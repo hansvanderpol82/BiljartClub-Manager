@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { PaymentModal } from './components/PaymentModal';
 import { 
   Trophy, 
   Users, 
@@ -430,6 +431,7 @@ export default function App() {
   const [newHomeMatchAwayFee, setNewHomeMatchAwayFee] = useState<number>(0);
   const [homeMatchStep, setHomeMatchStep] = useState<1 | 2>(1);
   const [homeMatchPairings, setHomeMatchPairings] = useState<{ id: string, homePlayerId: string, awayPlayerId: string }[]>([]);
+  const [paymentConfig, setPaymentConfig] = useState<{ isOpen: boolean; amount: number; description: string; onSuccess: () => void } | null>(null);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
   const shareDropdownRef = useRef<HTMLDivElement>(null);
   const hasPromptedRescheduleRef = useRef<Record<string, boolean>>({});
@@ -1060,7 +1062,7 @@ export default function App() {
     setNewClubParticipatesExternal(false);
   };
 
-  const addNewMember = (name: string, email: string, baseAverage: number, shortName?: string, role: 'admin' | 'planner' | 'member' = 'member', participatesInExternalMatches?: boolean) => {
+  const executeAddNewMember = (name: string, email: string, baseAverage: number, shortName?: string, role: 'admin' | 'planner' | 'member' = 'member', participatesInExternalMatches?: boolean) => {
     const newUser: User = {
       id: Math.random().toString(36).substr(2, 9),
       name,
@@ -1086,6 +1088,17 @@ export default function App() {
     setNewMemberAvg(20);
     setNewMemberRole('member');
     setNewMemberParticipatesExternal(false);
+  };
+
+  const addNewMember = (name: string, email: string, baseAverage: number, shortName?: string, role: 'admin' | 'planner' | 'member' = 'member', participatesInExternalMatches?: boolean) => {
+    setPaymentConfig({
+      isOpen: true,
+      amount: 100, // 1 euro
+      description: 'Aanmaken van een nieuw lid',
+      onSuccess: () => {
+        executeAddNewMember(name, email, baseAverage, shortName, role, participatesInExternalMatches);
+      }
+    });
   };
 
   const updateUserSettings = (email: string, baseAverage: number, avatar: string, shortName?: string, participatesInExternalMatches?: boolean) => {
@@ -1130,7 +1143,7 @@ export default function App() {
     );
   };
 
-  const createSeason = (seasonData: Partial<Season>) => {
+  const executeCreateSeason = (seasonData: Partial<Season>) => {
     const members: SeasonMember[] = (seasonData.members as any || []).map((userId: string) => ({
       userId,
       currentAverage: data.users.find((u: User) => u.id === userId)?.baseAverage || 20,
@@ -1176,6 +1189,22 @@ export default function App() {
     setNewSeasonInitialBalanceAmount(0);
     setNewSeasonCarryoverSeasonId('');
     setNewSeasonScoringSystem('default');
+  };
+
+  const createSeason = (seasonData: Partial<Season>) => {
+    const numMembers = (seasonData.members as any || []).length;
+    if (numMembers === 0) {
+      executeCreateSeason(seasonData);
+      return;
+    }
+    setPaymentConfig({
+      isOpen: true,
+      amount: numMembers * 100, // 1 euro per member
+      description: `Aanmaken nieuw seizoen (${numMembers} leden)`,
+      onSuccess: () => {
+        executeCreateSeason(seasonData);
+      }
+    });
   };
 
   const deleteSeason = (id: string) => {
@@ -1810,7 +1839,7 @@ export default function App() {
     setHomeMatchStep(2);
   };
 
-  const createHomeMatch = () => {
+  const executeCreateHomeMatch = () => {
     if (!activeClub || !newHomeMatchAwayClubId || !newHomeMatchDate || homeMatchPairings.length === 0) return;
 
     const games = homeMatchPairings.map(pairing => ({
@@ -1853,6 +1882,22 @@ export default function App() {
     setNewHomeMatchBeurten(30);
     setHomeMatchStep(1);
     setHomeMatchPairings([]);
+  };
+
+  const createHomeMatch = () => {
+    const numMembers = homeMatchPairings.length;
+    if (numMembers === 0) {
+      executeCreateHomeMatch();
+      return;
+    }
+    setPaymentConfig({
+      isOpen: true,
+      amount: numMembers * 100, // 1 euro per pair
+      description: `Uit/thuis wedstrijd aanmaken (${numMembers} spelers)`,
+      onSuccess: () => {
+        executeCreateHomeMatch();
+      }
+    });
   };
 
   const startMatch = (matchId: string, arbiterId: string, writerId: string, tafelNummer: number) => {
@@ -7447,6 +7492,20 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Payment Modal */}
+      {paymentConfig && (
+        <PaymentModal
+          isOpen={paymentConfig.isOpen}
+          onClose={() => setPaymentConfig({ ...paymentConfig, isOpen: false })}
+          onSuccess={() => {
+            paymentConfig.onSuccess();
+            setPaymentConfig(null);
+          }}
+          amount={paymentConfig.amount}
+          description={paymentConfig.description}
+        />
+      )}
 
       {/* Confirmation Modal */}
       <AnimatePresence>
