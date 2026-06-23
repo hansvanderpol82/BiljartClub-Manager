@@ -1,0 +1,13 @@
+266:  const [currentUser, setCurrentUser] = useState<User>(data.users[0]);
+1403:          let pairIdx = remainingPairs.findIndex(p => !playersPlayedTonight.has(p[0]) && !playersPlayedTonight.has(p[1]));
+1406:            pairIdx = remainingPairs.findIndex(p => !playersPlayedTonight.has(p[0]) || !playersPlayedTonight.has(p[1]));
+1411:          const pair = remainingPairs.splice(pairIdx, 1)[0];
+1412:          playersPlayedTonight.add(pair[0]);
+1415:          const p1SeasonInfo = (season.members || []).find(sm => sm.userId === pair[0]);
+1423:            player1Id: pair[0],
+2928:                { (currentUser.shortName || currentUser.name)[0] }
+4194:                                                    {(opponent?.shortName || opponent?.name || '?')[0]}
+5100:                                      {u.avatar ? <img src={u.avatar} className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : u.name?.[0]}
+7404:                              {p1?.name?.[0]}
+7438:                              {p2?.name?.[0]}
+8709:                             .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())

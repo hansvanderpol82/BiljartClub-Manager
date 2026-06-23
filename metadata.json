@@ -1,0 +1,6 @@
+{
+  "name": "BiljartClub Manager",
+  "description": "Beheer je biljartclub, seizoenen, leden en wedstrijden met live scorebord en automatische planning.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

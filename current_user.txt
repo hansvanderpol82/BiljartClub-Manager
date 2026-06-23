@@ -1,0 +1,66 @@
+267:  const [currentUser, setCurrentUser] = useState<User>(data.users[0]);
+413:  const [userSettingsEmail, setUserSettingsEmail] = useState(currentUser.email);
+414:  const [userSettingsShortName, setUserSettingsShortName] = useState(currentUser.shortName || '');
+415:  const [userSettingsAvg, setUserSettingsAvg] = useState(currentUser.baseAverage);
+416:  const [userSettingsAvatar, setUserSettingsAvatar] = useState(currentUser.avatar || '');
+417:  const [userSettingsParticipatesExternal, setUserSettingsParticipatesExternal] = useState(currentUser.participatesInExternalMatches ?? false);
+534:    if (currentUser.role !== 'admin' && currentUser.role !== 'planner' && activeClub?.adminId !== currentUser.id) return;
+604:    if (currentUser.role !== 'admin' && currentUser.role !== 'planner' && activeClub?.adminId !== currentUser.id) return;
+649:    if (currentUser.role !== 'admin' && currentUser.role !== 'planner' && activeClub?.adminId !== currentUser.id) return;
+843:      if (currentUser.id === activeClub?.adminId || currentUser.role === 'admin' || currentUser.role === 'planner') {
+864:  }, [activeTab, selectedSeasonId, data.matches, activeSeason, activeClub, currentUser]);
+1049:        adminId: currentUser.id,
+1050:        memberIds: [currentUser.id],
+1091:    const updatedUser = { ...currentUser, email, baseAverage, avatar, shortName, participatesInExternalMatches };
+1095:      users: prev.users.map((u: User) => u.id === currentUser.id ? updatedUser : u)
+1633:    if (currentUser.role !== 'admin' && currentUser.role !== 'planner') return;
+1650:    if (currentUser.role !== 'admin' && currentUser.role !== 'planner') return;
+1662:    if (currentUser.role !== 'admin' && currentUser.role !== 'planner') return;
+1681:    if (currentUser.role !== 'admin' && currentUser.role !== 'planner') return;
+3000:              {currentUser.role === 'admin' && (
+3014:            active={activeTab === 'profile' && selectedProfileId === currentUser.id} 
+3016:              setSelectedProfileId(currentUser.id);
+3033:              setUserSettingsEmail(currentUser.email);
+3034:              setUserSettingsShortName(currentUser.shortName || '');
+3035:              setUserSettingsAvg(currentUser.baseAverage);
+3036:              setUserSettingsAvatar(currentUser.avatar || '');
+3037:              setUserSettingsParticipatesExternal(currentUser.participatesInExternalMatches ?? false);
+3045:            {currentUser.avatar ? (
+3046:              <img src={currentUser.avatar} alt={currentUser.name} className="w-8 h-8 rounded-full object-cover shrink-0" referrerPolicy="no-referrer" />
+3052:                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{currentUser.shortName || currentUser.name}</p>
+3053:                <p className="text-xs text-slate-500 dark:text-slate-400 truncate capitalize">{currentUser.role}</p>
+3109:            {currentUser.avatar ? (
+3110:              <img src={currentUser.avatar} alt={currentUser.name} className="h-8 w-8 rounded-full object-cover" referrerPolicy="no-referrer" />
+3113:                { (currentUser.shortName || currentUser.name)?.[0] || '?' }
+3164:                            {club.adminId === currentUser.id && (
+3198:                          {club.adminId === currentUser.id ? 'Beheerder' : 'Lid'}
+3220:            {activeTab === 'cashbook' && currentUser.role === 'admin' && activeClub && (
+3443:                  {activeClub.adminId === currentUser.id && (
+3521:                                { (activeClub.adminId === currentUser.id || currentUser.role === 'admin' || currentUser.role === 'planner') && member?.id !== currentUser.id && (
+3585:                    {activeClub.adminId === currentUser.id && (
+3823:                                            {(activeClub.adminId === currentUser.id || currentUser.role === 'admin' || currentUser.role === 'planner') ? (
+3887:                                            {(activeClub.adminId === currentUser.id || currentUser.role === 'admin' || currentUser.role === 'planner') ? (
+3939:                                {activeClub.adminId === currentUser.id && (
+3974:                      {activeClub.adminId === currentUser.id && (
+4470:                    {activeClub.adminId === currentUser.id && (
+4479:                    {activeClub.adminId === currentUser.id && (
+4710:                                              disabled={activeClub.adminId !== currentUser.id}
+4779:                          {activeClub.adminId === currentUser.id && (
+4833:                      {(activeClub?.adminId === currentUser.id || currentUser.role === 'admin' || currentUser.role === 'planner') && (
+5095:                                            !isFinished && !isStarted && (currentUser.role === 'admin' || currentUser.role === 'planner' || activeClub?.adminId === currentUser.id) ? "cursor-pointer text-emerald-300 hover:text-emerald-100 transition-colors" : "text-emerald-300 opacity-80"
+5104:                                      {(activeClub.adminId === currentUser.id || currentUser.role === 'admin' || currentUser.role === 'planner') ? (
+5168:                                      {(activeClub.adminId === currentUser.id || currentUser.role === 'admin' || currentUser.role === 'planner') ? (
+5202:                                            !isFinished && !isStarted && (currentUser.role === 'admin' || currentUser.role === 'planner' || activeClub?.adminId === currentUser.id) ? "cursor-pointer text-emerald-300 hover:text-emerald-100 transition-colors" : "text-emerald-300 opacity-80"
+5214:                                          ((activeClub?.adminId === currentUser.id) || currentUser.role === 'admin' || currentUser.role === 'planner' || currentUser.role === 'user') && (
+5472:                                {!isPast && activeSeason && !cancelledReason && activeClub.adminId === currentUser.id && (
+5587:                                          {isPlanned && (currentUser.role === 'admin' || currentUser.role === 'planner' || activeClub?.adminId === currentUser.id) && (
+5615:                                        {(activeClub.adminId === currentUser.id || currentUser.role === 'admin' || currentUser.role === 'planner') ? (
+5660:                                            match.status === 'planned' && (currentUser.role === 'admin' || currentUser.role === 'planner' || activeClub?.adminId === currentUser.id) ? "cursor-pointer text-emerald-300 hover:text-emerald-100" : "text-emerald-300 opacity-80"
+5701:                                            match.status === 'planned' && (currentUser.role === 'admin' || currentUser.role === 'planner' || activeClub?.adminId === currentUser.id) ? "cursor-pointer text-emerald-300 hover:text-emerald-100" : "text-emerald-300 opacity-80"
+5721:                                        {(activeClub.adminId === currentUser.id || currentUser.role === 'admin' || currentUser.role === 'planner') ? (
+5762:                                            ((activeClub?.adminId === currentUser.id) || currentUser.role === 'admin' || currentUser.role === 'planner' || currentUser.role === 'user') && (
+5818:                                          {(activeClub.adminId === currentUser.id || currentUser.role === 'admin' || currentUser.role === 'planner') && (
+6493:              {currentUser.role === 'admin' && (
+6508:            active={activeTab === 'profile' && selectedProfileId === currentUser.id} 
+6510:              setSelectedProfileId(currentUser.id);
+7188:                {currentUser.role === 'admin' && (

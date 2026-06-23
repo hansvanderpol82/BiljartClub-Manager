@@ -1,0 +1,50 @@
+839:  const activeSeason = useMemo(() => data.seasons.find((s: Season) => s.id === selectedSeasonId), [data.seasons, selectedSeasonId]);
+842:    if (activeTab === 'matches' && selectedSeasonId && activeSeason) {
+864:  }, [activeTab, selectedSeasonId, data.matches, activeSeason, activeClub, currentUser]);
+1021:    const season = seasonOfMatch || activeSeason;
+1028:  }, [data.matches, data.externalMatches, activeSeason, seasonOfMatch, matchToStart]);
+3070:              {activeTab === 'matches' && `Wedstrijden ${activeSeason ? `(${activeSeason.name})` : ''}`}
+4823:                    Wedstrijden {selectedSeasonId && activeSeason ? `- ${activeSeason.name}` : selectedExternalMatchId ? (() => {
+5404:                        const rawAttendance = activeSeason?.attendance?.[date.toISOString()];
+5405:                        const attendance = rawAttendance || activeSeason?.members?.map(m => m.userId) || [];
+5407:                        const cancelledReason = activeSeason?.cancelledDays?.[date.toISOString()];
+5445:                                {isSameDay(date, new Date()) && activeSeason && !cancelledReason && (
+5459:                                            if (m.player1Paid) paid += activeSeason.inlegPerWedstrijd;
+5460:                                            if (m.player2Paid) paid += activeSeason.inlegPerWedstrijd;
+5472:                                {!isPast && activeSeason && !cancelledReason && activeClub.adminId === currentUser.id && (
+5485:                                {!isPast && activeSeason && !cancelledReason && (
+5497:                                          {Math.round((attendance.length / Math.max((activeSeason.members || []).length, 1)) * 100)}%
+5501:                                            const pct = (attendance.length / Math.max((activeSeason.members || []).length, 1)) * 100;
+5566:                                      activeSeason?.scoringSystem || '2-0'
+5571:                                      activeSeason?.scoringSystem || '2-0'
+5771:                                                    const available = Array.from({ length: activeSeason?.aantalTafels || 1 }, (_, i) => i + 1).find(n => !occupiedTables.includes(n));
+7819:                    {Array.from({ length: (seasonOfMatch?.aantalTafels || activeSeason?.aantalTafels || 1) }, (_, i) => i + 1).map(num => {
+7828:                  {occupiedTables.length >= (seasonOfMatch?.aantalTafels || activeSeason?.aantalTafels || 0) && (
+7841:                  disabled={!selectedArbiterId || !selectedWriterId || occupiedTables.includes(selectedTafelNummer) || occupiedTables.length >= (seasonOfMatch?.aantalTafels || activeSeason?.aantalTafels || 0)}
+7849:                      const currentSeason = seasonOfMatch || activeSeason;
+8022:        {isForecastModalOpen && activeSeason && (
+8049:                  const seasonMatches = data.matches.filter((m: Match) => m.seasonId === activeSeason.id);
+8067:                  const playerStats = (activeSeason.members || []).map(m => {
+8545:        {isAttendanceModalOpen && attendanceModalDate && activeSeason && (
+8576:                  {(activeSeason.members || []).map(m => {
+8578:                    const isPresent = (activeSeason.attendance?.[attendanceModalDate] || (activeSeason.members || []).map(mem => mem.userId)).includes(m.userId);
+8583:                        onClick={() => toggleAttendance(activeSeason.id, attendanceModalDate, m.userId)}
+8616:                    {(activeSeason.attendance?.[attendanceModalDate] || (activeSeason.members || []).map(mem => mem.userId)).length} / {(activeSeason.members || []).length}
+8631:        {isDailyMatchFeesModalOpen && dailyMatchFeesDate && activeSeason && (
+8664:                      m.seasonId === activeSeason.id && 
+8671:                    (activeSeason.members || []).forEach(m => {
+8688:                      const totalDue = stats.played * activeSeason.inlegPerWedstrijd;
+8689:                      const totalPaid = stats.paid * activeSeason.inlegPerWedstrijd;
+8736:        {isContributionsDetailModalOpen && activeSeason && (
+8771:                    {(activeSeason.members || []).map(m => {
+8791:                              {m.paidContributie ? formatCurrency(activeSeason.contributie) : formatCurrency(0)}
+8825:                        (activeSeason.members || []).map(m => {
+8828:                            match.seasonId === activeSeason.id && 
+8839:                          const totalDue = playedMatches * activeSeason.inlegPerWedstrijd;
+8840:                          const totalPaid = paidMatches * activeSeason.inlegPerWedstrijd;
+8885:                             .filter((match: Match) => match.seasonId === activeSeason.id && match.status !== 'cancelled')
+8897:                               const totalDue = playedMatchesCount * activeSeason.inlegPerWedstrijd;
+8900:                                 if (m.player1Paid) totalPaid += activeSeason.inlegPerWedstrijd;
+8901:                                 if (m.player2Paid) totalPaid += activeSeason.inlegPerWedstrijd;
+8941:                    {data.externalMatches?.filter((em: any) => em.seasonId === activeSeason.id).map((em: any) => {
+8993:                    {(!data.externalMatches || data.externalMatches.filter((em: any) => em.seasonId === activeSeason.id).length === 0) && (
