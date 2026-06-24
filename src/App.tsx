@@ -367,6 +367,7 @@ export default function App() {
   });
   const [activeShareDropdown, setActiveShareDropdown] = useState<string | null>(null);
   const [showPigAnimation, setShowPigAnimation] = useState(false);
+  const [niceBallNotification, setNiceBallNotification] = useState<'white' | 'yellow' | null>(null);
   const scoringInputRef = React.useRef<HTMLInputElement>(null);
 
   const [isClubModalOpen, setIsClubModalOpen] = useState(false);
@@ -830,6 +831,11 @@ export default function App() {
         setShowPigAnimation(true);
         setTimeout(() => setShowPigAnimation(false), 5000);
       }
+      if (e.key === 'niceBallAnimationTrigger' && e.newValue) {
+        const color = e.newValue.split('|')[0] as 'white' | 'yellow';
+        setNiceBallNotification(color);
+        setTimeout(() => setNiceBallNotification(null), 5000);
+      }
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -960,6 +966,13 @@ export default function App() {
     localStorage.setItem('pigAnimationTrigger', Date.now().toString());
     setShowPigAnimation(true);
     setTimeout(() => setShowPigAnimation(false), 5000);
+  };
+
+  const triggerNiceBallAnimation = () => {
+    const color = activeScoringPlayer === 1 ? 'white' : 'yellow';
+    localStorage.setItem('niceBallAnimationTrigger', `${color}|${Date.now()}`);
+    setNiceBallNotification(color);
+    setTimeout(() => setNiceBallNotification(null), 5000);
   };
 
   const matchToStart = useMemo(() => {
@@ -2553,6 +2566,92 @@ export default function App() {
                 </motion.div>
               </div>
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Nice Ball Animation */}
+        <AnimatePresence mode="wait">
+          {niceBallNotification && (
+            <div key="niceBall" className="fixed inset-0 z-[600] pointer-events-none overflow-hidden flex flex-col justify-center items-center">
+              
+              {/* The Banner (Mooie bal!!!) */}
+              <motion.div
+                initial={{ y: '100vh', opacity: 0 }}
+                animate={{ y: ['100vh', '100vh', '0vh', '0vh', '-100vh'], opacity: [0, 0, 1, 1, 0] }}
+                transition={{ duration: 5, times: [0, 0.5, 0.6, 0.9, 1], ease: "easeInOut" }}
+                className="absolute top-32 md:top-48 z-30 pointer-events-none"
+              >
+                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-12 py-6 rounded-[2rem] font-black text-5xl md:text-7xl shadow-[0_20px_50px_rgba(79,70,229,0.5)] border-4 border-blue-200 text-center uppercase tracking-widest w-max whitespace-nowrap">
+                  Mooie bal!!!
+                </div>
+              </motion.div>
+
+              {/* The Ball */}
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: [0, 1, 1, 1, 0], opacity: [0, 1, 1, 1, 0] }}
+                transition={{ duration: 5, times: [0, 0.16, 0.5, 0.9, 1] }}
+                className="relative z-10 flex justify-center items-center h-64 mt-20"
+              >
+                <motion.div
+                  animate={niceBallNotification === 'white' ? { rotate: 360 } : { rotate: -360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className={`w-56 h-56 rounded-full shadow-[inset_-15px_-15px_30px_rgba(0,0,0,0.3),_0_20px_40px_rgba(0,0,0,0.4)] relative flex items-center justify-center border border-slate-200/50 ${niceBallNotification === 'white' ? 'bg-white' : 'bg-yellow-400'}`}
+                >
+                  <div className="absolute top-6 left-8 w-16 h-8 bg-white/60 rounded-full blur-[2px] transform -rotate-45" />
+                </motion.div>
+
+                {/* Sparkles */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 0, 1, 1, 0] }}
+                  transition={{ duration: 5, times: [0, 0.5, 0.55, 0.9, 1] }}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                >
+                  {[...Array(8)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      animate={{ 
+                        scale: [0, 1.5, 0], 
+                        opacity: [0, 1, 0],
+                        rotate: [0, 180]
+                      }}
+                      transition={{ 
+                        duration: 1.5, 
+                        repeat: 2, 
+                        delay: 2.5 + (i * 0.15),
+                        ease: "easeInOut"
+                      }}
+                      className="absolute text-yellow-300 text-5xl drop-shadow-lg"
+                      style={{
+                        top: `${20 + Math.random() * 60}%`,
+                        left: `${20 + Math.random() * 60}%`,
+                        transform: `translate(-50%, -50%)`
+                      }}
+                    >
+                      ✨
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </motion.div>
+
+              {/* The Girl polishing */}
+              <motion.div
+                initial={{ x: '100vw' }}
+                animate={{ x: ['100vw', '0vw', '0vw', '100vw', '100vw'] }}
+                transition={{ duration: 5, times: [0, 0.16, 0.5, 0.66, 1], ease: "easeInOut" }}
+                className="absolute top-1/2 z-20 flex justify-center ml-48 md:ml-64 mt-10"
+              >
+                {/* Polishing arm movement */}
+                <motion.div
+                  animate={{ y: [0, 30, 0], rotate: [0, -15, 0], x: [0, -20, 0] }}
+                  transition={{ duration: 0.3, repeat: 6, delay: 0.8 }}
+                  className="scale-[1.5] origin-bottom"
+                >
+                  <RingGirlSVG />
+                </motion.div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
 
@@ -6243,6 +6342,15 @@ export default function App() {
 
                               <div className="text-center">
                                 <div className="relative">
+                                  <div className="flex items-center gap-4 mb-4 md:mb-0 md:absolute md:-left-14 md:top-1/2 md:-translate-y-1/2 md:flex-col justify-center">
+                                    <button 
+                                      onClick={triggerNiceBallAnimation}
+                                      title="Mooie bal!"
+                                      className="w-12 h-12 md:w-10 md:h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/30 flex items-center justify-center text-2xl hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-all shadow-sm active:scale-95"
+                                    >
+                                      ✨
+                                    </button>
+                                  </div>
                                   <input
                                   ref={scoringInputRef}
                                   type="number"
