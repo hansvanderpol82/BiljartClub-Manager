@@ -1045,9 +1045,9 @@ export default function App() {
     }, 500);
   };
 
-  const exportNextMatchDay = async () => {
-    if (!selectedSeasonId) return;
-    setExportCastData({ type: "nextMatchDay", id: selectedSeasonId });
+  const exportNextMatchDay = async (seasonId: string) => {
+    if (!seasonId) return;
+    setExportCastData({ type: "nextMatchDay", id: seasonId });
     setTimeout(async () => {
       const node = document.getElementById("cast-nextmatchday-export-node");
       if (node) {
@@ -1255,7 +1255,7 @@ export default function App() {
       ? castState?.viewType || castViewType
       : castViewType;
   const actualCastSeasonId =
-    exportCastData?.type === "standings"
+    exportCastData?.type === "standings" || exportCastData?.type === "nextMatchDay"
       ? exportCastData.id
       : isCastMode
         ? castState?.seasonId || castStandingsSeasonId
@@ -1927,7 +1927,10 @@ export default function App() {
     });
 
     setTimeout(() => {
-      handleRescheduleUnplayedMatches(seasonId);
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      handleRescheduleUnplayedMatches(seasonId, undefined, tomorrow);
     }, 100);
   };
 
@@ -2151,7 +2154,7 @@ export default function App() {
     return newMatches;
   };
 
-  const handleRescheduleUnplayedMatches = (seasonId: string, overrideSpeeldagen?: string[]) => {
+  const handleRescheduleUnplayedMatches = (seasonId: string, overrideSpeeldagen?: string[], startFromDate?: Date) => {
     const season = data.seasons.find((s: Season) => s.id === seasonId);
     if (!season) return;
 
@@ -2222,7 +2225,7 @@ export default function App() {
     const newMatches: Match[] = [];
     let weekOffset = 0;
 
-    const startDate = new Date(); // Start from today
+    const startDate = startFromDate || new Date(); // Start from today or provided date
     startDate.setHours(0, 0, 0, 0);
 
     // Track last played date for each pair to space them out
@@ -3250,11 +3253,11 @@ export default function App() {
               <div className="inline-flex items-center justify-center p-6 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-xl mb-6 shadow-2xl">
                 <Calendar className="text-purple-400 mr-4" size={48} />
                 <div>
-                  <h1 className="text-4xl font-black text-white tracking-tight uppercase leading-none drop-shadow-md">
-                    Volgende Speeldag
-                  </h1>
-                  <h2 className="text-2xl font-bold text-white/60 tracking-wider mt-1">
+                  <h1 className="text-4xl font-black text-white tracking-tight leading-none drop-shadow-md capitalize">
                     {format(nextDate, "EEEE d MMMM", { locale: nl })}
+                  </h1>
+                  <h2 className="text-xl font-bold text-white/60 tracking-wider mt-2">
+                    Volgende speeldag
                   </h2>
                 </div>
               </div>
@@ -3276,16 +3279,16 @@ export default function App() {
                         <div className="flex w-full items-center justify-between gap-4">
                           <div className="flex-1 flex flex-col items-end">
                             <span className="text-3xl font-black text-white truncate w-full text-right drop-shadow-md">{p1.name}</span>
-                            <span className="text-lg font-bold text-emerald-400 bg-emerald-900/30 px-3 py-1 rounded-lg mt-2">Moyenne: {p1.avg}</span>
+                            <span className="text-lg font-bold text-white bg-white/20 px-3 py-1 rounded-lg mt-2">Gemiddelde: {p1.avg}</span>
                           </div>
                           <div className="flex flex-col items-center justify-center px-4">
                             <div className="w-12 h-12 bg-purple-500/20 border border-purple-500/50 rounded-full flex items-center justify-center shadow-inner shadow-purple-500/20">
-                              <span className="text-purple-300 font-black text-xl italic leading-none">VS</span>
+                              <span className="text-purple-300 font-black text-3xl leading-none">-</span>
                             </div>
                           </div>
                           <div className="flex-1 flex flex-col items-start">
-                            <span className="text-3xl font-black text-white truncate w-full text-left drop-shadow-md">{p2.name}</span>
-                            <span className="text-lg font-bold text-yellow-400 bg-yellow-900/30 px-3 py-1 rounded-lg mt-2">Moyenne: {p2.avg}</span>
+                            <span className="text-3xl font-black text-yellow-400 truncate w-full text-left drop-shadow-md">{p2.name}</span>
+                            <span className="text-lg font-bold text-yellow-400 bg-yellow-900/30 px-3 py-1 rounded-lg mt-2">Gemiddelde: {p2.avg}</span>
                           </div>
                         </div>
                       </div>
@@ -9365,10 +9368,10 @@ export default function App() {
                                         <button
                                           onClick={() => showConfirm(
                                             "Speeldag Voltooien",
-                                            "Weet je zeker dat je deze speeldag wilt voltooien? Afwezigen worden naar de volgende speeldag verplaatst en de resterende wedstrijden worden opnieuw ingedeeld.",
+                                            "Nog niet gespeelde- en afgemelde wedstrijden worden naar de volgende speeldag verplaats en alles wordt opnieuw ingedeeld.",
                                             () => completeMatchDay(activeSeason.id, date.toISOString())
                                           )}
-                                          className="bg-emerald-600 px-4 py-2 rounded-xl text-white hover:bg-emerald-700 transition-all shadow-sm flex items-center gap-2 font-bold text-sm h-[42px]"
+                                          className="bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 text-slate-800 dark:text-white transition-all shadow-sm flex items-center gap-2 font-bold text-sm h-[42px]"
                                         >
                                           <CheckCircle2 size={16} />
                                           Speeldag voltooien
@@ -10015,6 +10018,8 @@ export default function App() {
                                                 <div className="flex items-center justify-center gap-1">
                                                   {!isFinished &&
                                                     !isStarted &&
+                                                    !isCancelled &&
+                                                    isSameDay(date, new Date()) &&
                                                     (activeClub?.adminId ===
                                                       currentUser.id ||
                                                       currentUser.role ===
@@ -10023,17 +10028,7 @@ export default function App() {
                                                         "planner" ||
                                                       currentUser.role ===
                                                         "user") &&
-                                                    (isMatchBlocked ? (
-                                                      <div
-                                                        className="w-8 h-8 rounded-full bg-slate-800 text-slate-500 flex items-center justify-center cursor-not-allowed border border-slate-700"
-                                                        title="Match kan niet gestart worden: speler afwezig"
-                                                      >
-                                                        <Play
-                                                          size={14}
-                                                          className="opacity-30 ml-0.5"
-                                                        />
-                                                      </div>
-                                                    ) : (
+                                                    !isMatchBlocked && (
                                                       <button
                                                         onClick={() => {
                                                           setMatchToStartId(
@@ -10101,7 +10096,7 @@ export default function App() {
                                                           className="ml-0.5"
                                                         />
                                                       </button>
-                                                    ))}
+                                                    )}
                                                   {isStarted && (
                                                     <button
                                                       onClick={() =>
@@ -10254,7 +10249,7 @@ export default function App() {
                         setIsMatchesExpanded(false);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
-                      className="flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-bold shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                      className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-full font-bold shadow-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all hover:-translate-y-1"
                     >
                       <ChevronUp size={20} />
                       Verberg toekomstige wedstrijden
@@ -15007,9 +15002,10 @@ export default function App() {
                       </div>
                     </button>
                     <button
-                      onClick={() => {
-                        exportNextMatchDay();
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setCastMenuTarget(null);
+                        setTimeout(() => exportNextMatchDay(castMenuTarget.id), 100);
                       }}
                       className="w-16 flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-purple-400 transition-colors text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 shadow-sm"
                       title="Exporteren als JPG"
