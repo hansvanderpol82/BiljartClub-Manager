@@ -4,7 +4,7 @@ export interface User {
   shortName?: string;
   email: string;
   role: 'admin' | 'planner' | 'member';
-  baseAverage: number; // Starting average for the user
+  baseAverage: number;
   avatar?: string;
   participatesInExternalMatches?: boolean;
 }
@@ -16,6 +16,7 @@ export interface Club {
   adminId: string;
   memberIds: string[];
   participatesInExternalMatches?: boolean;
+  inviteEmailTemplate?: string;
 }
 
 export interface SeasonMember {
@@ -29,9 +30,9 @@ export interface Transaction {
   id: string;
   date: string;
   description: string;
-  amount: number; // positive for income, negative for expense
+  amount: number;
   type: 'manual' | 'contribution' | 'match_fee';
-  userId?: string; // Optional: who performed the transaction or who it's for
+  userId?: string;
 }
 
 export interface Season {
@@ -40,17 +41,17 @@ export interface Season {
   name: string;
   members: SeasonMember[];
   matchesPerPair: number;
-  speeldagen: string[]; // ['maandag', 'woensdag']
+  speeldagen: string[];
   wedstrijdenPerSpeeldag: number;
   beurtenPerWedstrijd: number;
-  herzieningenPerSeizoen: number; // How many times to auto-recalculate
+  herzieningenPerSeizoen: number;
   contributie: number;
   inlegPerWedstrijd: number;
   aantalTafels: number;
   status: 'open' | 'closed';
   isBlocked?: boolean;
-  attendance?: Record<string, string[]>; // date string -> array of userIds who are PRESENT
-  cancelledDays?: Record<string, string>; // date string -> reason
+  attendance?: Record<string, string[]>;
+  cancelledDays?: Record<string, string>;
   initialBalanceType?: 'manual' | 'carryover';
   initialBalanceAmount?: number;
   carryoverSeasonId?: string;
@@ -94,8 +95,8 @@ export interface ExternalMatchGame {
   awayScore: number;
   homeTarget?: number;
   awayTarget?: number;
-  homePoints: number; // calculated points for the game
-  awayPoints: number; // calculated points for the game
+  homePoints: number;
+  awayPoints: number;
   status: 'planned' | 'started' | 'finished';
   arbiterId?: string;
   writerId?: string;

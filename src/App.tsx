@@ -50,6 +50,7 @@ import {
   MonitorPlay,
   Banknote,
   RefreshCw,
+  Mail,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toJpeg } from "html-to-image";
@@ -74,6 +75,10 @@ import {
 } from "date-fns";
 import { nl } from "date-fns/locale";
 import { cn } from "./lib/utils";
+import { auth, googleProvider, db } from "./lib/firebase";
+import { doc, onSnapshot, setDoc } from "firebase/firestore";
+import { signInWithEmailAndPassword, signInWithPopup, User as FirebaseUser, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { Login } from "./components/Login";
 import {
   User,
   Club,
@@ -356,47 +361,141 @@ const RingGirlSVG = () => (
 );
 
 export default function App() {
-  const [data, setData] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
+  const [data, setData] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem("biljart_club_data");
+      if (saved) {
         const parsed = JSON.parse(saved);
-        return {
-          ...initialData,
-          ...parsed,
-          externalMatches: (
-            parsed.externalMatches || initialData.externalMatches
-          )
-            .filter(Boolean)
-            .filter(
-              (m: any) => m && (!m.date || !isNaN(new Date(m.date).getTime())),
-            ),
-          matches: (parsed.matches || initialData.matches)
-            .filter(Boolean)
-            .filter(
-              (m: any) => m && m.date && !isNaN(new Date(m.date).getTime()),
-            ),
-          seasons: (parsed.seasons || initialData.seasons)
-            .filter(Boolean)
-            .map((s: any) => ({
-              ...s,
-              inlegPerWedstrijd: s.inlegPerWedstrijd || 0,
-              contributie: s.contributie || 0,
-            })),
-          clubs: (parsed.clubs || initialData.clubs).filter(Boolean),
-          users: (parsed.users?.length > 0
-            ? parsed.users
-            : initialData.users
-          ).filter(Boolean),
-        };
-      } catch (e) {
-        return initialData;
+        if (parsed.clubs && parsed.clubs.length > 0) {
+          return {
+            ...initialData,
+            ...parsed,
+            externalMatches: (parsed.externalMatches || initialData.externalMatches).filter(Boolean),
+            matches: (parsed.matches || initialData.matches).filter(Boolean),
+            seasons: (parsed.seasons || initialData.seasons).filter(Boolean),
+            clubs: (parsed.clubs || initialData.clubs).filter(Boolean),
+            users: (parsed.users?.length > 0 ? parsed.users : initialData.users).filter(Boolean),
+          };
+        }
       }
-    }
+    } catch(e) {}
     return initialData;
   });
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const dataRef = useRef(data);
+  useEffect(() => { dataRef.current = data; }, [data]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "appData", "main"), (docSnap) => {
+      if (docSnap.exists()) {
+        try {
+          const parsedDataStr = docSnap.data().data;
+          const parsed = JSON.parse(parsedDataStr);
+          
+          // Migrate logic: if Firestore is empty (0 clubs) and local has clubs, push local to Firestore instead of overwriting
+          const firestoreClubs = parsed.clubs || [];
+          const localClubs = dataRef.current.clubs || [];
+          
+          if (firestoreClubs.length === 0 && localClubs.length > 0) {
+            console.log("Migrating local data to Firestore...");
+            setDoc(doc(db, "appData", "main"), { data: JSON.stringify(dataRef.current) }).catch(console.error);
+          } else if (parsedDataStr !== JSON.stringify(dataRef.current)) {
+            setData({
+              ...initialData,
+              ...parsed,
+              externalMatches: (parsed.externalMatches || initialData.externalMatches).filter(Boolean),
+              matches: (parsed.matches || initialData.matches).filter(Boolean),
+              seasons: (parsed.seasons || initialData.seasons).filter(Boolean),
+              clubs: (parsed.clubs || initialData.clubs).filter(Boolean),
+              users: (parsed.users?.length > 0 ? parsed.users : initialData.users).filter(Boolean),
+            });
+          }
+        } catch(e) {}
+      } else {
+        setDoc(doc(db, "appData", "main"), { data: JSON.stringify(dataRef.current) });
+      }
+      setDataLoaded(true);
+    });
+    return () => unsub();
+  }, []);
+
+  const [authUser, setAuthUser] = useState<FirebaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthUser(user);
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const [currentUser, setCurrentUser] = useState<User>(data.users[0]);
+
+  useEffect(() => {
+    if (authUser && data.users) {
+      let user = data.users.find((u: User) => u.email === authUser.email);
+      
+      // Auto-promote administrators if needed
+      const isAdminEmail = authUser.email === "hansvanderpol82@gmail.com" || authUser.email === "biljarclubkot@gmail.com";
+      
+      if (user) {
+        if (isAdminEmail && user.role !== "admin") {
+          user = { ...user, role: "admin" };
+          setData((prev: any) => ({
+            ...prev,
+            users: prev.users.map((u: User) => u.id === user.id ? user : u)
+          }));
+        }
+        setCurrentUser(user);
+      } else if (authUser.email) {
+        const newUser: User = {
+          id: authUser.uid,
+          name: authUser.displayName || authUser.email.split('@')[0],
+          email: authUser.email,
+          role: isAdminEmail ? "admin" : "member",
+          baseAverage: 20
+        };
+        setData((prev: any) => ({ ...prev, users: [...prev.users, newUser] }));
+        setCurrentUser(newUser);
+      }
+    }
+  }, [authUser, data.users]);
+
+  // Handmatige herstel functie
+  const restoreLocalData = () => {
+    try {
+      const saved = localStorage.getItem("biljart_club_data");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.clubs && parsed.clubs.length > 0) {
+          if (window.confirm("Wil je je lokale gegevens herstellen naar de database? Dit overschrijft de huidige database.")) {
+             setData((prev: any) => ({
+                ...prev,
+                ...parsed,
+                externalMatches: (parsed.externalMatches || prev.externalMatches || []).filter(Boolean),
+                matches: (parsed.matches || prev.matches || []).filter(Boolean),
+                seasons: (parsed.seasons || prev.seasons || []).filter(Boolean),
+                clubs: (parsed.clubs || prev.clubs || []).filter(Boolean),
+                users: (parsed.users || prev.users || []).filter(Boolean),
+             }));
+             alert("Lokale gegevens hersteld! De database wordt nu bijgewerkt.");
+          }
+        } else {
+          alert("Geen lokale gegevens gevonden om te herstellen.");
+        }
+      } else {
+        alert("Geen lokale gegevens gevonden in de browser.");
+      }
+    } catch(e) {
+      alert("Fout bij het herstellen van gegevens.");
+    }
+  };
+
+
+  const [inviteClubId, setInviteClubId] = useState(() => new URLSearchParams(window.location.search).get('invite') || null);
+  const [showInviteWelcome, setShowInviteWelcome] = useState(!!inviteClubId);
+
   const [activeTab, setActiveTab] = useState<
     | "clubs"
     | "seasons"
@@ -640,6 +739,8 @@ export default function App() {
   >("member");
   const [newMemberParticipatesExternal, setNewMemberParticipatesExternal] =
     useState(false);
+  const [newMemberSendInvite, setNewMemberSendInvite] = useState(true);
+
   const [isUserSettingsModalOpen, setIsUserSettingsModalOpen] = useState(false);
   const [userSettingsEmail, setUserSettingsEmail] = useState(currentUser.email);
   const [userSettingsShortName, setUserSettingsShortName] = useState(
@@ -1108,8 +1209,10 @@ export default function App() {
   }, [liveMatchId]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [data]);
+    if (dataLoaded) {
+      setDoc(doc(db, "appData", "main"), { data: JSON.stringify(data) }).catch(console.error);
+    }
+  }, [data, dataLoaded]);
 
   useEffect(() => {
     localStorage.setItem("selectedClubId", selectedClubId || "");
@@ -1491,6 +1594,19 @@ export default function App() {
     }
   }, [isSeasonModalOpen, activeClub]);
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-4">
+        <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white">Laden...</h2>
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return <Login />;
+  }
+
   // --- Actions ---
   const createClub = (
     name: string,
@@ -1525,6 +1641,21 @@ export default function App() {
     setNewClubParticipatesExternal(false);
   };
 
+  const sendInviteEmail = (club: Club, user: User) => {
+    const defaultTemplate = `Beste {naam},\n\nJe bent uitgenodigd om lid te worden van biljartclub {clubNaam}.\n\nKlik op de onderstaande link om de uitnodiging te accepteren en een account aan te maken:\n{inviteLink}\n\nMet vriendelijke groet,\nDe beheerder`;
+    const template = club.inviteEmailTemplate || defaultTemplate;
+    const inviteLink = `${window.location.origin}/?invite=${club.id}`;
+    
+    const body = template
+      .replace(/{naam}/g, user.name)
+      .replace(/{clubNaam}/g, club.name)
+      .replace(/{inviteLink}/g, inviteLink);
+      
+    const subject = `Uitnodiging voor biljartclub ${club.name}`;
+    const mailtoLink = `mailto:${user.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoLink;
+  };
+
   const executeAddNewMember = (
     name: string,
     email: string,
@@ -1532,6 +1663,7 @@ export default function App() {
     shortName?: string,
     role: "admin" | "planner" | "member" = "member",
     participatesInExternalMatches?: boolean,
+    sendInvite: boolean = true,
   ) => {
     const newUser: User = {
       id: Math.random().toString(36).substr(2, 9),
@@ -1553,6 +1685,10 @@ export default function App() {
       ),
     }));
 
+    if (sendInvite && activeClub) {
+      sendInviteEmail(activeClub, newUser);
+    }
+
     setIsMemberModalOpen(false);
     setNewMemberName("");
     setNewMemberShortName("");
@@ -1560,6 +1696,7 @@ export default function App() {
     setNewMemberAvg(20);
     setNewMemberRole("member");
     setNewMemberParticipatesExternal(false);
+    setNewMemberSendInvite(true);
   };
 
   const addNewMember = (
@@ -1569,6 +1706,7 @@ export default function App() {
     shortName?: string,
     role: "admin" | "planner" | "member" = "member",
     participatesInExternalMatches?: boolean,
+    sendInvite: boolean = true,
   ) => {
     setPaymentConfig({
       isOpen: true,
@@ -1582,6 +1720,7 @@ export default function App() {
           shortName,
           role,
           participatesInExternalMatches,
+          sendInvite,
         );
       },
     });
@@ -3184,10 +3323,10 @@ export default function App() {
     if (season) {
       const todayStr = format(new Date(), "yyyy-MM-dd");
       const futureMatches = data.matches.filter(
-        (m: Match) => m.seasonId === season.id && m.status === "planned" && m.date >= todayStr
+        (m: Match) => m.seasonId === season.id && m.status === "planned" && format(new Date(m.date), "yyyy-MM-dd") >= todayStr
       );
       
-      const futureSpeeldagen = Array.from(new Set(futureMatches.map((m: Match) => m.date.split("T")[0]))).sort();
+      const futureSpeeldagen = Array.from(new Set(futureMatches.map((m: Match) => format(new Date(m.date), "yyyy-MM-dd")))).sort();
       const nextSpeeldag = futureSpeeldagen[0] as string | undefined;
 
       let nodeToRender: React.ReactNode;
@@ -3216,9 +3355,9 @@ export default function App() {
         );
       } else {
         const nextMatches = data.matches.filter(
-          (m: Match) => m.seasonId === season.id && m.date.startsWith(nextSpeeldag) && m.status === "planned"
+          (m: Match) => m.seasonId === season.id && format(new Date(m.date), "yyyy-MM-dd") === nextSpeeldag && m.status === "planned"
         );
-        const nextDate = new Date(nextSpeeldag);
+        const nextDate = new Date(nextSpeeldag + "T12:00:00");
         
         // Use member averages
         const getPlayerDetails = (playerId: string) => {
@@ -4836,6 +4975,12 @@ export default function App() {
             onClick={() => setActiveTab("settings")}
             collapsed={isSidebarCollapsed}
           />
+          <SidebarItem
+            icon={<LogOut size={20} />}
+            label="Uitloggen"
+            onClick={() => auth.signOut()}
+            collapsed={isSidebarCollapsed}
+          />
         </nav>
 
         <div className="p-4 border-t border-slate-100 dark:border-slate-800">
@@ -5715,6 +5860,15 @@ export default function App() {
                                       >
                                         <Settings size={18} />
                                       </button>
+                                      {member?.email && (
+                                        <button
+                                          onClick={() => sendInviteEmail(activeClub, member)}
+                                          className="p-2 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                                          title="Stuur Uitnodiging"
+                                        >
+                                          <Mail size={18} />
+                                        </button>
+                                      )}
                                       <button
                                         onClick={() =>
                                           removeMemberFromClub(
@@ -11159,6 +11313,44 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+
+                {activeClub && activeClub.adminId === currentUser.id && (
+                  <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6 mt-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">
+                        Club Instellingen
+                      </h2>
+                      <p className="text-slate-500 dark:text-slate-400">
+                        Beheer instellingen voor {activeClub.name}.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                          Sjabloon Uitnodigingsmail
+                        </label>
+                        <textarea
+                          value={activeClub.inviteEmailTemplate || `Beste {naam},\n\nJe bent uitgenodigd om lid te worden van biljartclub {clubNaam}.\n\nKlik op de onderstaande link om de uitnodiging te accepteren en een account aan te maken:\n{inviteLink}\n\nMet vriendelijke groet,\nDe beheerder`}
+                          onChange={(e) => {
+                            setData((prev: any) => ({
+                              ...prev,
+                              clubs: prev.clubs.map((c: Club) => 
+                                c.id === activeClub.id 
+                                  ? { ...c, inviteEmailTemplate: e.target.value }
+                                  : c
+                              )
+                            }));
+                          }}
+                          className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 min-h-[200px]"
+                        />
+                        <p className="text-xs text-slate-500 mt-2">
+                          Beschikbare variabelen: <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">{'{naam}'}</code>, <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">{'{clubNaam}'}</code>, <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">{'{inviteLink}'}</code>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -11221,6 +11413,12 @@ export default function App() {
               setSelectedProfileId(currentUser.id);
               setActiveTab("profile");
             }}
+          />
+          <MobileNavTab
+            icon={<LogOut size={22} />}
+            label="Uitloggen"
+            active={false}
+            onClick={() => auth.signOut()}
           />
         </nav>
       </main>
@@ -12097,6 +12295,21 @@ export default function App() {
                     </select>
                   </div>
                 )}
+                {!editingMemberId && (
+                  <div>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newMemberSendInvite}
+                        onChange={(e) => setNewMemberSendInvite(e.target.checked)}
+                        className="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                        Stuur uitnodigingsmail
+                      </span>
+                    </label>
+                  </div>
+                )}
               </div>
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                 <button
@@ -12109,6 +12322,7 @@ export default function App() {
                     setNewMemberAvg(20);
                     setNewMemberRole("member");
                     setNewMemberParticipatesExternal(false);
+                    setNewMemberSendInvite(true);
                   }}
                   className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
@@ -12135,6 +12349,7 @@ export default function App() {
                         newMemberShortName,
                         newMemberRole,
                         newMemberParticipatesExternal,
+                        newMemberSendInvite,
                       );
                     }
                   }}
@@ -15102,7 +15317,7 @@ export default function App() {
                       (m: any) =>
                         m.seasonId === castMenuTarget.id &&
                         m.status === "finished" &&
-                        m.date.startsWith(todayStr),
+                        format(new Date(m.date), "yyyy-MM-dd") === todayStr,
                     );
                   } else if (castMenuTarget.type === "extMatch") {
                     const em = data.externalMatches?.find(
@@ -15197,7 +15412,7 @@ export default function App() {
                             (m: any) =>
                               m.seasonId === castMenuTarget.id &&
                               m.status === "finished" &&
-                              !m.date.startsWith(todayStr),
+                              format(new Date(m.date), "yyyy-MM-dd") !== todayStr,
                           );
                         } else if (castMenuTarget.type === "extMatch") {
                           const em = data.externalMatches?.find(
