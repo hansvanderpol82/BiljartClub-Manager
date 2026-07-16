@@ -385,7 +385,22 @@ export default function App() {
   const dataRef = useRef(data);
   useEffect(() => { dataRef.current = data; }, [data]);
 
+  const [authUser, setAuthUser] = useState<FirebaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthUser(user);
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!authUser) {
+      setDataLoaded(false);
+      return;
+    }
     const unsub = onSnapshot(doc(db, "appData", "main"), (docSnap) => {
       if (docSnap.exists()) {
         try {
@@ -412,23 +427,14 @@ export default function App() {
           }
         } catch(e) {}
       } else {
-        setDoc(doc(db, "appData", "main"), { data: JSON.stringify(dataRef.current) });
+        setDoc(doc(db, "appData", "main"), { data: JSON.stringify(dataRef.current) }).catch(console.error);
       }
       setDataLoaded(true);
+    }, (error) => {
+      console.error("Error listening to appData:", error);
     });
     return () => unsub();
-  }, []);
-
-  const [authUser, setAuthUser] = useState<FirebaseUser | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setAuthUser(user);
-      setAuthLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
+  }, [authUser]);
 
   const [currentUser, setCurrentUser] = useState<User>(data.users[0]);
 
