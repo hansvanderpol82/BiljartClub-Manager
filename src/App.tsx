@@ -562,6 +562,13 @@ export default function App() {
     extMatchId?: string;
     matchId?: string;
   } | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const initialStateStr = params.get("initialState");
+    if (initialStateStr) {
+      try {
+        return JSON.parse(initialStateStr);
+      } catch (e) {}
+    }
     const saved = localStorage.getItem("biljart_cast_state");
     if (saved) {
       try {
@@ -593,6 +600,7 @@ export default function App() {
     };
   }, []);
 
+  const presentationConnRef = useRef<any>(null);
   const [castMenuTarget, setCastMenuTarget] = useState<{
     type: "season" | "extMatch";
     id: string;
@@ -15186,14 +15194,42 @@ export default function App() {
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               <button
-                onClick={() => {
-                  updateGlobalCastState(
-                    castMenuTarget.type === "season"
-                      ? { viewType: "standings", seasonId: castMenuTarget.id }
-                      : { viewType: "extMatch", extMatchId: castMenuTarget.id },
-                  );
+                onClick={async () => {
+                  const newState = castMenuTarget.type === "season"
+                    ? { viewType: "standings", seasonId: castMenuTarget.id } as const
+                    : { viewType: "extMatch", extMatchId: castMenuTarget.id } as const;
+                  
+                  const castUrl = new URL(window.location.origin);
+                  castUrl.searchParams.set("cast", "true");
+                  castUrl.searchParams.set("initialState", JSON.stringify(newState));
+                  
+                  if ('PresentationRequest' in window) {
+                    try {
+                      const request = new (window as any).PresentationRequest([castUrl.toString()]);
+                      const connection = await request.start();
+                      presentationConnRef.current = connection;
+                      
+                      try {
+                        connection.send(JSON.stringify({ type: "UPDATE_CAST_STATE", payload: newState }));
+                      } catch(e) {}
+                      
+                      updateGlobalCastState(newState);
+                    } catch (err: any) {
+                      console.log("Presentation cancelled or failed:", err);
+                      if (err.name === 'NotFoundError') {
+                        // No screens found, fallback to new tab
+                        updateGlobalCastState(newState);
+                        window.open(castUrl.toString(), '_blank');
+                      } else {
+                        // User cancelled, do nothing
+                      }
+                    }
+                  } else {
+                    updateGlobalCastState(newState);
+                    window.open(castUrl.toString(), '_blank');
+                  }
+                  
                   setCastMenuTarget(null);
-                  setIsCastMode(true);
                 }}
                 className="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-colors shadow-lg active:scale-[0.98]"
               >
