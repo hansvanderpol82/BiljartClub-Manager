@@ -443,7 +443,7 @@ export default function App() {
       let user = data.users.find((u: User) => u.email === authUser.email);
       
       // Auto-promote administrators if needed
-      const isAdminEmail = authUser.email === "hansvanderpol82@gmail.com" || authUser.email === "biljarclubkot@gmail.com";
+      const isAdminEmail = authUser.email === "hansvanderpol82@gmail.com" || authUser.email === "biljartclubkot@gmail.com" || authUser.email === "bijartclubkot@gmail.com";
       
       if (user) {
         if (isAdminEmail && user.role !== "admin") {
@@ -467,36 +467,6 @@ export default function App() {
       }
     }
   }, [authUser, data.users]);
-
-  // Handmatige herstel functie
-  const restoreLocalData = () => {
-    try {
-      const saved = localStorage.getItem("biljart_club_data");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.clubs && parsed.clubs.length > 0) {
-          if (window.confirm("Wil je je lokale gegevens herstellen naar de database? Dit overschrijft de huidige database.")) {
-             setData((prev: any) => ({
-                ...prev,
-                ...parsed,
-                externalMatches: (parsed.externalMatches || prev.externalMatches || []).filter(Boolean),
-                matches: (parsed.matches || prev.matches || []).filter(Boolean),
-                seasons: (parsed.seasons || prev.seasons || []).filter(Boolean),
-                clubs: (parsed.clubs || prev.clubs || []).filter(Boolean),
-                users: (parsed.users || prev.users || []).filter(Boolean),
-             }));
-             alert("Lokale gegevens hersteld! De database wordt nu bijgewerkt.");
-          }
-        } else {
-          alert("Geen lokale gegevens gevonden om te herstellen.");
-        }
-      } else {
-        alert("Geen lokale gegevens gevonden in de browser.");
-      }
-    } catch(e) {
-      alert("Fout bij het herstellen van gegevens.");
-    }
-  };
 
 
   const [inviteClubId, setInviteClubId] = useState(() => new URLSearchParams(window.location.search).get('invite') || null);
@@ -12762,16 +12732,18 @@ export default function App() {
                 </p>
               </div>
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
-                <button
-                  onClick={() => {
-                    if (confirmModalConfig.onCancel)
-                      confirmModalConfig.onCancel();
-                    setIsConfirmModalOpen(false);
-                  }}
-                  className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                >
-                  Nee
-                </button>
+                {confirmModalConfig.onCancel !== undefined && (
+                  <button
+                    onClick={() => {
+                      if (confirmModalConfig.onCancel)
+                        confirmModalConfig.onCancel();
+                      setIsConfirmModalOpen(false);
+                    }}
+                    className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    Nee
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     confirmModalConfig.onConfirm();
@@ -12779,7 +12751,7 @@ export default function App() {
                   }}
                   className="flex-1 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
                 >
-                  Ja
+                  {confirmModalConfig.onCancel !== undefined ? "Ja" : "OK"}
                 </button>
               </div>
             </motion.div>
