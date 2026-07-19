@@ -14,6 +14,7 @@ export interface Club {
   name: string;
   logo?: string;
   adminId: string;
+  coAdminEmails?: string[];
   memberIds: string[];
   participatesInExternalMatches?: boolean;
   inviteEmailTemplate?: string;
@@ -39,6 +40,7 @@ export interface Season {
   id: string;
   clubId: string;
   name: string;
+  startDate?: string;
   members: SeasonMember[];
   matchesPerPair: number;
   speeldagen: string[];

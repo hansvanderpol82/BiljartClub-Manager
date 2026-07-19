@@ -75,7 +75,8 @@ import {
 } from "date-fns";
 import { nl } from "date-fns/locale";
 import { cn } from "./lib/utils";
-import { auth, googleProvider, db } from "./lib/firebase";
+import { auth, googleProvider, db, storage } from "./lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { signInWithEmailAndPassword, signInWithPopup, User as FirebaseUser, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { Login } from "./components/Login";
@@ -359,6 +360,11 @@ const RingGirlSVG = () => (
     <path d="M 57 135 L 67 135 L 65 148 L 59 145 Z" fill="#111" />
   </svg>
 );
+
+const isClubAdmin = (club: Club | null | undefined, user: User | null | undefined) => {
+  if (!club || !user) return false;
+  return club.adminId === user.id || (club.coAdminEmails || []).includes(user.email);
+};
 
 export default function App() {
   const [data, setData] = useState<any>(() => {
@@ -645,8 +651,12 @@ export default function App() {
   const [isClubModalOpen, setIsClubModalOpen] = useState(false);
   const [newClubName, setNewClubName] = useState("");
   const [newClubLogo, setNewClubLogo] = useState("");
+  const [newClubLogoFile, setNewClubLogoFile] = useState<File | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [logoError, setLogoError] = useState("");
   const [newClubParticipatesExternal, setNewClubParticipatesExternal] =
     useState(false);
+  const [newClubCoAdminEmails, setNewClubCoAdminEmails] = useState("");
   const [editingClubId, setEditingClubId] = useState<string | null>(null);
   const [isSeasonModalOpen, setIsSeasonModalOpen] = useState(false);
   const [newSeasonName, setNewSeasonName] = useState("");
@@ -907,7 +917,7 @@ export default function App() {
     if (
       currentUser.role !== "admin" &&
       currentUser.role !== "planner" &&
-      activeClub?.adminId !== currentUser.id
+      !isClubAdmin(activeClub, currentUser)
     )
       return;
 
@@ -999,7 +1009,7 @@ export default function App() {
     if (
       currentUser.role !== "admin" &&
       currentUser.role !== "planner" &&
-      activeClub?.adminId !== currentUser.id
+      !isClubAdmin(activeClub, currentUser)
     )
       return;
 
@@ -1054,7 +1064,7 @@ export default function App() {
     if (
       currentUser.role !== "admin" &&
       currentUser.role !== "planner" &&
-      activeClub?.adminId !== currentUser.id
+      !isClubAdmin(activeClub, currentUser)
     )
       return;
 
@@ -1290,7 +1300,7 @@ export default function App() {
   useEffect(() => {
     if (activeTab === "matches" && selectedSeasonId && activeSeason) {
       if (
-        currentUser.id === activeClub?.adminId ||
+        isClubAdmin(activeClub, currentUser) ||
         currentUser.role === "admin" ||
         currentUser.role === "planner"
       ) {
@@ -1588,13 +1598,15 @@ export default function App() {
     name: string,
     logo?: string,
     participatesInExternalMatches?: boolean,
+    coAdminEmailsStr?: string
   ) => {
+    const coAdminEmails = coAdminEmailsStr ? coAdminEmailsStr.split(',').map(e => e.trim()).filter(e => e) : [];
     if (editingClubId) {
       setData((prev: any) => ({
         ...prev,
         clubs: prev.clubs.map((c: Club) =>
           c.id === editingClubId
-            ? { ...c, name, logo, participatesInExternalMatches }
+            ? { ...c, name, logo, participatesInExternalMatches, coAdminEmails }
             : c,
         ),
       }));
@@ -1607,6 +1619,7 @@ export default function App() {
         adminId: currentUser.id,
         memberIds: [currentUser.id],
         participatesInExternalMatches,
+        coAdminEmails
       };
       setData((prev: any) => ({ ...prev, clubs: [...prev.clubs, newClub] }));
       setSelectedClubId(newClub.id);
@@ -1615,6 +1628,7 @@ export default function App() {
     setNewClubName("");
     setNewClubLogo("");
     setNewClubParticipatesExternal(false);
+    setNewClubCoAdminEmails("");
   };
 
   const sendInviteEmail = (club: Club, user: User) => {
@@ -5090,7 +5104,7 @@ export default function App() {
                     <span>Cast Menu</span>
                   </button>
                   {selectedSeasonId &&
-                    (activeClub?.adminId === currentUser.id ||
+                    (isClubAdmin(activeClub, currentUser) ||
                       currentUser.role === "admin" ||
                       currentUser.role === "planner") && (
                       <button
@@ -5182,7 +5196,7 @@ export default function App() {
                   <Tv size={16} />
                   <span className="hidden sm:inline">Cast Menu</span>
                 </button>
-                {activeClub.adminId === currentUser.id && (
+                {isClubAdmin(activeClub, currentUser) && (
                   <button
                     onClick={() => setIsForecastModalOpen(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-sm font-bold"
@@ -5191,7 +5205,7 @@ export default function App() {
                     <span className="hidden lg:inline">Vooruitblikken</span>
                   </button>
                 )}
-                {activeClub.adminId === currentUser.id && (
+                {isClubAdmin(activeClub, currentUser) && (
                   <button
                     onClick={() => setIsSeasonModalOpen(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-bold"
@@ -5233,7 +5247,17 @@ export default function App() {
                     Mijn Biljartclubs
                   </h2>
                   <button
-                    onClick={() => setIsClubModalOpen(true)}
+                    onClick={() => {
+                        setIsClubModalOpen(true);
+                        setEditingClubId(null);
+                        setNewClubName("");
+                        setNewClubLogo("");
+                        setNewClubLogoFile(null);
+                        setLogoError("");
+                        setIsUploadingLogo(false);
+                        setNewClubCoAdminEmails("");
+                        setNewClubParticipatesExternal(false);
+                      }}
                     className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
                   >
                     <Plus size={20} />
@@ -5274,7 +5298,7 @@ export default function App() {
                             <h3 className="font-bold text-slate-800 dark:text-white truncate">
                               {club.name}
                             </h3>
-                            {club.adminId === currentUser.id && (
+                            {isClubAdmin(club, currentUser) && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -5284,6 +5308,7 @@ export default function App() {
                                   setNewClubParticipatesExternal(
                                     club.participatesInExternalMatches ?? false,
                                   );
+                                  setNewClubCoAdminEmails((club.coAdminEmails || []).join(", "));
                                   setIsClubModalOpen(true);
                                 }}
                                 className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
@@ -5312,7 +5337,7 @@ export default function App() {
                       </div>
                       <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-slate-800">
                         <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                          {club.adminId === currentUser.id
+                          {isClubAdmin(club, currentUser)
                             ? "Beheerder"
                             : "Lid"}
                         </span>
@@ -5333,7 +5358,17 @@ export default function App() {
                         Je bent nog geen lid van een club.
                       </p>
                       <button
-                        onClick={() => setIsClubModalOpen(true)}
+                        onClick={() => {
+                        setIsClubModalOpen(true);
+                        setEditingClubId(null);
+                        setNewClubName("");
+                        setNewClubLogo("");
+                        setNewClubLogoFile(null);
+                        setLogoError("");
+                        setIsUploadingLogo(false);
+                        setNewClubCoAdminEmails("");
+                        setNewClubParticipatesExternal(false);
+                      }}
                         className="mt-4 text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
                       >
                         Maak je eerste club aan
@@ -5711,7 +5746,7 @@ export default function App() {
                   <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
                     Leden van {activeClub.name}
                   </h2>
-                  {activeClub.adminId === currentUser.id && (
+                  {isClubAdmin(activeClub, currentUser) && (
                     <button
                       onClick={() => setIsMemberModalOpen(true)}
                       className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
@@ -5809,7 +5844,7 @@ export default function App() {
                                 >
                                   <UserCircle size={18} />
                                 </button>
-                                {(activeClub.adminId === currentUser.id ||
+                                {(isClubAdmin(activeClub, currentUser) ||
                                   currentUser.role === "admin" ||
                                   currentUser.role === "planner") &&
                                   member?.id !== currentUser.id && (
@@ -5912,7 +5947,7 @@ export default function App() {
                         <Unlock size={20} />
                       )}
                     </button>
-                    {activeClub.adminId === currentUser.id && (
+                    {isClubAdmin(activeClub, currentUser) && (
                       <button
                         onClick={() => setIsHomeMatchModalOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-sm"
@@ -6465,8 +6500,7 @@ export default function App() {
                                                 </td>
 
                                                 <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
-                                                  {activeClub.adminId ===
-                                                    currentUser.id ||
+                                                  {isClubAdmin(activeClub, currentUser) ||
                                                   currentUser.role ===
                                                     "admin" ||
                                                   currentUser.role ===
@@ -6639,8 +6673,7 @@ export default function App() {
                                                 </td>
 
                                                 <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
-                                                  {activeClub.adminId ===
-                                                    currentUser.id ||
+                                                  {isClubAdmin(activeClub, currentUser) ||
                                                   currentUser.role ===
                                                     "admin" ||
                                                   currentUser.role ===
@@ -6735,7 +6768,7 @@ export default function App() {
                                     </tbody>
                                   </table>
                                 </div>
-                                {activeClub.adminId === currentUser.id && (
+                                {isClubAdmin(activeClub, currentUser) && (
                                   <div className="pt-6 mt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
                                     <button
                                       onClick={() =>
@@ -6783,7 +6816,7 @@ export default function App() {
                       <p className="text-slate-500 dark:text-slate-400">
                         Er zijn nog geen uit- of thuiswedstrijden ingepland.
                       </p>
-                      {activeClub.adminId === currentUser.id && (
+                      {isClubAdmin(activeClub, currentUser) && (
                         <button
                           onClick={() => setIsHomeMatchModalOpen(true)}
                           className="mt-4 text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
@@ -8134,8 +8167,7 @@ export default function App() {
                                                 <td className="py-[13.5px] px-4 exclude-from-share text-center">
                                                   <button
                                                     disabled={
-                                                      activeClub.adminId !==
-                                                      currentUser.id
+                                                      !isClubAdmin(activeClub, currentUser)
                                                     }
                                                     onClick={() =>
                                                       togglePayment(
@@ -8263,7 +8295,7 @@ export default function App() {
                             </div>
 
                             {/* Season Actions */}
-                            {activeClub.adminId === currentUser.id && (
+                            {isClubAdmin(activeClub, currentUser) && (
                               <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
                                 <button
                                   onClick={() => toggleBlockSeason(season.id)}
@@ -8844,8 +8876,7 @@ export default function App() {
                                                         "admin" ||
                                                         currentUser.role ===
                                                           "planner" ||
-                                                        activeClub?.adminId ===
-                                                          currentUser.id)
+                                                        isClubAdmin(activeClub, currentUser))
                                                       ? "cursor-pointer text-emerald-300 hover:text-emerald-100 transition-colors"
                                                       : "text-emerald-300 opacity-80",
                                                   )}
@@ -8860,8 +8891,7 @@ export default function App() {
                                             </td>
 
                                             <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
-                                              {activeClub.adminId ===
-                                                currentUser.id ||
+                                              {isClubAdmin(activeClub, currentUser) ||
                                               currentUser.role === "admin" ||
                                               currentUser.role === "planner" ? (
                                                 <button
@@ -9036,8 +9066,7 @@ export default function App() {
                                             </td>
 
                                             <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
-                                              {activeClub.adminId ===
-                                                currentUser.id ||
+                                              {isClubAdmin(activeClub, currentUser) ||
                                               currentUser.role === "admin" ||
                                               currentUser.role === "planner" ? (
                                                 <button
@@ -9106,8 +9135,7 @@ export default function App() {
                                                         "admin" ||
                                                         currentUser.role ===
                                                           "planner" ||
-                                                        activeClub?.adminId ===
-                                                          currentUser.id)
+                                                        isClubAdmin(activeClub, currentUser))
                                                       ? "cursor-pointer text-emerald-300 hover:text-emerald-100 transition-colors"
                                                       : "text-emerald-300 opacity-80",
                                                   )}
@@ -9133,8 +9161,7 @@ export default function App() {
                                               <div className="flex items-center justify-center">
                                                 {!isFinished &&
                                                   !isStarted &&
-                                                  (activeClub?.adminId ===
-                                                    currentUser.id ||
+                                                  (isClubAdmin(activeClub, currentUser) ||
                                                     currentUser.role ===
                                                       "admin" ||
                                                     currentUser.role ===
@@ -9552,7 +9579,7 @@ export default function App() {
                                     {!isPast &&
                                       activeSeason &&
                                       !cancelledReason &&
-                                      activeClub.adminId === currentUser.id && (
+                                      isClubAdmin(activeClub, currentUser) && (
                                         <button
                                           onClick={() => {
                                             setCancelDayDate(
@@ -9835,8 +9862,7 @@ export default function App() {
                                                       "admin" ||
                                                       currentUser.role ===
                                                         "planner" ||
-                                                      activeClub?.adminId ===
-                                                        currentUser.id) && (
+                                                      isClubAdmin(activeClub, currentUser)) && (
                                                       <button
                                                         onClick={(e) => {
                                                           e.stopPropagation();
@@ -9874,8 +9900,7 @@ export default function App() {
                                               </td>
 
                                               <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
-                                                {activeClub.adminId ===
-                                                  currentUser.id ||
+                                                {isClubAdmin(activeClub, currentUser) ||
                                                 currentUser.role === "admin" ||
                                                 currentUser.role ===
                                                   "planner" ? (
@@ -9916,14 +9941,14 @@ export default function App() {
                                                   onClick={(e) => {
                                                     e.stopPropagation();
                                                     if (isFinished) return;
-                                                    if (activeSeason && dateStr && (currentUser.role === "admin" || currentUser.role === "planner" || activeClub?.adminId === currentUser.id)) {
+                                                    if (activeSeason && dateStr && (currentUser.role === "admin" || currentUser.role === "planner" || isClubAdmin(activeClub, currentUser))) {
                                                       toggleAttendance(activeSeason.id, date.toISOString(), match.player1Id);
                                                     }
                                                   }}
                                                   disabled={isFinished}
                                                   className={cn(
                                                     "focus:outline-none transition-transform active:scale-95",
-                                                    (currentUser.role === "admin" || currentUser.role === "planner" || activeClub?.adminId === currentUser.id) && !isFinished ? "cursor-pointer hover:opacity-80" : "cursor-default opacity-50"
+                                                    (currentUser.role === "admin" || currentUser.role === "planner" || isClubAdmin(activeClub, currentUser)) && !isFinished ? "cursor-pointer hover:opacity-80" : "cursor-default opacity-50"
                                                   )}
                                                   title={p1Absent ? "Afwezig" : "Aanwezig"}
                                                 >
@@ -9968,8 +9993,7 @@ export default function App() {
                                                         "admin" ||
                                                         currentUser.role ===
                                                           "planner" ||
-                                                        activeClub?.adminId ===
-                                                          currentUser.id)
+                                                        isClubAdmin(activeClub, currentUser))
                                                       ? "cursor-pointer text-emerald-300 hover:text-emerald-100"
                                                       : "text-emerald-300 opacity-80",
                                                   )}
@@ -10037,8 +10061,7 @@ export default function App() {
                                                         "admin" ||
                                                         currentUser.role ===
                                                           "planner" ||
-                                                        activeClub?.adminId ===
-                                                          currentUser.id)
+                                                        isClubAdmin(activeClub, currentUser))
                                                       ? "cursor-pointer text-emerald-300 hover:text-emerald-100"
                                                       : "text-emerald-300 opacity-80",
                                                   )}
@@ -10066,14 +10089,14 @@ export default function App() {
                                                   onClick={(e) => {
                                                     e.stopPropagation();
                                                     if (isFinished) return;
-                                                    if (activeSeason && dateStr && (currentUser.role === "admin" || currentUser.role === "planner" || activeClub?.adminId === currentUser.id)) {
+                                                    if (activeSeason && dateStr && (currentUser.role === "admin" || currentUser.role === "planner" || isClubAdmin(activeClub, currentUser))) {
                                                       toggleAttendance(activeSeason.id, date.toISOString(), match.player2Id);
                                                     }
                                                   }}
                                                   disabled={isFinished}
                                                   className={cn(
                                                     "focus:outline-none transition-transform active:scale-95",
-                                                    (currentUser.role === "admin" || currentUser.role === "planner" || activeClub?.adminId === currentUser.id) && !isFinished ? "cursor-pointer hover:opacity-80" : "cursor-default opacity-50"
+                                                    (currentUser.role === "admin" || currentUser.role === "planner" || isClubAdmin(activeClub, currentUser)) && !isFinished ? "cursor-pointer hover:opacity-80" : "cursor-default opacity-50"
                                                   )}
                                                   title={p2Absent ? "Afwezig" : "Aanwezig"}
                                                 >
@@ -10086,8 +10109,7 @@ export default function App() {
                                               </td>
 
                                               <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
-                                                {activeClub.adminId ===
-                                                  currentUser.id ||
+                                                {isClubAdmin(activeClub, currentUser) ||
                                                 currentUser.role === "admin" ||
                                                 currentUser.role ===
                                                   "planner" ? (
@@ -10150,8 +10172,7 @@ export default function App() {
                                                     !isStarted &&
                                                     !isCancelled &&
                                                     isSameDay(date, new Date()) &&
-                                                    (activeClub?.adminId ===
-                                                      currentUser.id ||
+                                                    (isClubAdmin(activeClub, currentUser) ||
                                                       currentUser.role ===
                                                         "admin" ||
                                                       currentUser.role ===
@@ -10253,8 +10274,7 @@ export default function App() {
                                                   )}
 
                                                   {/* Options: Payment / Restart / Move to Today */}
-                                                  {(activeClub.adminId ===
-                                                    currentUser.id ||
+                                                  {(isClubAdmin(activeClub, currentUser) ||
                                                     currentUser.role ===
                                                       "admin" ||
                                                     currentUser.role ===
@@ -11290,7 +11310,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {activeClub && activeClub.adminId === currentUser.id && (
+                {activeClub && isClubAdmin(activeClub, currentUser) && (
                   <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6 mt-8">
                     <div>
                       <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">
@@ -11412,7 +11432,12 @@ export default function App() {
                 setEditingClubId(null);
                 setNewClubName("");
                 setNewClubLogo("");
-              }}
+                        setNewClubLogoFile(null);
+                        setLogoError("");
+                        setIsUploadingLogo(false);
+                        setNewClubCoAdminEmails("");
+                        setNewClubParticipatesExternal(false);
+                      }}
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             />
             <motion.div
@@ -11444,7 +11469,7 @@ export default function App() {
                     onKeyDown={(e) =>
                       e.key === "Enter" &&
                       newClubName &&
-                      createClub(newClubName, newClubLogo)
+                      createClub(newClubName, newClubLogo, newClubParticipatesExternal, newClubCoAdminEmails)
                     }
                     placeholder="Bijv. De Groene Laken"
                     className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-colors"
@@ -11475,6 +11500,67 @@ export default function App() {
                   </div>
                   <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
                     Voer een URL in naar een afbeelding voor je clublogo.
+                  </p>
+                  
+                  <div className="mt-3">
+                    <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
+                      Of upload een bestand (Max 2MB, 2000x2000px, JPG/PNG)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/jpeg, image/png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        
+                        setLogoError("");
+                        setNewClubLogoFile(null);
+                        
+                        // Check size (max 2MB)
+                        if (file.size > 2 * 1024 * 1024) {
+                          setLogoError("Bestand is te groot (maximaal 2MB).");
+                          e.target.value = '';
+                          return;
+                        }
+                        
+                        // Check dimensions
+                        const img = new Image();
+                        const objectUrl = URL.createObjectURL(file);
+                        img.onload = () => {
+                          if (img.width > 2000 || img.height > 2000) {
+                            setLogoError("Afbeelding is te groot (maximaal 2000x2000 pixels).");
+                            setNewClubLogoFile(null);
+                          } else {
+                            setNewClubLogoFile(file);
+                            setNewClubLogo(objectUrl);
+                          }
+                        };
+                        img.onerror = () => {
+                          setLogoError("Fout bij het lezen van de afbeelding.");
+                          setNewClubLogoFile(null);
+                        };
+                        img.src = objectUrl;
+                      }}
+                      className="w-full text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 dark:file:bg-emerald-900/30 dark:file:text-emerald-400 transition-colors"
+                    />
+                    {logoError && (
+                      <p className="mt-1 text-xs text-red-500">{logoError}</p>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
+                    Mede-beheerders (Emails, gescheiden door komma's)
+                  </label>
+                  <input
+                    type="text"
+                    value={newClubCoAdminEmails}
+                    onChange={(e) => setNewClubCoAdminEmails(e.target.value)}
+                    placeholder="bijv. admin2@club.com, test@club.com"
+                    className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-colors"
+                  />
+                  <p className="mt-1 mb-4 text-[10px] text-slate-400 dark:text-slate-500">
+                    Gebruikers met deze e-mailadressen krijgen ook beheerdersrechten (zoals biljartclubkot@gmail.com).
                   </p>
                 </div>
                 <div>
@@ -11507,17 +11593,33 @@ export default function App() {
                   Annuleren
                 </button>
                 <button
-                  disabled={!newClubName}
-                  onClick={() =>
+                  disabled={!newClubName || isUploadingLogo}
+                  onClick={async () => {
+                    let logoUrl = newClubLogo;
+                    if (newClubLogoFile) {
+                      setIsUploadingLogo(true);
+                      try {
+                        const fileRef = ref(storage, `club_logos/${Date.now()}_${newClubLogoFile.name}`);
+                        await uploadBytes(fileRef, newClubLogoFile);
+                        logoUrl = await getDownloadURL(fileRef);
+                      } catch (err: any) {
+                        console.error("Fout bij uploaden:", err);
+                        alert("Fout bij uploaden van logo: " + err.message);
+                        setIsUploadingLogo(false);
+                        return;
+                      }
+                      setIsUploadingLogo(false);
+                    }
                     createClub(
                       newClubName,
-                      newClubLogo,
+                      logoUrl,
                       newClubParticipatesExternal,
-                    )
-                  }
-                  className="flex-1 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      newClubCoAdminEmails
+                    );
+                  }}
+                  className="flex-1 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
                 >
-                  {editingClubId ? "Opslaan" : "Club Aanmaken"}
+                  {isUploadingLogo ? <span className="animate-pulse">Uploaden...</span> : editingClubId ? "Opslaan" : "Club Aanmaken"}
                 </button>
               </div>
             </motion.div>
