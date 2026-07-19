@@ -2,7 +2,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "biljart-club-manager",
@@ -21,4 +20,3 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-export const storage = getStorage(app);

@@ -75,8 +75,7 @@ import {
 } from "date-fns";
 import { nl } from "date-fns/locale";
 import { cn } from "./lib/utils";
-import { auth, googleProvider, db, storage } from "./lib/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth, googleProvider, db } from "./lib/firebase";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { signInWithEmailAndPassword, signInWithPopup, User as FirebaseUser, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { Login } from "./components/Login";
@@ -651,9 +650,7 @@ export default function App() {
   const [isClubModalOpen, setIsClubModalOpen] = useState(false);
   const [newClubName, setNewClubName] = useState("");
   const [newClubLogo, setNewClubLogo] = useState("");
-  const [newClubLogoFile, setNewClubLogoFile] = useState<File | null>(null);
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const [logoError, setLogoError] = useState("");
+      const [logoError, setLogoError] = useState("");
   const [newClubParticipatesExternal, setNewClubParticipatesExternal] =
     useState(false);
   const [newClubCoAdminEmails, setNewClubCoAdminEmails] = useState("");
@@ -5252,10 +5249,8 @@ export default function App() {
                         setEditingClubId(null);
                         setNewClubName("");
                         setNewClubLogo("");
-                        setNewClubLogoFile(null);
-                        setLogoError("");
-                        setIsUploadingLogo(false);
-                        setNewClubCoAdminEmails("");
+                                                setLogoError("");
+                                                setNewClubCoAdminEmails("");
                         setNewClubParticipatesExternal(false);
                       }}
                     className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
@@ -5363,10 +5358,8 @@ export default function App() {
                         setEditingClubId(null);
                         setNewClubName("");
                         setNewClubLogo("");
-                        setNewClubLogoFile(null);
-                        setLogoError("");
-                        setIsUploadingLogo(false);
-                        setNewClubCoAdminEmails("");
+                                                setLogoError("");
+                                                setNewClubCoAdminEmails("");
                         setNewClubParticipatesExternal(false);
                       }}
                         className="mt-4 text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
@@ -11432,10 +11425,8 @@ export default function App() {
                 setEditingClubId(null);
                 setNewClubName("");
                 setNewClubLogo("");
-                        setNewClubLogoFile(null);
-                        setLogoError("");
-                        setIsUploadingLogo(false);
-                        setNewClubCoAdminEmails("");
+                                                setLogoError("");
+                                                setNewClubCoAdminEmails("");
                         setNewClubParticipatesExternal(false);
                       }}
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
@@ -11477,18 +11468,12 @@ export default function App() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
-                    Logo URL
+                    Club Logo (Max 2MB, 2000x2000px, JPG/PNG)
                   </label>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      value={newClubLogo}
-                      onChange={(e) => setNewClubLogo(e.target.value)}
-                      placeholder="https://example.com/logo.png"
-                      className="flex-1 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-colors"
-                    />
-                    {newClubLogo && (
-                      <div className="h-12 w-12 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
+                  
+                  {newClubLogo ? (
+                    <div className="flex items-center gap-4">
+                      <div className="h-20 w-20 rounded-xl border-2 border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
                         <img
                           src={newClubLogo}
                           alt="Preview"
@@ -11496,48 +11481,63 @@ export default function App() {
                           referrerPolicy="no-referrer"
                         />
                       </div>
-                    )}
-                  </div>
-                  <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
-                    Voer een URL in naar een afbeelding voor je clublogo.
-                  </p>
-                  
-                  <div className="mt-3">
-                    <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
-                      Of upload een bestand (Max 2MB, 2000x2000px, JPG/PNG)
-                    </label>
-                    <input
+                      <button
+                        onClick={() => {
+                          setNewClubLogo("");
+                                                  }}
+                        className="px-4 py-2 text-sm font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                      >
+                        Logo Verwijderen / Wijzigen
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <input
                       type="file"
-                      accept="image/jpeg, image/png"
+                      accept="image/jpeg, image/png, image/webp"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         
                         setLogoError("");
-                        setNewClubLogoFile(null);
-                        
-                        // Check size (max 2MB)
-                        if (file.size > 2 * 1024 * 1024) {
-                          setLogoError("Bestand is te groot (maximaal 2MB).");
+                                                
+                        if (file.size > 5 * 1024 * 1024) {
+                          setLogoError("Bestand is te groot (max 5MB).");
                           e.target.value = '';
                           return;
                         }
                         
-                        // Check dimensions
                         const img = new Image();
                         const objectUrl = URL.createObjectURL(file);
                         img.onload = () => {
-                          if (img.width > 2000 || img.height > 2000) {
-                            setLogoError("Afbeelding is te groot (maximaal 2000x2000 pixels).");
-                            setNewClubLogoFile(null);
-                          } else {
-                            setNewClubLogoFile(file);
-                            setNewClubLogo(objectUrl);
+                          const canvas = document.createElement("canvas");
+                          let width = img.width;
+                          let height = img.height;
+                          const MAX_DIMENSION = 400;
+                          
+                          if (width > height && width > MAX_DIMENSION) {
+                            height *= MAX_DIMENSION / width;
+                            width = MAX_DIMENSION;
+                          } else if (height > MAX_DIMENSION) {
+                            width *= MAX_DIMENSION / height;
+                            height = MAX_DIMENSION;
                           }
+                          
+                          canvas.width = width;
+                          canvas.height = height;
+                          const ctx = canvas.getContext("2d");
+                          if (ctx) {
+                            ctx.drawImage(img, 0, 0, width, height);
+                            const base64String = canvas.toDataURL("image/jpeg", 0.8);
+                            setNewClubLogo(base64String);
+                          } else {
+                            setLogoError("Fout bij het verwerken van de afbeelding.");
+                          }
+                          URL.revokeObjectURL(objectUrl);
                         };
                         img.onerror = () => {
                           setLogoError("Fout bij het lezen van de afbeelding.");
-                          setNewClubLogoFile(null);
+                          URL.revokeObjectURL(objectUrl);
                         };
                         img.src = objectUrl;
                       }}
@@ -11547,6 +11547,7 @@ export default function App() {
                       <p className="mt-1 text-xs text-red-500">{logoError}</p>
                     )}
                   </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
@@ -11593,33 +11594,18 @@ export default function App() {
                   Annuleren
                 </button>
                 <button
-                  disabled={!newClubName || isUploadingLogo}
-                  onClick={async () => {
-                    let logoUrl = newClubLogo;
-                    if (newClubLogoFile) {
-                      setIsUploadingLogo(true);
-                      try {
-                        const fileRef = ref(storage, `club_logos/${Date.now()}_${newClubLogoFile.name}`);
-                        await uploadBytes(fileRef, newClubLogoFile);
-                        logoUrl = await getDownloadURL(fileRef);
-                      } catch (err: any) {
-                        console.error("Fout bij uploaden:", err);
-                        alert("Fout bij uploaden van logo: " + err.message);
-                        setIsUploadingLogo(false);
-                        return;
-                      }
-                      setIsUploadingLogo(false);
-                    }
+                  disabled={!newClubName}
+                  onClick={() => {
                     createClub(
                       newClubName,
-                      logoUrl,
+                      newClubLogo,
                       newClubParticipatesExternal,
                       newClubCoAdminEmails
                     );
                   }}
                   className="flex-1 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
                 >
-                  {isUploadingLogo ? <span className="animate-pulse">Uploaden...</span> : editingClubId ? "Opslaan" : "Club Aanmaken"}
+                  {editingClubId ? "Opslaan" : "Club Aanmaken"}
                 </button>
               </div>
             </motion.div>
