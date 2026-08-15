@@ -7,6 +7,8 @@ export interface User {
   baseAverage: number;
   avatar?: string;
   participatesInExternalMatches?: boolean;
+  pushNotificationsEnabled?: boolean;
+  fcmToken?: string;
 }
 
 export interface Club {
@@ -123,4 +125,17 @@ export interface ExternalMatch {
   seasonId?: string;
   homePlayerFee?: number;
   awayPlayerFee?: number;
+}
+
+
+export interface Notification {
+  id: string;
+  type: 'absence_request' | 'absence_approved' | 'system';
+  title: string;
+  message: string;
+  forRole?: ('admin' | 'planner' | 'member')[];
+  forUserId?: string;
+  readBy: string[];
+  createdAt: string;
+  relatedEntityId?: string;
 }

@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { PaymentModal } from "./components/PaymentModal";
 import {
+  Bell,
+  BellOff,
+  BellRing,
   Trophy,
   Users,
   Calendar,
@@ -51,6 +54,7 @@ import {
   Banknote,
   RefreshCw,
   Mail,
+  Home,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toJpeg } from "html-to-image";
@@ -89,6 +93,587 @@ import {
   Transaction,
 } from "./types";
 
+
+
+const HomeTab = ({
+  data,
+  currentUser,
+  setActiveTab,
+  setSelectedClubId,
+  setSelectedSeasonId,
+  setData,
+  handleRescheduleUnplayedMatches,
+}: {
+  data: any;
+  currentUser: User;
+  setActiveTab: (tab: any) => void;
+  setSelectedClubId: (id: string) => void;
+  setSelectedSeasonId: (id: string) => void;
+  setData: any;
+  handleRescheduleUnplayedMatches: any;
+}) => {
+  const [isAbsenceModalOpen, setIsAbsenceModalOpen] = useState(false);
+  const [absenceDate, setAbsenceDate] = useState("");
+  const [absenceSeasonId, setAbsenceSeasonId] = useState("");
+
+  const [activeNotification, setActiveNotification] = useState<any>(null);
+  const [substitutePlayerId, setSubstitutePlayerId] = useState<string>("");
+
+  const userClubs = data.clubs.filter((c: Club) => (c.memberIds || []).includes(currentUser.id));
+  const openSeasons = data.seasons.filter(
+    (s: Season) => s.status === 'open' && userClubs.some((c: Club) => c.id === s.clubId)
+  );
+
+  const notifications = data.notifications || [];
+  const activeNotifications = notifications.filter(
+    (n: any) => 
+      n.type === 'absence_request' && 
+      n.forRole?.includes(currentUser.role) && 
+      !n.readBy.includes(currentUser.id)
+  );
+
+  const handleAbsenceSubmit = () => {
+    if (!absenceDate || !absenceSeasonId) return;
+
+    const newNotification = {
+      id: "notif_" + Date.now().toString(),
+      type: 'absence_request',
+      title: 'Nieuwe Afmelding',
+      message: `${currentUser.name} heeft zich afgemeld voor speeldag: ${absenceDate}.`,
+      forRole: ['admin', 'planner'],
+      forUserId: currentUser.id,
+      readBy: [],
+      createdAt: new Date().toISOString(),
+      relatedEntityId: absenceSeasonId + "_" + absenceDate,
+    };
+
+    setData((prev: any) => ({
+      ...prev,
+      notifications: [...(prev.notifications || []), newNotification]
+    }));
+    
+    setIsAbsenceModalOpen(false);
+    setAbsenceDate("");
+    setAbsenceSeasonId("");
+  };
+
+  const handleProcessNotification = () => {
+    if (!activeNotification) return;
+
+    const [seasonId, dateStr] = activeNotification.relatedEntityId.split("_");
+    const absentUserId = activeNotification.forUserId;
+
+    setData((prev: any) => {
+      let matches = [...prev.matches];
+
+      // Find the match for the absent user on this date
+      const matchToCancel = matches.find(
+        (m: Match) => m.seasonId === seasonId && m.date === dateStr && m.status === 'planned' && (m.player1Id === absentUserId || m.player2Id === absentUserId)
+      );
+
+      if (matchToCancel) {
+        // Mark original match as cancelled/on_hold
+        matchToCancel.status = 'cancelled';
+
+        if (substitutePlayerId) {
+          const opponentId = matchToCancel.player1Id === absentUserId ? matchToCancel.player2Id : matchToCancel.player1Id;
+          
+          // Find future match between opponent and substitute
+          const futureMatch = matches.find(
+            (m: Match) => m.seasonId === seasonId && m.status === 'planned' && m.date > dateStr &&
+            ((m.player1Id === substitutePlayerId && m.player2Id === opponentId) || (m.player2Id === substitutePlayerId && m.player1Id === opponentId))
+          );
+
+          if (futureMatch) {
+            futureMatch.date = dateStr;
+          }
+        }
+      }
+
+      // Mark notification as read
+      const newNotifs = (prev.notifications || []).map((n: any) => {
+        if (n.id === activeNotification.id) {
+          return { ...n, readBy: [...n.readBy, currentUser.id] };
+        }
+        return n;
+      });
+
+      return { ...prev, matches, notifications: newNotifs };
+    });
+
+    // Trigger reschedule via global event to ensure it gets the latest data state
+    window.dispatchEvent(new CustomEvent('triggerReschedule', { detail: seasonId }));
+
+    setActiveNotification(null);
+    setSubstitutePlayerId("");
+  };
+
+  const renderNotificationAction = () => {
+    if (!activeNotification) return null;
+    const [seasonId, dateStr] = activeNotification.relatedEntityId.split("_");
+    const absentUserId = activeNotification.forUserId;
+
+    // Find the match
+    const matchToCancel = data.matches.find(
+      (m: Match) => m.seasonId === seasonId && m.date === dateStr && m.status === 'planned' && (m.player1Id === absentUserId || m.player2Id === absentUserId)
+    );
+
+    if (!matchToCancel) {
+      const rescheduleRef = useRef(handleRescheduleUnplayedMatches);
+  useEffect(() => {
+    rescheduleRef.current = handleRescheduleUnplayedMatches;
+  }, [handleRescheduleUnplayedMatches]);
+
+  useEffect(() => {
+    const listener = (e: any) => {
+      setTimeout(() => {
+        if (rescheduleRef.current) rescheduleRef.current(e.detail);
+      }, 500);
+    };
+    window.addEventListener('triggerReschedule', listener);
+    return () => window.removeEventListener('triggerReschedule', listener);
+  }, []);
+
+  return (
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500">Geen geplande wedstrijd gevonden voor deze speler op deze datum.</p>
+          <button onClick={handleProcessNotification} className="w-full py-2 bg-emerald-600 text-white rounded-lg font-bold">Bevestig (Geen actie vereist)</button>
+        </div>
+      );
+    }
+
+    const opponentId = matchToCancel.player1Id === absentUserId ? matchToCancel.player2Id : matchToCancel.player1Id;
+    const opponent = data.users.find((u: User) => u.id === opponentId);
+
+    // Find future matches of the opponent
+    const futureMatches = data.matches.filter(
+      (m: Match) => m.seasonId === seasonId && m.status === 'planned' && m.date > dateStr && (m.player1Id === opponentId || m.player2Id === opponentId)
+    );
+
+    const potentialSubstitutes = futureMatches.map((m: Match) => {
+      const subId = m.player1Id === opponentId ? m.player2Id : m.player1Id;
+      return data.users.find((u: User) => u.id === subId);
+    }).filter(Boolean);
+
+    return (
+      <div className="space-y-4">
+        <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
+          <p className="text-sm text-amber-800 font-medium">De vervallen wedstrijd was tegen: <strong>{opponent?.name}</strong></p>
+        </div>
+        
+        {potentialSubstitutes.length > 0 ? (
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1">Kies een vervanger uit toekomstige wedstrijden:</label>
+            <select
+              value={substitutePlayerId}
+              onChange={(e) => setSubstitutePlayerId(e.target.value)}
+              className="w-full p-2 border border-slate-300 rounded-lg text-sm"
+            >
+              <option value="">Geen vervanger (Wedstrijd doorschuiven)</option>
+              {potentialSubstitutes.map((sub: User) => (
+                <option key={sub.id} value={sub.id}>{sub.name}</option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500 italic">Geen toekomstige tegenstanders gevonden om naar voren te halen.</p>
+        )}
+        
+        <p className="text-xs text-slate-500">Door te bevestigen wordt de originele wedstrijd "On hold" gezet en automatisch meegenomen in de herindeling voor de rest van het seizoen.</p>
+        <button onClick={handleProcessNotification} className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 transition-colors text-white rounded-lg font-bold">Bevestig Afmelding & Herindeel</button>
+      </div>
+    );
+  };
+
+  return (
+    <motion.div
+      key="home"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-8"
+    >
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
+          Welkom, {currentUser.shortName || currentUser.name}
+        </h2>
+      </div>
+
+      {activeNotifications.length > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 shadow-sm space-y-4">
+          <h3 className="text-lg font-bold text-amber-800 dark:text-amber-400 flex items-center gap-2">
+            <BellRing size={20} />
+            Actie Vereist ({activeNotifications.length})
+          </h3>
+          <div className="space-y-3">
+            {activeNotifications.map((n: any) => (
+              <div key={n.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <div>
+                  <p className="font-bold text-slate-800 dark:text-white">{n.title}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{n.message}</p>
+                </div>
+                <button 
+                  onClick={() => setActiveNotification(n)}
+                  className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-bold shadow-sm"
+                >
+                  Behandel
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {openSeasons.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 text-center">
+          <p className="text-slate-500 dark:text-slate-400">
+            Je bent momenteel geen lid van een club met een actief/open seizoen.
+          </p>
+          <button
+            onClick={() => setActiveTab("clubs")}
+            className="mt-4 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
+          >
+            Ga naar Clubs
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="space-y-8">
+            {openSeasons.map((season: Season) => {
+              const club = userClubs.find((c: Club) => c.id === season.clubId);
+              
+              const plannedMatches = data.matches.filter(
+                (m: Match) => m.seasonId === season.id && m.status === 'planned' && m.date
+              );
+              
+              const upcomingDates = [...new Set(plannedMatches.map((m: Match) => m.date))].sort();
+              const todayStr = new Date().toISOString().split('T')[0];
+              const nextDate = upcomingDates.find(d => (d as string) >= todayStr) || upcomingDates[0];
+              
+              const matchesOnNextDate = nextDate ? plannedMatches.filter((m: Match) => m.date === nextDate) : [];
+              
+              return (
+                <div key={`upcoming-${season.id}`} className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                    <Calendar size={20} className="text-emerald-500" />
+                    Aankomende Wedstrijden
+                  </h3>
+                  <p className="text-sm text-slate-500 mb-4 font-medium">
+                    {club?.name} - {season.name}
+                  </p>
+                  
+                  {matchesOnNextDate.length > 0 ? (
+                    <div>
+                      <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg inline-block">
+                        Speeldag: {format(new Date(nextDate as string), "EEEE d MMMM", { locale: nl })}
+                      </p>
+                      <div className="space-y-2">
+                        {matchesOnNextDate.map((match: Match) => {
+                          const p1 = data.users.find((u: User) => u.id === match.player1Id);
+                          const p2 = data.users.find((u: User) => u.id === match.player2Id);
+                          const isUserMatch = match.player1Id === currentUser.id || match.player2Id === currentUser.id;
+                          return (
+                            <div key={match.id} className={cn(
+                              "flex justify-between items-center p-3 rounded-xl border text-sm",
+                              isUserMatch 
+                                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800" 
+                                : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700"
+                            )}>
+                              <div className="flex-1 font-medium text-slate-700 dark:text-slate-300">
+                                {p1?.shortName || p1?.name}
+                              </div>
+                              <div className="px-3 text-slate-400 font-bold text-xs bg-white dark:bg-slate-900 py-1 rounded-md border border-slate-200 dark:border-slate-700 shadow-sm mx-2 flex flex-col items-center gap-1">
+                                <span>VS</span>
+                              </div>
+                              <div className="flex-1 font-medium text-slate-700 dark:text-slate-300 text-right">
+                                {p2?.shortName || p2?.name}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        <button
+                          onClick={() => {
+                            setAbsenceSeasonId(season.id);
+                            setAbsenceDate(nextDate as string);
+                            setIsAbsenceModalOpen(true);
+                          }}
+                          className="flex-1 text-center text-sm font-bold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg py-2 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                        >
+                          Afmelden
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedClubId(season.clubId);
+                            setSelectedSeasonId(season.id);
+                            setActiveTab("matches");
+                          }}
+                          className="flex-1 text-center text-sm font-bold bg-slate-50 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700 rounded-lg py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        >
+                          Alle wedstrijden
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 italic">Geen geplande wedstrijden gevonden voor dit seizoen.</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="space-y-8">
+            {openSeasons.map((season: Season) => {
+              const club = userClubs.find((c: Club) => c.id === season.clubId);
+              const memberRecord = season.members.find(m => m.userId === currentUser.id);
+              const isPaid = memberRecord?.paidContributie;
+              
+              const standings = getSeasonStandings(season, data);
+              const topStandings = standings.slice(0, 5);
+              const userStandingIndex = standings.findIndex(s => s.userId === currentUser.id);
+              
+              return (
+                <div key={`standings-${season.id}`} className="space-y-8">
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-1">
+                        <Wallet size={20} className={isPaid ? "text-emerald-500" : "text-amber-500"} />
+                        Contributie
+                      </h3>
+                      <p className="text-sm text-slate-500 font-medium">
+                        {club?.name} - {season.name}
+                      </p>
+                    </div>
+                    <div className={cn(
+                      "px-4 py-2 rounded-xl font-bold text-sm shadow-sm border",
+                      isPaid 
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800" 
+                        : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800"
+                    )}>
+                      {isPaid ? "Betaald" : "Niet betaald"}
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                      <Trophy size={20} className="text-amber-500" />
+                      Tussenstand
+                    </h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                            <th className="pb-2 font-medium w-8">#</th>
+                            <th className="pb-2 font-medium">Naam</th>
+                            <th className="pb-2 font-medium text-right">Pnt</th>
+                            <th className="pb-2 font-medium text-right">Gem</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {topStandings.map((stat, idx) => (
+                            <tr key={stat.userId} className={cn(
+                              "transition-colors",
+                              stat.userId === currentUser.id ? "bg-emerald-50/50 dark:bg-emerald-900/10" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            )}>
+                              <td className="py-2.5 text-slate-400 font-bold">{idx + 1}</td>
+                              <td className={cn(
+                                "py-2.5 font-medium",
+                                stat.userId === currentUser.id ? "text-emerald-700 dark:text-emerald-400 font-bold" : "text-slate-700 dark:text-slate-300"
+                              )}>{stat.name}</td>
+                              <td className="py-2.5 text-right font-bold text-slate-800 dark:text-white">{stat.totalPoints}</td>
+                              <td className="py-2.5 text-right text-slate-500">{formatDecimal(stat.currentAvg, 3)}</td>
+                            </tr>
+                          ))}
+                          
+                          {userStandingIndex >= 5 && (
+                            <>
+                              <tr>
+                                <td colSpan={4} className="py-1 text-center text-slate-300 dark:text-slate-600">...</td>
+                              </tr>
+                              <tr className="bg-emerald-50/50 dark:bg-emerald-900/10 transition-colors">
+                                <td className="py-2.5 text-slate-400 font-bold">{userStandingIndex + 1}</td>
+                                <td className="py-2.5 font-bold text-emerald-700 dark:text-emerald-400">
+                                  {standings[userStandingIndex].name}
+                                </td>
+                                <td className="py-2.5 text-right font-bold text-slate-800 dark:text-white">
+                                  {standings[userStandingIndex].totalPoints}
+                                </td>
+                                <td className="py-2.5 text-right text-slate-500">
+                                  {formatDecimal(standings[userStandingIndex].currentAvg, 3)}
+                                </td>
+                              </tr>
+                            </>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedClubId(season.clubId);
+                        setSelectedSeasonId(season.id);
+                        setActiveTab("seasons");
+                      }}
+                      className="mt-4 w-full text-center text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:underline py-2"
+                    >
+                      Volledige stand bekijken
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Absence Modal */}
+      <AnimatePresence>
+        {isAbsenceModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden"
+            >
+              <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white">Afmelden voor speeldag</h2>
+              </div>
+              <div className="p-6 space-y-4">
+                <p className="text-sm text-slate-500">
+                  Kies voor welke speeldag je je wilt afmelden. Er zal automatisch een melding naar de planners worden gestuurd.
+                </p>
+                
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Speeldag</label>
+                  <select
+                    value={absenceDate}
+                    onChange={(e) => setAbsenceDate(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+                  >
+                    <option value="" disabled>Selecteer een datum...</option>
+                    {(() => {
+                      const season = data.seasons.find((s: Season) => s.id === absenceSeasonId);
+                      if(!season) return null;
+                      const plannedMatches = data.matches.filter(
+                        (m: Match) => m.seasonId === season.id && m.status === 'planned' && m.date
+                      );
+                      const upcomingDates = [...new Set(plannedMatches.map((m: Match) => m.date))].sort();
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      return upcomingDates.filter(d => (d as string) >= todayStr).map((d: any) => (
+                        <option key={d} value={d}>{format(new Date(d), "EEEE d MMMM yyyy", { locale: nl })}</option>
+                      ));
+                    })()}
+                  </select>
+                </div>
+              </div>
+              <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex gap-3">
+                <button
+                  onClick={() => setIsAbsenceModalOpen(false)}
+                  className="flex-1 px-4 py-3 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                >
+                  Annuleren
+                </button>
+                <button
+                  onClick={handleAbsenceSubmit}
+                  disabled={!absenceDate}
+                  className="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
+                >
+                  Afmelden Bevestigen
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Notification Handling Modal */}
+      <AnimatePresence>
+        {activeNotification && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden"
+            >
+              <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white">Melding Behandelen</h2>
+              </div>
+              <div className="p-6">
+                {renderNotificationAction()}
+              </div>
+              <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700">
+                <button
+                  onClick={() => setActiveNotification(null)}
+                  className="w-full px-4 py-2 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                >
+                  Sluiten
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+    </motion.div>
+  );
+}
+export const getSeasonStandings = (season: Season, data: any) => {
+  if (!season || !season.members) return [];
+  const stats = season.members.map((memberInfo) => {
+    const memberId = memberInfo.userId;
+    const member = data.users.find((u: User) => u.id === memberId);
+    const memberMatches = data.matches.filter(
+      (m: Match) =>
+        m.seasonId === season.id &&
+        m.status === "finished" &&
+        (m.player1Id === memberId || m.player2Id === memberId)
+    );
+    let totalCar = 0;
+    let highest = 0;
+    let totalPoints = 0;
+    memberMatches.forEach((m: Match) => {
+      const isP1 = m.player1Id === memberId;
+      const made = (m.turns || []).reduce(
+        (acc: number, t: any) => acc + (isP1 ? t.player1 : t.player2),
+        0
+      );
+      const target = isP1 ? m.player1AvgBefore : m.player2AvgBefore;
+      const opponentMade = isP1
+        ? (m.turns || []).reduce((acc: number, t: any) => acc + t.player2, 0)
+        : (m.turns || []).reduce((acc: number, t: any) => acc + t.player1, 0);
+      const opponentTarget = isP1 ? m.player2AvgBefore : m.player1AvgBefore;
+      totalCar += made;
+      totalPoints += calculatePoints(
+        made,
+        target,
+        opponentMade,
+        opponentTarget,
+        season.scoringSystem
+      );
+      (m.turns || []).forEach((t: any) => {
+        const val = isP1 ? t.player1 : t.player2;
+        if (val > highest) highest = val;
+      });
+    });
+    const matchAvg =
+      memberMatches.length > 0
+        ? totalCar / memberMatches.length
+        : memberInfo.manualAverageOverride || memberInfo.currentAverage;
+    return {
+      ...memberInfo,
+      name: member?.shortName || member?.name || "",
+      fullName: member?.name || "",
+      matchesCount: memberMatches.length,
+      totalCar,
+      highest,
+      currentAvg: matchAvg,
+      totalPoints,
+    };
+  });
+  return stats.sort((a, b) => b.totalPoints - a.totalPoints);
+};
 // --- Mock Data & Storage ---
 const STORAGE_KEY = "biljart_club_data";
 const DAYS_OF_WEEK = [
@@ -184,6 +769,7 @@ const getHolidayForDate = (date: Date) => {
 };
 
 const initialData = {
+  notifications: [],
   users: [
     {
       id: "1",
@@ -411,6 +997,7 @@ export default function App() {
         try {
           const parsedDataStr = docSnap.data().data;
           const parsed = JSON.parse(parsedDataStr);
+          if (!parsed.notifications) parsed.notifications = [];
           
           // Migrate logic: if Firestore is empty (0 clubs) and local has clubs, push local to Firestore instead of overwriting
           const firestoreClubs = parsed.clubs || [];
@@ -478,11 +1065,14 @@ export default function App() {
   const [showInviteWelcome, setShowInviteWelcome] = useState(!!inviteClubId);
 
   const [activeTab, setActiveTab] = useState<
+    | "home"
     | "clubs"
     | "seasons"
     | "matches"
+    | "external-matches"
     | "members"
     | "settings"
+    | "notifications"
     | "dashboard"
     | "profile"
     | "cashbook"
@@ -490,7 +1080,7 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("cast") === "true" || params.get("matchId"))
       return "matches";
-    return "clubs";
+    return "home";
   });
   const [selectedClubId, setSelectedClubId] = useState<string | null>(() =>
     localStorage.getItem("selectedClubId"),
@@ -548,6 +1138,7 @@ export default function App() {
       return localStorage.getItem("selectedSeasonId");
     },
   );
+  const [cashbookSelectedSeasonId, setCashbookSelectedSeasonId] = useState<string | "all">("all");
   const [liveMatchId, setLiveMatchId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     const mId = params.get("matchId");
@@ -839,6 +1430,9 @@ export default function App() {
   const [historyDateFilter, setHistoryDateFilter] = useState("");
   const [historyOpponentFilter, setHistoryOpponentFilter] = useState("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isClubsSubmenuOpen, setIsClubsSubmenuOpen] = useState(true);
+  const [isSeasonsSubmenuOpen, setIsSeasonsSubmenuOpen] = useState(true);
+  const [isSettingsSubmenuOpen, setIsSettingsSubmenuOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     const saved = localStorage.getItem("theme");
     return (saved as "light" | "dark") || "light";
@@ -4902,17 +5496,40 @@ export default function App() {
 
         <nav className="flex-1 p-4 space-y-2">
           <SidebarItem
+            icon={<Home size={20} />}
+            label="Home"
+            active={activeTab === "home"}
+            onClick={() => setActiveTab("home")}
+            collapsed={isSidebarCollapsed}
+          />
+          <SidebarItem
             icon={<Building2 size={20} />}
             label="Clubs"
             active={activeTab === "clubs"}
-            onClick={() => setActiveTab("clubs")}
+            onClick={() => {
+              setActiveTab("clubs");
+              if (selectedClubId) {
+                setIsClubsSubmenuOpen(!isClubsSubmenuOpen);
+              }
+            }}
             collapsed={isSidebarCollapsed}
+            hasSubmenu={!!selectedClubId}
+            submenuOpen={isClubsSubmenuOpen}
           />
-          {selectedClubId && (
-            <>
-              <SidebarItem
+          <AnimatePresence initial={false}>
+            {selectedClubId && isClubsSubmenuOpen && (
+              <motion.div
+                key="clubs-submenu"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden space-y-2"
+              >
+                <SidebarItem
                 icon={<Users size={20} />}
                 label="Leden"
+                isSubItem
                 active={activeTab === "members"}
                 onClick={() => setActiveTab("members")}
                 collapsed={isSidebarCollapsed}
@@ -4920,37 +5537,60 @@ export default function App() {
               <SidebarItem
                 icon={<Calendar size={20} />}
                 label="Seizoenen"
+                isSubItem
                 active={activeTab === "seasons"}
-                onClick={() => setActiveTab("seasons")}
+                onClick={() => {
+                  setActiveTab("seasons");
+                  setIsSeasonsSubmenuOpen(!isSeasonsSubmenuOpen);
+                }}
                 collapsed={isSidebarCollapsed}
+                hasSubmenu={true}
+                submenuOpen={isSeasonsSubmenuOpen}
               />
-              {activeClub?.participatesInExternalMatches && (
-                <SidebarItem
-                  icon={<Trophy size={20} />}
-                  label="Uit & Thuis"
-                  active={activeTab === "external-matches"}
-                  onClick={() => setActiveTab("external-matches")}
-                  collapsed={isSidebarCollapsed}
-                />
-              )}
-              <SidebarItem
-                icon={<History size={20} />}
-                label="Wedstrijden"
-                active={activeTab === "matches"}
-                onClick={() => setActiveTab("matches")}
-                collapsed={isSidebarCollapsed}
-              />
+              <AnimatePresence initial={false}>
+                {isSeasonsSubmenuOpen && (
+                  <motion.div
+                    key="seasons-submenu"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden space-y-2 pl-4"
+                  >
+                    {activeClub?.participatesInExternalMatches && (
+                      <SidebarItem
+                        icon={<Trophy size={20} />}
+                        label="Uit & Thuis"
+                        isSubItem
+                        active={activeTab === "external-matches"}
+                        onClick={() => setActiveTab("external-matches")}
+                        collapsed={isSidebarCollapsed}
+                      />
+                    )}
+                    <SidebarItem
+                      icon={<History size={20} />}
+                      label="Wedstrijden"
+                      isSubItem
+                      active={activeTab === "matches"}
+                      onClick={() => setActiveTab("matches")}
+                      collapsed={isSidebarCollapsed}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {currentUser.role === "admin" && (
                 <SidebarItem
                   icon={<Wallet size={20} />}
                   label="Kasboek"
+                  isSubItem
                   active={activeTab === "cashbook"}
                   onClick={() => setActiveTab("cashbook")}
                   collapsed={isSidebarCollapsed}
                 />
               )}
-            </>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
           <SidebarItem
             icon={<UserCircle size={20} />}
             label="Profiel"
@@ -4967,9 +5607,35 @@ export default function App() {
             icon={<Settings size={20} />}
             label="Instellingen"
             active={activeTab === "settings"}
-            onClick={() => setActiveTab("settings")}
+            onClick={() => {
+              setActiveTab("settings");
+              setIsSettingsSubmenuOpen(!isSettingsSubmenuOpen);
+            }}
             collapsed={isSidebarCollapsed}
+            hasSubmenu={true}
+            submenuOpen={isSettingsSubmenuOpen}
           />
+          <AnimatePresence initial={false}>
+            {isSettingsSubmenuOpen && (
+              <motion.div
+                key="settings-submenu"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden space-y-2 pl-4"
+              >
+                <SidebarItem
+                  icon={<Bell size={20} />}
+                  label="Meldinghistorie"
+                  isSubItem
+                  active={activeTab === "notifications"}
+                  onClick={() => setActiveTab("notifications")}
+                  collapsed={isSidebarCollapsed}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
           <SidebarItem
             icon={<LogOut size={20} />}
             label="Uitloggen"
@@ -5239,6 +5905,17 @@ export default function App() {
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
           <AnimatePresence mode="wait">
+            {activeTab === "home" && (
+              <HomeTab
+                data={data}
+                currentUser={currentUser}
+                setActiveTab={setActiveTab}
+                setSelectedClubId={setSelectedClubId}
+                setSelectedSeasonId={setSelectedSeasonId}
+                setData={setData}
+                handleRescheduleUnplayedMatches={handleRescheduleUnplayedMatches}
+              />
+            )}
             {activeTab === "clubs" && (
               <motion.div
                 key="clubs"
@@ -5335,6 +6012,17 @@ export default function App() {
                             >
                               Leden beheren
                             </button>
+                            <span className="text-slate-300 dark:text-slate-700">•</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedClubId(club.id);
+                                setActiveTab("cashbook");
+                              }}
+                              className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                            >
+                              Kasboek beheren
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -5390,10 +6078,29 @@ export default function App() {
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-8"
                 >
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
                       Kasboek van {activeClub.name}
                     </h2>
+                    
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                        Seizoen:
+                      </label>
+                      <select
+                        value={cashbookSelectedSeasonId}
+                        onChange={(e) => setCashbookSelectedSeasonId(e.target.value)}
+                        className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                      >
+                        <option value="all">Alle seizoenen</option>
+                        {data.seasons
+                          .filter((s: Season) => s.clubId === activeClub.id)
+                          .sort((a: Season, b: Season) => new Date(b.id).getTime() - new Date(a.id).getTime())
+                          .map((s: Season) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                      </select>
+                    </div>
                   </div>
 
                   <div className="space-y-6">
@@ -5401,7 +6108,7 @@ export default function App() {
                       .filter(
                         (s: Season) =>
                           s.clubId === activeClub.id &&
-                          s.id === selectedSeasonId,
+                          (cashbookSelectedSeasonId === "all" ? true : s.id === cashbookSelectedSeasonId),
                       )
                       .sort(
                         (a, b) =>
@@ -6118,6 +6825,17 @@ export default function App() {
                                         ({listExtAwayPointsTotal})
                                       </span>
                                     </div>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedSeasonId(null);
+                                        setSelectedExternalMatchId(match.id);
+                                        setActiveTab("matches"); // Assuming "matches" will show games for the external match if selectedExternalMatchId is set
+                                      }}
+                                      className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg transition-colors text-[10px] md:text-xs font-bold border bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center gap-1.5 md:gap-2"
+                                    >
+                                      <History size={14} />
+                                      Wedstrijden
+                                    </button>
                                     <button
                                       onClick={() => {
                                         setSelectedExternalMatchId(
@@ -7744,6 +8462,16 @@ export default function App() {
                             </p>
                           </div>
                           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                            <button
+                              onClick={() => {
+                                setSelectedSeasonId(season.id);
+                                setActiveTab("matches");
+                              }}
+                              className="px-4 py-2 rounded-lg transition-colors text-sm font-bold border bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center gap-2"
+                            >
+                              <History size={16} />
+                              Wedstrijden
+                            </button>
                             <button
                               onClick={() => {
                                 setSelectedSeasonId(
@@ -11236,6 +11964,26 @@ export default function App() {
                 })()}
               </motion.div>
             )}
+            {activeTab === "notifications" && (
+              <motion.div
+                key="notifications"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="max-w-4xl mx-auto space-y-8"
+              >
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <Bell size={24} className="text-emerald-500" />
+                    Meldinghistorie
+                  </h2>
+                </div>
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-8 text-center">
+                  <BellOff size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                  <p className="text-slate-500 dark:text-slate-400">Er zijn nog geen meldingen.</p>
+                </div>
+              </motion.div>
+            )}
             {activeTab === "settings" && (
               <motion.div
                 key="settings"
@@ -11255,6 +12003,79 @@ export default function App() {
                   </div>
 
                   <div className="space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
+                          {currentUser.pushNotificationsEnabled ? <BellRing size={20} /> : <BellOff size={20} />}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-800 dark:text-white">
+                            (Push) Meldingen
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Ontvang notificaties bij afmeldingen en wijzigingen
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          const newState = !currentUser.pushNotificationsEnabled;
+                          let newFcmToken = currentUser.fcmToken || "";
+                          if (newState) {
+                            try {
+                              const { getToken } = await import('firebase/messaging');
+                              const { messaging } = await import('./lib/firebase');
+                              if (messaging) {
+                                const permission = await Notification.requestPermission();
+                                if (permission === 'granted') {
+                                  newFcmToken = await getToken(messaging, { vapidKey: 'BCZV8Kv9XIO7U9LfrdyNlhn2jo1w2z1rAul9p5GiNJ3YV7ow2NZEemCAVGhtqwQOlZRg9mhPjQwknwMfCSXlOq0' });
+                                  console.log("Push notifications geactiveerd!");
+                                } else {
+                                  alert("Je hebt toestemming voor meldingen geweigerd in je browser instellingen.");
+                                  return;
+                                }
+                              } else {
+                                alert("Push meldingen worden niet ondersteund op dit apparaat/browser.");
+                                return;
+                              }
+                            } catch(e) {
+                              console.error(e);
+                              alert("Er ging iets mis bij het activeren van push meldingen: " + (e instanceof Error ? e.message : String(e)));
+                              return;
+                            }
+                          }
+                          
+                          // Save to Firestore so backend/cloud functions can use it
+                          try {
+                            const userRef = doc(db, "users", currentUser.id);
+                            await setDoc(userRef, { pushNotificationsEnabled: newState, fcmToken: newFcmToken }, { merge: true });
+                          } catch(e) {
+                            console.error("Kon FCM token niet in Firestore opslaan (dit is oké in lokale mode zonder firebase auth)", e);
+                          }
+                          
+                          setData((prev: any) => ({
+                            ...prev,
+                            users: prev.users.map((u: User) =>
+                              u.id === currentUser.id
+                                ? { ...u, pushNotificationsEnabled: newState, fcmToken: newFcmToken }
+                                : u
+                            ),
+                          }));
+                        }}
+                        className={cn(
+                          "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                          currentUser.pushNotificationsEnabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                            currentUser.pushNotificationsEnabled ? "translate-x-6" : "translate-x-1"
+                          )}
+                        />
+                      </button>
+                    </div>
+
                     <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800">
                       <div className="flex items-center gap-4">
                         <div className="h-10 w-10 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-slate-400 shadow-sm">
@@ -11355,12 +12176,23 @@ export default function App() {
         {/* Mobile Navigation */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-around z-50 px-2 h-16 transition-colors shadow-[0_-4px_10px_rgba(0,0,0,0.05)] overflow-x-auto">
           <MobileNavTab
+            icon={<Home size={22} />}
+            label="Home"
+            active={activeTab === "home"}
+            onClick={() => setActiveTab("home")}
+          />
+          <MobileNavTab
             icon={<Building2 size={22} />}
             label="Clubs"
             active={activeTab === "clubs"}
-            onClick={() => setActiveTab("clubs")}
+            onClick={() => {
+              setActiveTab("clubs");
+              if (selectedClubId) {
+                setIsClubsSubmenuOpen(!isClubsSubmenuOpen);
+              }
+            }}
           />
-          {selectedClubId ? (
+          {selectedClubId && isClubsSubmenuOpen ? (
             <>
               <MobileNavTab
                 icon={<Users size={22} />}
@@ -11372,22 +12204,29 @@ export default function App() {
                 icon={<Calendar size={22} />}
                 label="Seizoenen"
                 active={activeTab === "seasons"}
-                onClick={() => setActiveTab("seasons")}
+                onClick={() => {
+                  setActiveTab("seasons");
+                  setIsSeasonsSubmenuOpen(!isSeasonsSubmenuOpen);
+                }}
               />
-              {activeClub?.participatesInExternalMatches && (
-                <MobileNavTab
-                  icon={<Trophy size={22} />}
-                  label="Uit & Thuis"
-                  active={activeTab === "external-matches"}
-                  onClick={() => setActiveTab("external-matches")}
-                />
+              {isSeasonsSubmenuOpen && (
+                <>
+                  {activeClub?.participatesInExternalMatches && (
+                    <MobileNavTab
+                      icon={<Trophy size={22} />}
+                      label="Uit & Thuis"
+                      active={activeTab === "external-matches"}
+                      onClick={() => setActiveTab("external-matches")}
+                    />
+                  )}
+                  <MobileNavTab
+                    icon={<History size={22} />}
+                    label="Wedstrijden"
+                    active={activeTab === "matches"}
+                    onClick={() => setActiveTab("matches")}
+                  />
+                </>
               )}
-              <MobileNavTab
-                icon={<History size={22} />}
-                label="Wedstrijden"
-                active={activeTab === "matches"}
-                onClick={() => setActiveTab("matches")}
-              />
               {currentUser.role === "admin" && (
                 <MobileNavTab
                   icon={<Wallet size={22} />}
@@ -15754,12 +16593,18 @@ function SidebarItem({
   active,
   onClick,
   collapsed,
+  isSubItem,
+  hasSubmenu,
+  submenuOpen,
 }: {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
   onClick: () => void;
   collapsed?: boolean;
+  isSubItem?: boolean;
+  hasSubmenu?: boolean;
+  submenuOpen?: boolean;
 }) {
   return (
     <button
@@ -15771,6 +16616,7 @@ function SidebarItem({
           ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 shadow-sm"
           : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200",
         collapsed && "justify-center px-0",
+        isSubItem && !collapsed && "ml-4 w-[calc(100%-1rem)] py-2 text-sm",
       )}
     >
       <span
@@ -15783,7 +16629,16 @@ function SidebarItem({
       >
         {icon}
       </span>
-      {!collapsed && <span>{label}</span>}
+      {!collapsed && <span className="truncate flex-1 text-left">{label}</span>}
+      {hasSubmenu && !collapsed && (
+        <ChevronDown
+          size={16}
+          className={cn(
+            "transition-transform opacity-50 group-hover:opacity-100",
+            submenuOpen ? "rotate-180" : ""
+          )}
+        />
+      )}
       {active && !collapsed && (
         <motion.div
           layoutId="active-pill"
