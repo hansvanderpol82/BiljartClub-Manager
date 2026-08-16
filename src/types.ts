@@ -3,7 +3,7 @@ export interface User {
   name: string;
   shortName?: string;
   email: string;
-  role: 'admin' | 'planner' | 'member';
+  role: 'applicatiebeheerder' | 'admin' | 'planner' | 'member';
   active?: boolean;
   baseAverage: number;
   avatar?: string;
@@ -21,6 +21,7 @@ export interface Club {
   memberIds: string[];
   participatesInExternalMatches?: boolean;
   inviteEmailTemplate?: string;
+  allowAppAdminAccess?: boolean;
 }
 
 export interface SeasonMember {
@@ -134,9 +135,18 @@ export interface Notification {
   type: 'absence_request' | 'absence_approved' | 'system';
   title: string;
   message: string;
-  forRole?: ('admin' | 'planner' | 'member')[];
+  forRole?: ('applicatiebeheerder' | 'admin' | 'planner' | 'member')[];
   forUserId?: string;
   readBy: string[];
   createdAt: string;
   relatedEntityId?: string;
+}
+
+export interface AppPayment {
+  id: string;
+  date: string;
+  amount: number;
+  description: string;
+  clubId?: string;
+  userId: string;
 }

@@ -121,9 +121,12 @@ const HomeTab = ({
   const [activeNotification, setActiveNotification] = useState<any>(null);
   const [substitutePlayerId, setSubstitutePlayerId] = useState<string>("");
 
-  const userClubs = data.clubs.filter((c: Club) => (c.memberIds || []).includes(currentUser.id));
+  const userClubs = data.clubs.filter((c: Club) => 
+    (c.memberIds || []).includes(currentUser.id) || 
+    (currentUser.role === 'applicatiebeheerder' && c.allowAppAdminAccess)
+  );
   const openSeasons = data.seasons.filter(
-    (s: Season) => s.status === 'open' && userClubs.some((c: Club) => c.id === s.clubId)
+    (s: Season) => s.status === 'open' && !s.isBlocked && userClubs.some((c: Club) => c.id === s.clubId)
   );
 
   const notifications = data.notifications || [];
@@ -950,6 +953,7 @@ const RingGirlSVG = () => (
 
 const isClubAdmin = (club: Club | null | undefined, user: User | null | undefined) => {
   if (!club || !user) return false;
+  if (user.role === 'applicatiebeheerder' && club.allowAppAdminAccess) return true;
   return club.adminId === user.id || (club.coAdminEmails || []).includes(user.email);
 };
 
@@ -1038,9 +1042,16 @@ export default function App() {
       
       // Auto-promote administrators if needed
       const isAdminEmail = authUser.email === "hansvanderpol82@gmail.com" || authUser.email === "biljartclubkot@gmail.com" || authUser.email === "bijartclubkot@gmail.com";
+      const isAppAdminEmail = authUser.email === "info@hans-apps.com";
       
       if (user) {
-        if (isAdminEmail && user.role !== "admin") {
+        if (isAppAdminEmail && user.role !== "applicatiebeheerder") {
+          user = { ...user, role: "applicatiebeheerder" as any };
+          setData((prev: any) => ({
+            ...prev,
+            users: prev.users.map((u: User) => u.id === user.id ? user : u)
+          }));
+        } else if (isAdminEmail && user.role !== "admin" && user.role !== "applicatiebeheerder") {
           user = { ...user, role: "admin" };
           setData((prev: any) => ({
             ...prev,
@@ -1053,7 +1064,7 @@ export default function App() {
           id: authUser.uid,
           name: authUser.displayName || authUser.email.split('@')[0],
           email: authUser.email,
-          role: isAdminEmail ? "admin" : "member",
+          role: isAppAdminEmail ? "applicatiebeheerder" as any : (isAdminEmail ? "admin" : "member"),
           baseAverage: 20
         };
         setData((prev: any) => ({ ...prev, users: [...prev.users, newUser] }));
@@ -1078,6 +1089,7 @@ export default function App() {
     | "dashboard"
     | "profile"
     | "cashbook"
+    | "manage"
   >(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("cast") === "true" || params.get("matchId"))
@@ -5629,6 +5641,15 @@ export default function App() {
             hasSubmenu={true}
             submenuOpen={isSettingsSubmenuOpen}
           />
+          {currentUser.role === 'applicatiebeheerder' && (
+            <SidebarItem
+              icon={<Settings size={20} />}
+              label="Beheren"
+              active={activeTab === "manage"}
+              onClick={() => setActiveTab("manage")}
+              collapsed={isSidebarCollapsed}
+            />
+          )}
           <AnimatePresence initial={false}>
             {isSettingsSubmenuOpen && (
               <motion.div
@@ -6614,18 +6635,20 @@ export default function App() {
                                           <Mail size={18} />
                                         </button>
                                       )}
-                                      <button
-                                        onClick={() =>
-                                          removeMemberFromClub(
-                                            activeClub.id,
-                                            member!.id,
-                                          )
-                                        }
-                                        className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
-                                        title="Verwijderen"
-                                      >
-                                        <Trash2 size={18} />
-                                      </button>
+                                      {currentUser.role === 'applicatiebeheerder' && (
+                                        <button
+                                          onClick={() =>
+                                            removeMemberFromClub(
+                                              activeClub.id,
+                                              member!.id,
+                                            )
+                                          }
+                                          className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
+                                          title="Verwijderen"
+                                        >
+                                          <Trash2 size={18} />
+                                        </button>
+                                      )}
                                     </>
                                   )}
                               </div>
@@ -9070,16 +9093,18 @@ export default function App() {
                                     ? "Seizoen voltooid ongedaan maken"
                                     : "Seizoen voltooid"}
                                 </button>
-                                <button
-                                  onClick={() => {
-                                    setSeasonToDeleteId(season.id);
-                                    setIsDeleteSeasonModalOpen(true);
-                                  }}
-                                  className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-800/50 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-bold flex items-center gap-2"
-                                >
-                                  <Trash2 size={16} />
-                                  Seizoen verwijderen
-                                </button>
+                                {currentUser.role === 'applicatiebeheerder' && (
+                                  <button
+                                    onClick={() => {
+                                      setSeasonToDeleteId(season.id);
+                                      setIsDeleteSeasonModalOpen(true);
+                                    }}
+                                    className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-800/50 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-bold flex items-center gap-2"
+                                  >
+                                    <Trash2 size={16} />
+                                    Seizoen verwijderen
+                                  </button>
+                                )}
                               </div>
                             )}
                           </div>
@@ -12172,6 +12197,39 @@ export default function App() {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                          Toegang Applicatiebeheerder
+                        </label>
+                        <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                          <div>
+                            <p className="font-semibold text-slate-800 dark:text-white">Applicatiebeheerder toegang verlenen</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">Hiermee geef je info@hans-apps.com de rechten om mee te kijken en leden/seizoenen te verwijderen indien nodig.</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setData((prev: any) => ({
+                                ...prev,
+                                clubs: prev.clubs.map((c: Club) =>
+                                  c.id === activeClub.id
+                                    ? { ...c, allowAppAdminAccess: !c.allowAppAdminAccess }
+                                    : c
+                                )
+                              }));
+                            }}
+                            className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors duration-300 ${
+                              activeClub.allowAppAdminAccess ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                            }`}
+                          >
+                            <div
+                              className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${
+                                activeClub.allowAppAdminAccess ? 'translate-x-7' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
                           Sjabloon Uitnodigingsmail
                         </label>
                         <textarea
@@ -12208,6 +12266,105 @@ export default function App() {
                 </div>
               </motion.div>
             )}
+
+            {activeTab === "manage" && currentUser.role === "applicatiebeheerder" && (
+              <motion.div
+                key="manage"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="max-w-7xl mx-auto space-y-8"
+              >
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">
+                      Applicatiebeheerder Dashboard
+                    </h2>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      Beheer betalingen, acties en overige systeeminstellingen over alle clubs heen.
+                    </p>
+                  </div>
+
+                  {/* Betaal Overzicht */}
+                  <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                      <CreditCard size={20} className="text-emerald-500" />
+                      Ontvangsten (Betalingen van Clubs)
+                    </h3>
+                    
+                    {(!data.appPayments || data.appPayments.length === 0) ? (
+                      <div className="text-center py-8 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+                        Nog geen betalingen ontvangen.
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="border-b border-slate-200 dark:border-slate-700">
+                              <th className="pb-3 pt-4 px-4 font-bold text-sm text-slate-500 dark:text-slate-400">Datum</th>
+                              <th className="pb-3 pt-4 px-4 font-bold text-sm text-slate-500 dark:text-slate-400">Club</th>
+                              <th className="pb-3 pt-4 px-4 font-bold text-sm text-slate-500 dark:text-slate-400">Omschrijving</th>
+                              <th className="pb-3 pt-4 px-4 font-bold text-sm text-slate-500 dark:text-slate-400">Gebruiker (Admin)</th>
+                              <th className="pb-3 pt-4 px-4 font-bold text-sm text-slate-500 dark:text-slate-400 text-right">Bedrag</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {[...data.appPayments]
+                              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                              .map((payment: any) => {
+                                const club = data.clubs.find((c: Club) => c.id === payment.clubId);
+                                const user = data.users.find((u: User) => u.id === payment.userId);
+                                return (
+                                  <tr key={payment.id} className="hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors">
+                                    <td className="py-4 px-4 text-slate-800 dark:text-slate-200">
+                                      {new Date(payment.date).toLocaleDateString("nl-NL", { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </td>
+                                    <td className="py-4 px-4 font-medium text-slate-800 dark:text-white">
+                                      {club?.name || "Onbekende club"}
+                                    </td>
+                                    <td className="py-4 px-4 text-slate-600 dark:text-slate-400">
+                                      {payment.description}
+                                    </td>
+                                    <td className="py-4 px-4 text-slate-500 dark:text-slate-400">
+                                      {user?.name || "Onbekende gebruiker"}
+                                    </td>
+                                    <td className="py-4 px-4 font-black text-slate-800 dark:text-white text-right">
+                                      € {(payment.amount / 100).toFixed(2).replace('.', ',')}
+                                    </td>
+                                  </tr>
+                                );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Future sections */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                    <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 opacity-70">
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                        <Trophy size={20} className="text-amber-500" />
+                        Kortingen & Acties
+                      </h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Deze module is gereserveerd voor het beheren van kortingscodes en actietarieven voor clubs. (Binnenkort beschikbaar)
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 opacity-70">
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                        <Mail size={20} className="text-blue-500" />
+                        Berichten naar Clubs
+                      </h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Deze module is gereserveerd om systeemberichten en updates te communiceren naar club-admins. (Binnenkort beschikbaar)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
           </AnimatePresence>
         </div>
         {/* Mobile Navigation */}
@@ -12287,6 +12444,14 @@ export default function App() {
               setActiveTab("profile");
             }}
           />
+          {currentUser.role === 'applicatiebeheerder' && (
+            <MobileNavTab
+              icon={<Settings size={22} />}
+              label="Beheren"
+              active={activeTab === "manage"}
+              onClick={() => setActiveTab("manage")}
+            />
+          )}
           <MobileNavTab
             icon={<LogOut size={22} />}
             label="Uitloggen"
@@ -13690,6 +13855,20 @@ export default function App() {
           isOpen={paymentConfig.isOpen}
           onClose={() => setPaymentConfig({ ...paymentConfig, isOpen: false })}
           onSuccess={() => {
+            setData((prev: any) => ({
+              ...prev,
+              appPayments: [
+                ...(prev.appPayments || []),
+                {
+                  id: Math.random().toString(36).substr(2, 9),
+                  date: new Date().toISOString(),
+                  amount: paymentConfig.amount,
+                  description: paymentConfig.description,
+                  clubId: selectedClubId,
+                  userId: currentUser.id
+                }
+              ]
+            }));
             paymentConfig.onSuccess();
             setPaymentConfig(null);
           }}
