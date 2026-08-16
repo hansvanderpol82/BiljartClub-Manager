@@ -55,6 +55,8 @@ import {
   RefreshCw,
   Mail,
   Home,
+  Pencil,
+  Edit,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toJpeg } from "html-to-image";
@@ -1322,6 +1324,7 @@ export default function App() {
   const [newMemberParticipatesExternal, setNewMemberParticipatesExternal] =
     useState(false);
   const [newMemberSendInvite, setNewMemberSendInvite] = useState(true);
+  const [newMemberActive, setNewMemberActive] = useState(true);
 
   const [isUserSettingsModalOpen, setIsUserSettingsModalOpen] = useState(false);
   const [userSettingsEmail, setUserSettingsEmail] = useState(currentUser.email);
@@ -2175,9 +2178,13 @@ export default function App() {
 
   useEffect(() => {
     if (isSeasonModalOpen && activeClub) {
-      setNewSeasonMemberIds(activeClub.memberIds || []);
+      const activeIds = (activeClub.memberIds || []).filter(id => {
+        const u = data.users.find((user) => user.id === id);
+        return u && u.active !== false;
+      });
+      setNewSeasonMemberIds(activeIds);
     }
-  }, [isSeasonModalOpen, activeClub]);
+  }, [isSeasonModalOpen, activeClub, data.users]);
 
   if (authLoading) {
     return (
@@ -2253,6 +2260,7 @@ export default function App() {
     role: "admin" | "planner" | "member" = "member",
     participatesInExternalMatches?: boolean,
     sendInvite: boolean = true,
+    active: boolean = true,
   ) => {
     const newUser: User = {
       id: Math.random().toString(36).substr(2, 9),
@@ -2262,6 +2270,7 @@ export default function App() {
       role,
       baseAverage,
       participatesInExternalMatches,
+      active,
     };
 
     setData((prev: any) => ({
@@ -2296,10 +2305,11 @@ export default function App() {
     role: "admin" | "planner" | "member" = "member",
     participatesInExternalMatches?: boolean,
     sendInvite: boolean = true,
+    active: boolean = true,
   ) => {
     setPaymentConfig({
       isOpen: true,
-      amount: 100, // 1 euro
+      amount: 200, // 2 euro
       description: "Aanmaken van een nieuw lid",
       onSuccess: () => {
         executeAddNewMember(
@@ -2310,6 +2320,7 @@ export default function App() {
           role,
           participatesInExternalMatches,
           sendInvite,
+          active
         );
       },
     });
@@ -2348,6 +2359,7 @@ export default function App() {
     shortName?: string,
     role?: "admin" | "planner" | "member",
     participatesInExternalMatches?: boolean,
+    active?: boolean,
   ) => {
     setData((prev: any) => ({
       ...prev,
@@ -2361,6 +2373,7 @@ export default function App() {
               shortName,
               role: role || u.role,
               participatesInExternalMatches,
+              active: active ?? u.active,
             }
           : u,
       ),
@@ -2373,6 +2386,7 @@ export default function App() {
     setNewMemberAvg(20);
     setNewMemberRole("member");
     setNewMemberParticipatesExternal(false);
+    setNewMemberActive(true);
   };
 
   const removeMemberFromClub = (clubId: string, userId: string) => {
@@ -3273,7 +3287,7 @@ export default function App() {
     const homeMembers = (activeClub.memberIds || [])
       .map((userId) => data.users.find((u: User) => u.id === userId))
       .filter(
-        (user): user is User => !!user && !!user.participatesInExternalMatches,
+        (user): user is User => !!user && !!user.participatesInExternalMatches && user.active !== false,
       )
       .sort((a, b) => b.baseAverage - a.baseAverage);
 
@@ -3286,7 +3300,7 @@ export default function App() {
     const awayMembers = (awayClub.memberIds || [])
       .map((userId) => data.users.find((u: User) => u.id === userId))
       .filter(
-        (user): user is User => !!user && !!user.participatesInExternalMatches,
+        (user): user is User => !!user && !!user.participatesInExternalMatches && user.active !== false,
       )
       .sort((a, b) => b.baseAverage - a.baseAverage);
 
@@ -5464,7 +5478,7 @@ export default function App() {
             ) : (
               <Trophy size={28} className="shrink-0" />
             )}
-            <span className="whitespace-nowrap truncate">
+            <span className="whitespace-normal break-words leading-tight">
               {activeClub?.name || "BiljartClub"}
             </span>
           </div>
@@ -5994,7 +6008,7 @@ export default function App() {
                                 className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
                                 title="Club wijzigen"
                               >
-                                <Settings size={14} />
+                                <Pencil size={14} />
                               </button>
                             )}
                           </div>
@@ -6380,7 +6394,7 @@ export default function App() {
                                                 className="p-1 text-slate-400 hover:text-emerald-600 transition-colors"
                                                 title="Wijzigen"
                                               >
-                                                <Settings size={14} />
+                                                <Pencil size={14} />
                                               </button>
                                               <button
                                                 onClick={() => {
@@ -6484,7 +6498,10 @@ export default function App() {
                         return (
                           <tr
                             key={memberId}
-                            className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors"
+                            className={cn(
+                              "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors",
+                              member?.active === false ? "opacity-50 grayscale bg-slate-50/50 dark:bg-slate-900/50" : ""
+                            )}
                           >
                             <td className="py-4 pl-6">
                               <div className="flex flex-col">
@@ -6532,6 +6549,14 @@ export default function App() {
                                     <UserIcon size={16} />
                                   </div>
                                 )}
+                                {member?.active === false && (
+                                  <div
+                                    className="p-1.5 px-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold"
+                                    title="Inactief"
+                                  >
+                                    Inactief
+                                  </div>
+                                )}
                               </div>
                             </td>
                             <td className="py-4 text-slate-500 dark:text-slate-400">
@@ -6572,12 +6597,13 @@ export default function App() {
                                               .participatesInExternalMatches ??
                                               false,
                                           );
+                                          setNewMemberActive(member!.active ?? true);
                                           setIsMemberModalOpen(true);
                                         }}
                                         className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
                                         title="Wijzigen"
                                       >
-                                        <Settings size={18} />
+                                        <Pencil size={18} />
                                       </button>
                                       {member?.email && (
                                         <button
@@ -12169,6 +12195,17 @@ export default function App() {
                     </div>
                   </div>
                 )}
+
+                {/* Over sectie */}
+                <div className="mt-12 mb-8 pt-8 border-t border-slate-200 dark:border-slate-800 text-center">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-2">Over</h3>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    Ontwikkeld door <a href="https://hans-apps.com" target="_blank" rel="noopener noreferrer" className="text-emerald-600 dark:text-emerald-400 hover:underline">Hans-apps.com</a>
+                  </p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                    in samenwerking met Google AI Studio
+                  </p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -12713,6 +12750,7 @@ export default function App() {
                           const member = data.users.find(
                             (u: User) => u.id === memberId,
                           );
+                          if (member?.active === false) return null;
                           const isSelected =
                             newSeasonMemberIds.includes(memberId);
                           return (
@@ -13190,6 +13228,23 @@ export default function App() {
                     </span>
                   </label>
                 </div>
+                {editingMemberId && (
+                  <div>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newMemberActive}
+                        onChange={(e) =>
+                          setNewMemberActive(e.target.checked)
+                        }
+                        className="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                        Actief (Lid kan wedstrijden spelen)
+                      </span>
+                    </label>
+                  </div>
+                )}
                 {currentUser.role === "admin" && (
                   <div>
                     <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
@@ -13251,6 +13306,7 @@ export default function App() {
                         newMemberShortName,
                         newMemberRole,
                         newMemberParticipatesExternal,
+                        newMemberActive
                       );
                     } else {
                       addNewMember(
@@ -13261,6 +13317,7 @@ export default function App() {
                         newMemberRole,
                         newMemberParticipatesExternal,
                         newMemberSendInvite,
+                        newMemberActive
                       );
                     }
                   }}
@@ -14172,6 +14229,7 @@ export default function App() {
                               const user = data.users.find(
                                 (u: User) => u.id === id,
                               );
+                              if (user?.active === false) return null;
                               return (
                                 <option key={id} value={id}>
                                   {user?.shortName || user?.name}
@@ -15090,7 +15148,8 @@ export default function App() {
                                     .filter(
                                       (user): user is User =>
                                         !!user &&
-                                        !!user.participatesInExternalMatches,
+                                        !!user.participatesInExternalMatches &&
+                                        user.active !== false,
                                     )
                                     .sort(
                                       (a, b) => b.baseAverage - a.baseAverage,
@@ -15106,7 +15165,8 @@ export default function App() {
                                     .filter(
                                       (user): user is User =>
                                         !!user &&
-                                        !!user.participatesInExternalMatches,
+                                        !!user.participatesInExternalMatches &&
+                                        user.active !== false,
                                     )
                                     .sort(
                                       (a, b) => b.baseAverage - a.baseAverage,

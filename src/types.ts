@@ -4,6 +4,7 @@ export interface User {
   shortName?: string;
   email: string;
   role: 'admin' | 'planner' | 'member';
+  active?: boolean;
   baseAverage: number;
   avatar?: string;
   participatesInExternalMatches?: boolean;
