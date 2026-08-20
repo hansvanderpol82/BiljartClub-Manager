@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { PaymentModal } from "./components/PaymentModal";
+import { ImageCropperModal } from "./components/ImageCropperModal";
 import {
   Bell,
   BellOff,
@@ -437,7 +438,7 @@ const HomeTab = ({
                                 {p1?.shortName || p1?.name}
                               </div>
                               <div className="px-3 text-slate-400 font-bold text-xs bg-white dark:bg-slate-900 py-1 rounded-md border border-slate-200 dark:border-slate-700 shadow-sm mx-2 flex flex-col items-center gap-1">
-                                <span>VS</span>
+                                <span>-</span>
                               </div>
                               <div className="flex-1 font-medium text-slate-700 dark:text-slate-300 text-right">
                                 {p2?.shortName || p2?.name}
@@ -1146,6 +1147,7 @@ export default function App() {
       return "matches";
     return "home";
   });
+  const [mobileSubmenu, setMobileSubmenu] = useState<"home" | "clubs" | "profile" | "settings" | null>(null);
   const [selectedClubId, setSelectedClubId] = useState<string | null>(() =>
     localStorage.getItem("selectedClubId"),
   );
@@ -1314,6 +1316,7 @@ export default function App() {
   const [newClubName, setNewClubName] = useState("");
   const [newClubLogo, setNewClubLogo] = useState("");
       const [logoError, setLogoError] = useState("");
+  const [cropperConfig, setCropperConfig] = useState<{ isOpen: boolean; imageSrc: string; target: "club" | "avatar" | null }>({ isOpen: false, imageSrc: "", target: null });
   const [newClubParticipatesExternal, setNewClubParticipatesExternal] =
     useState(false);
   const [newClubCoAdminEmails, setNewClubCoAdminEmails] = useState("");
@@ -5829,7 +5832,7 @@ export default function App() {
           {currentUser.role === 'applicatiebeheerder' && (
             <SidebarItem
               icon={<Settings size={20} />}
-              label="Beheren"
+              label="Gebruikersinstellingen"
               active={activeTab === "manage"}
               onClick={() => setActiveTab("manage")}
               collapsed={isSidebarCollapsed}
@@ -6087,18 +6090,33 @@ export default function App() {
               </>
             )}
 
-            {currentUser.avatar ? (
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.name}
-                className="h-8 w-8 rounded-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold">
-                {(currentUser.shortName || currentUser.name)?.[0] || "?"}
-              </div>
-            )}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setActiveTab("home")}
+                className="relative p-2 text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 transition-colors"
+                title="Meldingen"
+              >
+                <Bell size={20} />
+                {accessibleBoardMessages.filter((m: BoardMessage) => !m.readBy?.includes(currentUser.id)).length > 0 && (
+                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">
+                    {accessibleBoardMessages.filter((m: BoardMessage) => !m.readBy?.includes(currentUser.id)).length}
+                  </span>
+                )}
+              </button>
+              
+              {currentUser.avatar ? (
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="h-8 w-8 rounded-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold">
+                  {(currentUser.shortName || currentUser.name)?.[0] || "?"}
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -12304,7 +12322,7 @@ export default function App() {
                           }));
                         }}
                         className={cn(
-                          "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                          "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors",
                           currentUser.pushNotificationsEnabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
                         )}
                       >
@@ -12405,14 +12423,16 @@ export default function App() {
                                 )
                               }));
                             }}
-                            className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors duration-300 ${
-                              activeClub.allowAppAdminAccess ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
-                            }`}
+                            className={cn(
+                              "w-14 h-7 shrink-0 flex items-center rounded-full p-1 transition-colors duration-300",
+                              activeClub.allowAppAdminAccess ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
+                            )}
                           >
                             <div
-                              className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${
-                                activeClub.allowAppAdminAccess ? 'translate-x-7' : 'translate-x-0'
-                              }`}
+                              className={cn(
+                                "bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300",
+                                activeClub.allowAppAdminAccess ? "translate-x-7" : "translate-x-0"
+                              )}
                             />
                           </button>
                         </div>
@@ -12549,97 +12569,173 @@ export default function App() {
           </AnimatePresence>
         </div>
         {/* Mobile Navigation */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-around z-50 px-2 h-16 transition-colors shadow-[0_-4px_10px_rgba(0,0,0,0.05)] overflow-x-auto">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-around z-50 px-2 h-16 transition-colors shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
           <MobileNavTab
             icon={<Home size={22} />}
             label="Home"
-            active={activeTab === "home"}
-            onClick={() => setActiveTab("home")}
+            active={["home", "notifications"].includes(activeTab)}
+            onClick={() => setMobileSubmenu(mobileSubmenu === "home" ? null : "home")}
           />
           <MobileNavTab
             icon={<Building2 size={22} />}
             label="Clubs"
-            active={activeTab === "clubs"}
-            onClick={() => {
-              setActiveTab("clubs");
-              if (selectedClubId) {
-                setIsClubsSubmenuOpen(!isClubsSubmenuOpen);
-              }
-            }}
+            active={["clubs", "members", "seasons", "external-matches", "matches", "cashbook"].includes(activeTab)}
+            onClick={() => setMobileSubmenu(mobileSubmenu === "clubs" ? null : "clubs")}
           />
-          {selectedClubId && isClubsSubmenuOpen ? (
-            <>
-              <MobileNavTab
-                icon={<Users size={22} />}
-                label="Leden"
-                active={activeTab === "members"}
-                onClick={() => setActiveTab("members")}
-              />
-              <MobileNavTab
-                icon={<Calendar size={22} />}
-                label="Seizoenen"
-                active={activeTab === "seasons"}
-                onClick={() => {
-                  setActiveTab("seasons");
-                  setIsSeasonsSubmenuOpen(!isSeasonsSubmenuOpen);
-                }}
-              />
-              {isSeasonsSubmenuOpen && (
-                <>
-                  {activeClub?.participatesInExternalMatches && (
-                    <MobileNavTab
-                      icon={<Trophy size={22} />}
-                      label="Uit & Thuis"
-                      active={activeTab === "external-matches"}
-                      onClick={() => setActiveTab("external-matches")}
-                    />
-                  )}
-                  <MobileNavTab
-                    icon={<History size={22} />}
-                    label="Wedstrijden"
-                    active={activeTab === "matches"}
-                    onClick={() => setActiveTab("matches")}
-                  />
-                </>
-              )}
-              {currentUser.role === "admin" && (
-                <MobileNavTab
-                  icon={<Wallet size={22} />}
-                  label="Kasboek"
-                  active={activeTab === "cashbook"}
-                  onClick={() => setActiveTab("cashbook")}
-                />
-              )}
-            </>
-          ) : (
-            <div className="flex-1" />
-          )}
           <MobileNavTab
             icon={<UserCircle size={22} />}
             label="Profiel"
-            active={
-              activeTab === "profile" && selectedProfileId === currentUser.id
-            }
-            onClick={() => {
-              setSelectedProfileId(currentUser.id);
-              setActiveTab("profile");
-            }}
+            active={activeTab === "profile"}
+            onClick={() => setMobileSubmenu(mobileSubmenu === "profile" ? null : "profile")}
           />
-          {currentUser.role === 'applicatiebeheerder' && (
-            <MobileNavTab
-              icon={<Settings size={22} />}
-              label="Beheren"
-              active={activeTab === "manage"}
-              onClick={() => setActiveTab("manage")}
-            />
-          )}
           <MobileNavTab
-            icon={<LogOut size={22} />}
-            label="Uitloggen"
-            active={false}
-            onClick={() => auth.signOut()}
+            icon={<Settings size={22} />}
+            label="Meer"
+            active={["settings", "manage"].includes(activeTab)}
+            onClick={() => setMobileSubmenu(mobileSubmenu === "settings" ? null : "settings")}
           />
         </nav>
+
+        {/* Mobile Submenu Overlay */}
+        <AnimatePresence>
+          {mobileSubmenu && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="md:hidden fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm"
+                onClick={() => setMobileSubmenu(null)}
+              />
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                className="md:hidden fixed bottom-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] p-4 pb-6"
+              >
+                <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-6" />
+                <div className="flex flex-col gap-2">
+                  {mobileSubmenu === "home" && (
+                    <>
+                      <button 
+                        className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "home" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                        onClick={() => { setActiveTab("home"); setMobileSubmenu(null); }}
+                      >
+                        <Home size={20} />
+                        Overzicht
+                      </button>
+                      <button 
+                        className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "notifications" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                        onClick={() => { setActiveTab("notifications"); setMobileSubmenu(null); }}
+                      >
+                        <MessageSquare size={20} />
+                        Prikbord
+                      </button>
+                    </>
+                  )}
+
+                  {mobileSubmenu === "clubs" && (
+                    <>
+                      <button 
+                        className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "clubs" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                        onClick={() => { setActiveTab("clubs"); setMobileSubmenu(null); }}
+                      >
+                        <Building2 size={20} />
+                        Mijn Clubs
+                      </button>
+                      {selectedClubId && (
+                        <>
+                          <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
+                          <button 
+                            className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "members" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                            onClick={() => { setActiveTab("members"); setMobileSubmenu(null); }}
+                          >
+                            <Users size={20} />
+                            Leden
+                          </button>
+                          <button 
+                            className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "seasons" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                            onClick={() => { setActiveTab("seasons"); setMobileSubmenu(null); }}
+                          >
+                            <Calendar size={20} />
+                            Seizoenen
+                          </button>
+                          {activeClub?.participatesInExternalMatches && (
+                            <button 
+                              className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "external-matches" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                              onClick={() => { setActiveTab("external-matches"); setMobileSubmenu(null); }}
+                            >
+                              <Trophy size={20} />
+                              Uit & Thuis
+                            </button>
+                          )}
+                          <button 
+                            className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "matches" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                            onClick={() => { setActiveTab("matches"); setMobileSubmenu(null); }}
+                          >
+                            <History size={20} />
+                            Wedstrijden
+                          </button>
+                          {currentUser.role === "admin" && (
+                            <button 
+                              className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "cashbook" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                              onClick={() => { setActiveTab("cashbook"); setMobileSubmenu(null); }}
+                            >
+                              <Wallet size={20} />
+                              Kasboek
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  {mobileSubmenu === "profile" && (
+                    <>
+                      <button 
+                        className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "profile" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                        onClick={() => { setSelectedProfileId(currentUser.id); setActiveTab("profile"); setMobileSubmenu(null); }}
+                      >
+                        <UserCircle size={20} />
+                        Mijn Profiel
+                      </button>
+                    </>
+                  )}
+
+                  {mobileSubmenu === "settings" && (
+                    <>
+                      <button 
+                        className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "settings" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                        onClick={() => { setActiveTab("settings"); setMobileSubmenu(null); }}
+                      >
+                        <Settings size={20} />
+                        Instellingen
+                      </button>
+                      {currentUser.role === 'applicatiebeheerder' && (
+                        <button 
+                          className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "manage" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                          onClick={() => { setActiveTab("manage"); setMobileSubmenu(null); }}
+                        >
+                          <Users size={20} />
+                          Gebruikersinstellingen
+                        </button>
+                      )}
+                      <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
+                      <button 
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        onClick={() => { auth.signOut(); setMobileSubmenu(null); }}
+                      >
+                        <LogOut size={20} />
+                        Uitloggen
+                      </button>
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* Club Creation Modal */}
@@ -14071,34 +14167,53 @@ export default function App() {
                 </p>
               </div>
               <div className="p-6 space-y-4">
-                <div className="flex justify-center mb-4">
+                <div className="flex flex-col items-center justify-center mb-4 space-y-2">
                   <div className="relative group">
                     {userSettingsAvatar ? (
-                      <img
-                        src={userSettingsAvatar}
-                        alt="Avatar"
-                        className="w-24 h-24 rounded-full object-cover border-4 border-slate-100 dark:border-slate-800"
-                        referrerPolicy="no-referrer"
-                      />
+                      <div className="relative">
+                        <img
+                          src={userSettingsAvatar}
+                          alt="Avatar"
+                          className="w-24 h-24 rounded-full object-cover border-4 border-slate-100 dark:border-slate-800"
+                          referrerPolicy="no-referrer"
+                        />
+                        <button
+                          onClick={() => setUserSettingsAvatar("")}
+                          className="absolute bottom-0 right-0 p-2 bg-red-600 text-white rounded-full shadow-lg hover:bg-red-700 transition-colors"
+                          title="Avatar verwijderen"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     ) : (
-                      <div className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 border-4 border-slate-100 dark:border-slate-800">
-                        <UserCircle size={48} />
+                      <div className="relative">
+                        <div className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 border-4 border-slate-100 dark:border-slate-800">
+                          <UserCircle size={48} />
+                        </div>
+                        <label className="absolute bottom-0 right-0 p-2 bg-emerald-600 text-white rounded-full shadow-lg hover:bg-emerald-700 transition-colors cursor-pointer" title="Avatar uploaden">
+                          <ImageIcon size={16} />
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/jpeg, image/png, image/webp"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              if (file.size > 5 * 1024 * 1024) {
+                                alert("Bestand is te groot (max 5MB).");
+                                e.target.value = '';
+                                return;
+                              }
+                              const objectUrl = URL.createObjectURL(file);
+                              setCropperConfig({ isOpen: true, imageSrc: objectUrl, target: "avatar" });
+                              e.target.value = '';
+                            }}
+                          />
+                        </label>
                       </div>
                     )}
-                    <button
-                      onClick={() => {
-                        showPrompt(
-                          "Avatar URL",
-                          "Voer de URL van je avatar in:",
-                          userSettingsAvatar,
-                          (url) => setUserSettingsAvatar(url),
-                        );
-                      }}
-                      className="absolute bottom-0 right-0 p-2 bg-emerald-600 text-white rounded-full shadow-lg hover:bg-emerald-700 transition-colors"
-                    >
-                      <ImageIcon size={16} />
-                    </button>
                   </div>
+                  <p className="text-[10px] text-slate-400 font-medium">Max 5MB, JPG/PNG</p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
@@ -14179,6 +14294,19 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+
+      <ImageCropperModal
+        isOpen={cropperConfig.isOpen}
+        imageSrc={cropperConfig.imageSrc}
+        onClose={() => setCropperConfig({ isOpen: false, imageSrc: "", target: null })}
+        onCropComplete={(croppedBase64) => {
+          if (cropperConfig.target === "club") {
+            setNewClubLogo(croppedBase64);
+          } else if (cropperConfig.target === "avatar") {
+            setUserSettingsAvatar(croppedBase64);
+          }
+        }}
+      />
 
       {/* Payment Modal */}
       {paymentConfig && (
@@ -15634,7 +15762,7 @@ export default function App() {
                                   Thuisspeler (Wit)
                                 </th>
                                 <th className="p-3 font-bold w-10 text-center">
-                                  VS
+                                  -
                                 </th>
                                 <th className="p-3 font-bold">
                                   Tegenstander (Geel)
@@ -15712,7 +15840,7 @@ export default function App() {
                                     </td>
                                     <td className="p-2 md:p-3 text-center">
                                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                        VS
+                                        -
                                       </span>
                                     </td>
                                     <td className="p-2 md:p-3">
@@ -16803,7 +16931,7 @@ export default function App() {
                         </div>
                         <div>
                           <p className="font-bold text-slate-800 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                            {p1?.shortName || p1?.name} vs{" "}
+                            {p1?.shortName || p1?.name} -{" "}
                             {p2?.shortName || p2?.name}
                           </p>
                           <p className="text-xs text-amber-600 dark:text-amber-500 font-bold uppercase tracking-wider mt-0.5">
@@ -16879,7 +17007,7 @@ export default function App() {
                         </div>
                         <div>
                           <p className="font-bold text-slate-800 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                            {p1?.shortName || p1?.name} vs{" "}
+                            {p1?.shortName || p1?.name} -{" "}
                             {p2?.shortName || p2?.name}
                           </p>
                           <p className="text-xs text-slate-500 mt-0.5">
@@ -17048,7 +17176,7 @@ export default function App() {
                                             </div>
                                             <div>
                                               <p className="font-bold text-sm text-slate-800 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                                                {p1?.shortName || p1?.name} vs{" "}
+                                                {p1?.shortName || p1?.name} -{" "}
                                                 {p2?.shortName || p2?.name}
                                               </p>
                                             </div>
