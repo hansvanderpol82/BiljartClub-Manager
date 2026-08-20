@@ -1251,6 +1251,33 @@ export default function App() {
       }
     };
     window.addEventListener("storage", handleStorageChange);
+
+    // Presentation API receiver logic
+    if ((navigator as any).presentation && (navigator as any).presentation.receiver) {
+      (navigator as any).presentation.receiver.connectionList.then(list => {
+        list.connections.forEach(connection => {
+          connection.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              if (data.type === 'UPDATE_CAST_STATE') {
+                setCastState(data.payload);
+              }
+            } catch (e) {}
+          };
+        });
+        list.onconnectionavailable = (event) => {
+          event.connection.onmessage = (msgEvent) => {
+            try {
+              const data = JSON.parse(msgEvent.data);
+              if (data.type === 'UPDATE_CAST_STATE') {
+                setCastState(data.payload);
+              }
+            } catch (e) {}
+          };
+        };
+      }).catch(() => {});
+    }
+
     return () => {
       channel.close();
       window.removeEventListener("storage", handleStorageChange);
@@ -1278,6 +1305,14 @@ export default function App() {
     const channel = new BroadcastChannel("biljart_cast_channel");
     channel.postMessage({ type: "UPDATE_CAST_STATE", payload: newState });
     channel.close();
+    
+    if (presentationConnRef.current) {
+      try {
+        presentationConnRef.current.send(JSON.stringify({ type: "UPDATE_CAST_STATE", payload: newState }));
+      } catch (e) {
+        console.error("Failed to send via presentation connection", e);
+      }
+    }
   };
 
   const [isCastMode, setIsCastMode] = useState(() => {
@@ -2401,6 +2436,19 @@ export default function App() {
     sendInvite: boolean = true,
     active: boolean = true,
   ) => {
+    if (currentUser?.role === "applicatiebeheerder") {
+      executeAddNewMember(
+        name,
+        email,
+        baseAverage,
+        shortName,
+        role,
+        participatesInExternalMatches,
+        sendInvite,
+        active
+      );
+      return;
+    }
     setPaymentConfig({
       isOpen: true,
       amount: 200, // 2 euro
@@ -2644,7 +2692,7 @@ export default function App() {
 
   const createSeason = (seasonData: Partial<Season>) => {
     const numMembers = ((seasonData.members as any) || []).length;
-    if (numMembers === 0) {
+    if (numMembers === 0 || currentUser?.role === "applicatiebeheerder") {
       executeCreateSeason(seasonData);
       return;
     }
@@ -3558,7 +3606,7 @@ export default function App() {
 
   const createHomeMatch = () => {
     const numMembers = homeMatchPairings.length;
-    if (numMembers === 0) {
+    if (numMembers === 0 || currentUser?.role === "applicatiebeheerder") {
       executeCreateHomeMatch();
       return;
     }
