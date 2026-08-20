@@ -369,7 +369,7 @@ const HomeTab = ({
                 </div>
                 <button 
                   onClick={() => setActiveNotification(n)}
-                  className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-bold shadow-sm"
+                  className="px-2 sm:px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-bold shadow-sm"
                 >
                   Behandel
                 </button>
@@ -386,7 +386,7 @@ const HomeTab = ({
           </p>
           <button
             onClick={() => setActiveTab("clubs")}
-            className="mt-4 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
+            className="mt-4 px-2 sm:px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
           >
             Ga naar Clubs
           </button>
@@ -501,7 +501,7 @@ const HomeTab = ({
                       </p>
                     </div>
                     <div className={cn(
-                      "px-4 py-2 rounded-xl font-bold text-sm shadow-sm border",
+                      "px-2 sm:px-4 py-2 rounded-xl font-bold text-sm shadow-sm border",
                       isPaid 
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800" 
                         : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800"
@@ -515,7 +515,7 @@ const HomeTab = ({
                       <Trophy size={20} className="text-amber-500" />
                       Tussenstand
                     </h3>
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto -mx-4 sm:mx-0 px-0">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
@@ -531,13 +531,13 @@ const HomeTab = ({
                               "transition-colors",
                               stat.userId === currentUser.id ? "bg-emerald-50/50 dark:bg-emerald-900/10" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
                             )}>
-                              <td className="py-2.5 text-slate-400 font-bold">{idx + 1}</td>
+                              <td className="py-1 sm:py-2.5 text-slate-400 font-bold">{idx + 1}</td>
                               <td className={cn(
                                 "py-2.5 font-medium",
                                 stat.userId === currentUser.id ? "text-emerald-700 dark:text-emerald-400 font-bold" : "text-slate-700 dark:text-slate-300"
                               )}>{stat.name}</td>
-                              <td className="py-2.5 text-right font-bold text-slate-800 dark:text-white">{stat.totalPoints}</td>
-                              <td className="py-2.5 text-right text-slate-500">{formatDecimal(stat.currentAvg, 3)}</td>
+                              <td className="py-1 sm:py-2.5 text-right font-bold text-slate-800 dark:text-white">{stat.totalPoints}</td>
+                              <td className="py-1 sm:py-2.5 text-right text-slate-500">{formatDecimal(stat.currentAvg, 3)}</td>
                             </tr>
                           ))}
                           
@@ -547,14 +547,14 @@ const HomeTab = ({
                                 <td colSpan={4} className="py-1 text-center text-slate-300 dark:text-slate-600">...</td>
                               </tr>
                               <tr className="bg-emerald-50/50 dark:bg-emerald-900/10 transition-colors">
-                                <td className="py-2.5 text-slate-400 font-bold">{userStandingIndex + 1}</td>
-                                <td className="py-2.5 font-bold text-emerald-700 dark:text-emerald-400">
+                                <td className="py-1 sm:py-2.5 text-slate-400 font-bold">{userStandingIndex + 1}</td>
+                                <td className="py-1 sm:py-2.5 font-bold text-emerald-700 dark:text-emerald-400">
                                   {standings[userStandingIndex].name}
                                 </td>
-                                <td className="py-2.5 text-right font-bold text-slate-800 dark:text-white">
+                                <td className="py-1 sm:py-2.5 text-right font-bold text-slate-800 dark:text-white">
                                   {standings[userStandingIndex].totalPoints}
                                 </td>
-                                <td className="py-2.5 text-right text-slate-500">
+                                <td className="py-1 sm:py-2.5 text-right text-slate-500">
                                   {formatDecimal(standings[userStandingIndex].currentAvg, 3)}
                                 </td>
                               </tr>
@@ -584,7 +584,7 @@ const HomeTab = ({
       {/* Absence Modal */}
       <AnimatePresence>
         {isAbsenceModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-2 sm:px-4 bg-slate-900/50 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -604,7 +604,7 @@ const HomeTab = ({
                   <select
                     value={absenceDate}
                     onChange={(e) => setAbsenceDate(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+                    className="w-full px-2 sm:px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
                   >
                     <option value="" disabled>Selecteer een datum...</option>
                     {(() => {
@@ -625,14 +625,14 @@ const HomeTab = ({
               <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex gap-3">
                 <button
                   onClick={() => setIsAbsenceModalOpen(false)}
-                  className="flex-1 px-4 py-3 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-3 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
                 >
                   Annuleren
                 </button>
                 <button
                   onClick={handleAbsenceSubmit}
                   disabled={!absenceDate}
-                  className="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
+                  className="flex-1 px-2 sm:px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
                 >
                   Afmelden Bevestigen
                 </button>
@@ -645,7 +645,7 @@ const HomeTab = ({
       {/* Notification Handling Modal */}
       <AnimatePresence>
         {activeNotification && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-2 sm:px-4 bg-slate-900/50 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -661,7 +661,7 @@ const HomeTab = ({
               <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700">
                 <button
                   onClick={() => setActiveNotification(null)}
-                  className="w-full px-4 py-2 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  className="w-full px-2 sm:px-4 py-2 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
                 >
                   Sluiten
                 </button>
@@ -4026,29 +4026,29 @@ export default function App() {
           </div>
 
           <div className="w-full max-w-[1400px] mx-auto bg-black/30 rounded-3xl border border-white/10 backdrop-blur-lg overflow-hidden animate-in fade-in slide-in-from-bottom duration-700 shadow-2xl relative z-10 shrink-0">
-            <div className="overflow-x-auto w-full">
+            <div className="overflow-x-auto w-full -mx-4 sm:mx-0">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-[#163a16]/80 text-[#f1c40f] text-sm font-black uppercase tracking-widest border-b border-white/10">
-                    <th className="py-4 pl-6 text-center w-16 border-r border-white/10">
+                    <th className="py-2 sm:py-4 pl-6 text-center w-16 border-r border-white/10">
                       #
                     </th>
-                    <th className="py-4 px-6 text-left border-r border-white/10">
+                    <th className="py-2 sm:py-4 px-6 text-left border-r border-white/10">
                       Naam
                     </th>
-                    <th className="py-4 px-4 text-center border-r border-white/10">
+                    <th className="py-2 sm:py-4 px-2 sm:px-4 text-center border-r border-white/10">
                       Caramboles
                     </th>
-                    <th className="py-4 px-4 text-center border-r border-white/10">
+                    <th className="py-2 sm:py-4 px-2 sm:px-4 text-center border-r border-white/10">
                       Wedstrijden
                     </th>
-                    <th className="py-4 px-4 text-center border-r border-white/10">
+                    <th className="py-2 sm:py-4 px-2 sm:px-4 text-center border-r border-white/10 hidden sm:table-cell">
                       Hoogste Serie
                     </th>
-                    <th className="py-4 px-4 text-center border-r border-white/10">
+                    <th className="py-2 sm:py-4 px-2 sm:px-4 text-center border-r border-white/10">
                       Punten
                     </th>
-                    <th className="py-4 px-6 text-center">Gemiddelde</th>
+                    <th className="py-2 sm:py-4 px-6 text-center hidden sm:table-cell">Gemiddelde</th>
                   </tr>
                 </thead>
                 <tbody className="bg-transparent">
@@ -4062,7 +4062,7 @@ export default function App() {
                       max: number;
                       format?: (v: any) => any;
                     }) => (
-                      <td className="relative py-4 px-4 text-center text-white/90 font-black text-xl border-r border-white/10 overflow-hidden">
+                      <td className="relative py-4 px-2 sm:px-4 text-center text-white/90 font-black text-xl border-r border-white/10 overflow-hidden">
                         <div
                           className="absolute inset-y-1 my-1 left-1 rounded-md bg-emerald-500/20 backdrop-blur-sm transition-all duration-500"
                           style={{
@@ -4112,7 +4112,7 @@ export default function App() {
                           value={memberInfo.highest}
                           max={maxStats.highest}
                         />
-                        <td className="relative py-4 px-4 text-center text-[#f1c40f] font-black text-2xl border-r border-white/10 overflow-hidden">
+                        <td className="relative py-4 px-2 sm:px-4 text-center text-[#f1c40f] font-black text-2xl border-r border-white/10 overflow-hidden">
                           <div
                             className="absolute inset-y-1 my-1 left-1 rounded-md bg-[#f1c40f]/15 backdrop-blur-sm transition-all duration-500"
                             style={{
@@ -4250,7 +4250,7 @@ export default function App() {
                             <span className="text-3xl font-black text-white truncate w-full text-right drop-shadow-md">{p1.name}</span>
                             <span className="text-lg font-bold text-white bg-white/20 px-3 py-1 rounded-lg mt-2">Gemiddelde: {p1.avg}</span>
                           </div>
-                          <div className="flex flex-col items-center justify-center px-4">
+                          <div className="flex flex-col items-center justify-center px-2 sm:px-4">
                             <div className="w-12 h-12 bg-purple-500/20 border border-purple-500/50 rounded-full flex items-center justify-center shadow-inner shadow-purple-500/20">
                               <span className="text-purple-300 font-black text-3xl leading-none">-</span>
                             </div>
@@ -4452,34 +4452,34 @@ export default function App() {
                 <table className="w-full text-left border-collapse flex-1 flex flex-col">
                   <thead>
                     <tr className="bg-black/30 border-b border-white/10 flex w-full">
-                      <th className="py-4 px-8 font-black text-[#f1c40f] text-xs md:text-sm uppercase tracking-widest text-left flex-1">
+                      <th className="py-2 sm:py-4 px-8 font-black text-[#f1c40f] text-xs md:text-sm uppercase tracking-widest text-left flex-1">
                         Speler (Thuis)
                       </th>
-                      <th className="py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-32">
+                      <th className="py-2 sm:py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-32 hidden sm:table-cell">
                         Hoogste Serie
                       </th>
-                      <th className="py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-32">
+                      <th className="py-2 sm:py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-32 hidden sm:table-cell">
                         Gemiddelde
                       </th>
-                      <th className="py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-32">
+                      <th className="py-2 sm:py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-32">
                         Caramboles
                       </th>
-                      <th className="py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-28 bg-black/20">
+                      <th className="py-2 sm:py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-28 bg-black/20">
                         Punten
                       </th>
-                      <th className="py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-28 bg-black/20">
+                      <th className="py-2 sm:py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-28 bg-black/20">
                         Punten
                       </th>
-                      <th className="py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-32">
+                      <th className="py-2 sm:py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-32">
                         Caramboles
                       </th>
-                      <th className="py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-32">
+                      <th className="py-2 sm:py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-32 hidden sm:table-cell">
                         Gemiddelde
                       </th>
-                      <th className="py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-32">
+                      <th className="py-2 sm:py-4 px-2 font-black text-[#f1c40f] text-[10px] md:text-xs uppercase tracking-widest text-center w-32 hidden sm:table-cell">
                         Hoogste Serie
                       </th>
-                      <th className="py-4 px-8 font-black text-[#f1c40f] text-xs md:text-sm uppercase tracking-widest text-right flex-1">
+                      <th className="py-2 sm:py-4 px-8 font-black text-[#f1c40f] text-xs md:text-sm uppercase tracking-widest text-right flex-1">
                         Speler (Uit)
                       </th>
                     </tr>
@@ -4632,7 +4632,7 @@ export default function App() {
                             key={g.id}
                             className="border-b border-white/5 hover:bg-white/5 transition-colors flex w-full flex-1 min-h-[50px] items-center"
                           >
-                            <td className="py-2 px-6 text-left flex-1 items-center flex">
+                            <td className="py-1 sm:py-2 px-6 text-left flex-1 items-center flex">
                               <span className="font-bold text-white text-lg md:text-xl xl:text-3xl mr-2 whitespace-nowrap capitalize">
                                 {p1?.shortName || p1?.name || "Onbekend"}
                               </span>
@@ -4641,7 +4641,7 @@ export default function App() {
                               </span>
                             </td>
 
-                            <td className="relative py-2 px-2 text-center w-32 overflow-hidden text-white/50 text-xl md:text-2xl">
+                            <td className="relative py-1 sm:py-2 px-2 text-center w-32 overflow-hidden text-white/50 text-xl md:text-2xl">
                               <div
                                 className="absolute inset-y-1 my-1 left-1 rounded-md bg-emerald-500/20 backdrop-blur-sm transition-all duration-500"
                                 style={{
@@ -4658,7 +4658,7 @@ export default function App() {
                                 )}
                               </span>
                             </td>
-                            <td className="relative py-2 px-2 text-center w-32 overflow-hidden text-[#f1c40f] text-xl md:text-2xl">
+                            <td className="relative py-1 sm:py-2 px-2 text-center w-32 overflow-hidden text-[#f1c40f] text-xl md:text-2xl">
                               <div
                                 className="absolute inset-y-1 my-1 left-1 rounded-md bg-emerald-500/20 backdrop-blur-sm transition-all duration-500"
                                 style={{
@@ -4675,7 +4675,7 @@ export default function App() {
                                 )}
                               </span>
                             </td>
-                            <td className="relative py-2 px-2 text-center w-32 overflow-hidden">
+                            <td className="relative py-1 sm:py-2 px-2 text-center w-32 overflow-hidden">
                               <div
                                 className="absolute inset-y-1 my-1 left-1 rounded-md bg-emerald-500/20 backdrop-blur-sm transition-all duration-500"
                                 style={{
@@ -4694,7 +4694,7 @@ export default function App() {
                                 )}
                               </span>
                             </td>
-                            <td className="relative py-2 px-2 text-center w-28 border-r border-white/5 bg-black/10 overflow-hidden h-full flex items-center justify-center">
+                            <td className="relative py-1 sm:py-2 px-2 text-center w-28 border-r border-white/5 bg-black/10 overflow-hidden h-full flex items-center justify-center">
                               <div
                                 className="absolute inset-y-1 my-1 left-1 rounded-md bg-[#f1c40f]/15 backdrop-blur-sm transition-all duration-500"
                                 style={{
@@ -4705,7 +4705,7 @@ export default function App() {
                                 {displayHomePoints}
                               </span>
                             </td>
-                            <td className="relative py-2 px-2 text-center w-28 border-r border-white/5 bg-black/10 overflow-hidden h-full flex items-center justify-center">
+                            <td className="relative py-1 sm:py-2 px-2 text-center w-28 border-r border-white/5 bg-black/10 overflow-hidden h-full flex items-center justify-center">
                               <div
                                 className="absolute inset-y-1 my-1 left-1 rounded-md bg-[#f1c40f]/15 backdrop-blur-sm transition-all duration-500"
                                 style={{
@@ -4716,7 +4716,7 @@ export default function App() {
                                 {displayAwayPoints}
                               </span>
                             </td>
-                            <td className="relative py-2 px-2 text-center w-32 overflow-hidden">
+                            <td className="relative py-1 sm:py-2 px-2 text-center w-32 overflow-hidden">
                               <div
                                 className="absolute inset-y-1 my-1 left-1 rounded-md bg-emerald-500/20 backdrop-blur-sm transition-all duration-500"
                                 style={{
@@ -4735,7 +4735,7 @@ export default function App() {
                                 )}
                               </span>
                             </td>
-                            <td className="relative py-2 px-2 text-center w-32 overflow-hidden text-[#f1c40f] text-xl md:text-2xl">
+                            <td className="relative py-1 sm:py-2 px-2 text-center w-32 overflow-hidden text-[#f1c40f] text-xl md:text-2xl">
                               <div
                                 className="absolute inset-y-1 my-1 left-1 rounded-md bg-emerald-500/20 backdrop-blur-sm transition-all duration-500"
                                 style={{
@@ -4752,7 +4752,7 @@ export default function App() {
                                 )}
                               </span>
                             </td>
-                            <td className="relative py-2 px-2 text-center w-32 overflow-hidden text-white/50 text-xl md:text-2xl">
+                            <td className="relative py-1 sm:py-2 px-2 text-center w-32 overflow-hidden text-white/50 text-xl md:text-2xl">
                               <div
                                 className="absolute inset-y-1 my-1 left-1 rounded-md bg-emerald-500/20 backdrop-blur-sm transition-all duration-500"
                                 style={{
@@ -4770,7 +4770,7 @@ export default function App() {
                               </span>
                             </td>
 
-                            <td className="py-2 px-6 text-right flex-1 items-center flex justify-end">
+                            <td className="py-1 sm:py-2 px-6 text-right flex-1 items-center flex justify-end">
                               <span className="text-xs md:text-sm text-emerald-300/80 font-bold tracking-widest mr-2">
                                 ({g.awayTarget ?? p2?.baseAverage ?? 0})
                               </span>
@@ -5331,7 +5331,7 @@ export default function App() {
 
           {/* Header / Game Info - Centered and Slimmer */}
           <div className="w-full max-w-2xl text-center animate-in fade-in slide-in-from-top duration-700 relative mb-2">
-            <div className="inline-flex items-center gap-4 px-4 py-1.5 bg-black/30 rounded-full border border-white/10 mb-2 backdrop-blur-sm">
+            <div className="inline-flex items-center gap-4 px-2 sm:px-4 py-1.5 bg-black/30 rounded-full border border-white/10 mb-2 backdrop-blur-sm">
               <span className="text-emerald-400 font-bold text-sm md:text-base uppercase tracking-[0.2em]">
                 {liveCurrentSeason?.name}
               </span>
@@ -5583,7 +5583,7 @@ export default function App() {
 
             {/* Personnel Info - Stacked vertically */}
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+              <div className="flex items-center gap-4 bg-white/5 px-2 sm:px-4 py-2 rounded-xl border border-white/5">
                 <span className="text-white/20 text-base md:text-lg font-black uppercase tracking-widest w-24">
                   Arbiter
                 </span>
@@ -5591,7 +5591,7 @@ export default function App() {
                   {arbiter?.shortName || arbiter?.name || "Vrij"}
                 </span>
               </div>
-              <div className="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+              <div className="flex items-center gap-4 bg-white/5 px-2 sm:px-4 py-2 rounded-xl border border-white/5">
                 <span className="text-white/20 text-base md:text-lg font-black uppercase tracking-widest w-24">
                   Schrijver
                 </span>
@@ -5699,7 +5699,7 @@ export default function App() {
               <img
                 src={activeClub.logo}
                 alt={activeClub.name}
-                className="h-8 w-8 rounded-lg object-contain shrink-0"
+                className="h-8 w-8 rounded-full object-contain shrink-0 bg-white/10 p-0.5 border border-white/10 shadow-sm"
                 referrerPolicy="no-referrer"
               />
             ) : (
@@ -5714,7 +5714,7 @@ export default function App() {
               <img
                 src={activeClub.logo}
                 alt={activeClub.name}
-                className="h-8 w-8 rounded-lg object-contain mx-auto"
+                className="h-8 w-8 rounded-full object-contain mx-auto bg-white/10 p-0.5 border border-white/10 shadow-sm"
                 referrerPolicy="no-referrer"
               />
             ) : (
@@ -5937,13 +5937,13 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden pb-16 md:pb-0">
-        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 md:px-8 transition-colors duration-300">
+        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-2 sm:px-4 md:px-8 transition-colors duration-300">
           <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
             {activeClub?.logo && (
               <img
                 src={activeClub.logo}
                 alt={activeClub.name}
-                className="h-6 w-6 md:h-8 md:w-8 rounded-lg object-contain shrink-0"
+                className="h-6 w-6 md:h-8 md:w-8 rounded-full object-contain shrink-0 bg-white/10 p-0.5 border border-white/10 shadow-sm"
                 referrerPolicy="no-referrer"
               />
             )}
@@ -5985,17 +5985,17 @@ export default function App() {
                     if (targetId)
                       setCastMenuTarget({ type: targetType, id: targetId });
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-bold text-sm shadow-lg active:scale-95"
+                  className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-bold text-sm shadow-lg active:scale-95"
                 >
                   <Tv size={18} />
-                  <span>Cast Menu</span>
+                  <span className="hidden sm:inline">Cast Menu</span>
                 </button>
                 <button
                   onClick={() => setLiveMatchId(null)}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-bold text-sm"
+                  className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-bold text-sm"
                 >
                   <ArrowLeft size={18} />
-                  <span>Ga terug naar wedstrijden</span>
+                  <span className="hidden sm:inline">Ga terug naar wedstrijden</span>
                 </button>
               </>
             )}
@@ -6019,10 +6019,10 @@ export default function App() {
                         });
                       }
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-bold text-sm shadow-lg active:scale-95"
+                    className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-bold text-sm shadow-lg active:scale-95"
                   >
                     <Tv size={18} />
-                    <span>Cast Menu</span>
+                    <span className="hidden sm:inline">Cast Menu</span>
                   </button>
                   {selectedSeasonId &&
                     (isClubAdmin(activeClub, currentUser) ||
@@ -6037,10 +6037,10 @@ export default function App() {
                               handleRescheduleUnplayedMatches(selectedSeasonId),
                           )
                         }
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-sm font-bold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 border border-amber-100 dark:border-amber-800/50"
+                        className="flex items-center gap-2 px-2 sm:px-4 py-2 rounded-xl transition-all text-sm font-bold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 border border-amber-100 dark:border-amber-800/50"
                       >
                         <RefreshCw size={18} />
-                        <span>Herindelen</span>
+                        <span className="hidden sm:inline">Herindelen</span>
                       </button>
                     )}
                   {selectedSeasonId && (
@@ -6049,14 +6049,14 @@ export default function App() {
                         setShowFinishedMatches(!showFinishedMatches)
                       }
                       className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-sm font-bold border",
+                        "flex items-center gap-2 px-2 sm:px-4 py-2 rounded-xl transition-all text-sm font-bold border",
                         showFinishedMatches
                           ? "bg-emerald-100 dark:bg-emerald-900/40 border-emerald-300 dark:border-emerald-700/50 text-emerald-800 dark:text-emerald-300"
                           : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 border-emerald-100 dark:border-emerald-800/50",
                       )}
                     >
                       <History size={18} />
-                      <span>
+                      <span className="hidden sm:inline">
                         {showFinishedMatches
                           ? "Verberg voltooide"
                           : "Toon voltooide"}
@@ -6205,7 +6205,7 @@ export default function App() {
                                                 setNewClubCoAdminEmails("");
                         setNewClubParticipatesExternal(false);
                       }}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
                   >
                     <Plus size={20} />
                     <span>Nieuwe Club</span>
@@ -6228,7 +6228,7 @@ export default function App() {
                       }}
                     >
                       <div className="flex items-center gap-4 mb-4">
-                        <div className="h-12 w-12 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 overflow-hidden flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors">
+                        <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 overflow-hidden flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors p-0.5">
                           {club.logo ? (
                             <img
                               src={club.logo}
@@ -6357,7 +6357,7 @@ export default function App() {
                       <select
                         value={cashbookSelectedSeasonId}
                         onChange={(e) => setCashbookSelectedSeasonId(e.target.value)}
-                        className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                        className="px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                       >
                         <option value="all">Alle seizoenen</option>
                         {data.seasons
@@ -6544,7 +6544,7 @@ export default function App() {
                                     Toevoegen
                                   </button>
                                 </div>
-                                <div className="overflow-x-auto">
+                                <div className="overflow-x-auto -mx-4 sm:mx-0 px-0">
                                   <table className="w-full text-left">
                                     <thead>
                                       <tr className="text-[10px] font-bold text-slate-400 uppercase border-b border-slate-100 dark:border-slate-800">
@@ -6561,16 +6561,16 @@ export default function App() {
                                     <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                                       {season.initialBalanceType && (
                                         <tr>
-                                          <td className="py-2 text-[10px] text-slate-400">
+                                          <td className="py-1 sm:py-2 text-[10px] text-slate-400">
                                             Start
                                           </td>
-                                          <td className="py-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                                          <td className="py-1 sm:py-2 text-xs font-medium text-slate-600 dark:text-slate-300">
                                             {season.initialBalanceType ===
                                             "manual"
                                               ? "Beginbalans"
                                               : "Overname vorig seizoen"}
                                           </td>
-                                          <td className="py-2 text-xs font-bold text-blue-600 text-right">
+                                          <td className="py-1 sm:py-2 text-xs font-bold text-blue-600 text-right">
                                             {formatCurrency(
                                               season.initialBalanceType ===
                                                 "manual"
@@ -6591,18 +6591,18 @@ export default function App() {
                                                   : 0,
                                             )}
                                           </td>
-                                          <td className="py-2 text-right"></td>
+                                          <td className="py-1 sm:py-2 text-right"></td>
                                         </tr>
                                       )}
                                       {manualTransactions.map((t) => (
                                         <tr key={t.id}>
-                                          <td className="py-2 text-[10px] text-slate-400">
+                                          <td className="py-1 sm:py-2 text-[10px] text-slate-400">
                                             {format(
                                               new Date(t.date),
                                               "dd-MM-yy",
                                             )}
                                           </td>
-                                          <td className="py-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                                          <td className="py-1 sm:py-2 text-xs font-medium text-slate-600 dark:text-slate-300">
                                             {t.description}
                                           </td>
                                           <td
@@ -6615,7 +6615,7 @@ export default function App() {
                                           >
                                             {formatCurrency(t.amount)}
                                           </td>
-                                          <td className="py-2 text-right">
+                                          <td className="py-1 sm:py-2 text-right">
                                             <div className="flex justify-end gap-1">
                                               <button
                                                 onClick={() => {
@@ -6724,7 +6724,7 @@ export default function App() {
                   {isClubAdmin(activeClub, currentUser) && (
                     <button
                       onClick={() => setIsMemberModalOpen(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                      className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
                     >
                       <UserPlus size={20} />
                       <span>Nieuw Lid Toevoegen</span>
@@ -6736,11 +6736,11 @@ export default function App() {
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-slate-50 dark:bg-slate-800/50 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                        <th className="py-4 pl-6 text-left">Naam</th>
-                        <th className="py-4 text-left">Rol</th>
-                        <th className="py-4 text-left">Email</th>
-                        <th className="py-4 text-left">Start Gemiddelde</th>
-                        <th className="py-4 pr-6 text-right">Acties</th>
+                        <th className="py-2 sm:py-4 pl-6 text-left">Naam</th>
+                        <th className="py-2 sm:py-4 text-left">Rol</th>
+                        <th className="py-2 sm:py-4 text-left hidden sm:table-cell">Email</th>
+                        <th className="py-2 sm:py-4 text-left hidden sm:table-cell">Start Gemiddelde</th>
+                        <th className="py-2 sm:py-4 pr-6 text-right">Acties</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
@@ -6919,7 +6919,7 @@ export default function App() {
                         )
                       }
                       className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors shadow-sm",
+                        "flex items-center gap-2 px-2 sm:px-4 py-2 rounded-lg border transition-colors shadow-sm",
                         showBlockedExternalMatches
                           ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
                           : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800",
@@ -6939,7 +6939,7 @@ export default function App() {
                     {isClubAdmin(activeClub, currentUser) && (
                       <button
                         onClick={() => setIsHomeMatchModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-sm"
+                        className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-sm"
                       >
                         <Plus size={20} />
                         <span>Nieuwe Thuiswedstrijd</span>
@@ -7092,7 +7092,7 @@ export default function App() {
                                     </span>
                                   </div>
 
-                                  <div className="flex items-center justify-center gap-1 md:gap-2 px-1 md:px-4 shrink-0 text-[9px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pt-2">
+                                  <div className="flex items-center justify-center gap-1 md:gap-2 px-1 md:px-2 sm:px-4 shrink-0 text-[9px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pt-2">
                                     Gespeeld: {fGames.length} &nbsp;&bull;&nbsp;
                                     Resterend: {pGames.length}
                                   </div>
@@ -7112,7 +7112,7 @@ export default function App() {
                                         setSelectedExternalMatchId(match.id);
                                         setActiveTab("matches"); // Assuming "matches" will show games for the external match if selectedExternalMatchId is set
                                       }}
-                                      className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg transition-colors text-[10px] md:text-xs font-bold border bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center gap-1.5 md:gap-2"
+                                      className="px-3 py-1 md:px-2 sm:px-4 md:py-1.5 rounded-lg transition-colors text-[10px] md:text-xs font-bold border bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center gap-1.5 md:gap-2"
                                     >
                                       <History size={14} />
                                       Wedstrijden
@@ -7127,7 +7127,7 @@ export default function App() {
                                         setSelectedSeasonId(null);
                                       }}
                                       className={cn(
-                                        "px-3 py-1 md:px-4 md:py-1.5 rounded-lg transition-colors text-[10px] md:text-xs font-bold border",
+                                        "px-3 py-1 md:px-2 sm:px-4 md:py-1.5 rounded-lg transition-colors text-[10px] md:text-xs font-bold border",
                                         selectedExternalMatchId === match.id
                                           ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
                                           : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40",
@@ -7172,7 +7172,7 @@ export default function App() {
                                               100,
                                             );
                                           }}
-                                          className="px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"
+                                          className="px-2 sm:px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"
                                         >
                                           Exporteren als JPG
                                         </button>
@@ -7184,7 +7184,7 @@ export default function App() {
                                               id: match.id,
                                             });
                                           }}
-                                          className="px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"
+                                          className="px-2 sm:px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"
                                         >
                                           Cast Menu
                                         </button>
@@ -7196,60 +7196,60 @@ export default function App() {
                                   ref={(el) =>
                                     (extMatchRefs.current[match.id] = el)
                                   }
-                                  className="overflow-x-auto bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] rounded-2xl shadow-sm border border-[#2b6e2b]"
+                                  className="overflow-x-auto -mx-4 sm:mx-0 bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] rounded-2xl shadow-sm border border-[#2b6e2b]"
                                 >
                                   <table className="w-full border-collapse">
-                                    <thead>
-                                      <tr className="bg-[#163a16] text-[#f1c40f] text-[10px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
-                                        <th className="py-4 pl-4 pr-4 text-left border-r border-[#2b6e2b]/30">
+                                    <thead className="hidden sm:table-header-group">
+<tr className="bg-[#163a16] text-[#f1c40f] text-[10px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
+                                        <th className="py-2 sm:py-4 px-2 sm:px-4 text-left border-r border-[#2b6e2b]/30">
                                           Speler (Thuis)
                                         </th>
                                         <th
-                                          className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                          className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell"
                                           title="Inleg (Thuis)"
                                         >
                                           Inleg
                                         </th>
-                                        <th className="py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                        <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
                                           Hoogste Serie
                                         </th>
-                                        <th className="py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                        <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
                                           Gemiddelde
                                         </th>
-                                        <th className="py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                        <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
                                           Caramboles
                                         </th>
-                                        <th className="py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20">
+                                        <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20">
                                           Punten
                                         </th>
-                                        <th className="py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20">
+                                        <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20">
                                           Punten
                                         </th>
-                                        <th className="py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                        <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
                                           Caramboles
                                         </th>
-                                        <th className="py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                        <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
                                           Gemiddelde
                                         </th>
-                                        <th className="py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                        <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
                                           Hoogste Serie
                                         </th>
                                         <th
-                                          className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                          className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell"
                                           title="Inleg (Uit)"
                                         >
                                           Inleg
                                         </th>
-                                        <th className="py-4 pl-4 pr-4 text-right border-r border-[#2b6e2b]/30">
+                                        <th className="py-2 sm:py-4 px-2 sm:px-4 text-right border-r border-[#2b6e2b]/30">
                                           Speler (Uit)
                                         </th>
-                                        <th className="py-4 px-4 text-center exclude-from-share">
+                                        <th className="py-2 sm:py-4 px-2 sm:px-4 text-center exclude-from-share">
                                           Actie
                                         </th>
                                       </tr>
                                     </thead>
-                                    <tbody>
-                                      {(() => {
+                                    <tbody className="block sm:table-row-group">
+{(() => {
                                         let maxPoints =
                                           match.scoringSystem === "driebanden"
                                             ? 2
@@ -7473,11 +7473,9 @@ export default function App() {
                                             }
 
                                             return (
-                                              <tr
-                                                key={game.id}
-                                                className="hover:bg-white/5 transition-colors border-b border-[#2b6e2b]/30 last:border-0"
+                                              <tr key={game.id} className="hover:bg-white/5 transition-colors border-b border-[#2b6e2b]/30 last:border-0 grid grid-cols-[1fr_auto_auto_auto] sm:table-row"
                                               >
-                                                <td className="py-2 pl-4 pr-4 border-r border-[#2b6e2b]/30 text-left">
+                                                <td className="py-1 sm:py-2 px-2 sm:px-4 border-r border-[#2b6e2b]/30 text-left col-start-1 row-start-1">
                                                   <div className="flex items-center">
                                                     <p
                                                       className="font-bold text-white truncate text-base inline-block mr-2"
@@ -7499,7 +7497,7 @@ export default function App() {
                                                   </div>
                                                 </td>
 
-                                                <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                                <td className="py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
                                                   {isClubAdmin(activeClub, currentUser) ||
                                                   currentUser.role ===
                                                     "admin" ||
@@ -7548,7 +7546,7 @@ export default function App() {
                                                   )}
                                                 </td>
 
-                                                <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-white/50">
+                                                <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-white/50 hidden sm:table-cell">
                                                   <div
                                                     className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                     style={{
@@ -7566,7 +7564,7 @@ export default function App() {
                                                   </span>
                                                 </td>
 
-                                                <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-[#f1c40f]">
+                                                <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-[#f1c40f] hidden sm:table-cell">
                                                   <div
                                                     className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                     style={{
@@ -7584,7 +7582,7 @@ export default function App() {
                                                   </span>
                                                 </td>
 
-                                                <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden">
+                                                <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden">
                                                   <div
                                                     className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                     style={{
@@ -7598,7 +7596,7 @@ export default function App() {
                                                   </span>
                                                 </td>
 
-                                                <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
+                                                <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
                                                   <div
                                                     className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                     style={{
@@ -7610,7 +7608,7 @@ export default function App() {
                                                   </span>
                                                 </td>
 
-                                                <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
+                                                <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
                                                   <div
                                                     className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                     style={{
@@ -7622,7 +7620,7 @@ export default function App() {
                                                   </span>
                                                 </td>
 
-                                                <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden">
+                                                <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden">
                                                   <div
                                                     className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                     style={{
@@ -7636,7 +7634,7 @@ export default function App() {
                                                   </span>
                                                 </td>
 
-                                                <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-[#f1c40f]">
+                                                <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-[#f1c40f] hidden sm:table-cell">
                                                   <div
                                                     className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                     style={{
@@ -7654,7 +7652,7 @@ export default function App() {
                                                   </span>
                                                 </td>
 
-                                                <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-white/50">
+                                                <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-white/50 hidden sm:table-cell">
                                                   <div
                                                     className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                     style={{
@@ -7672,7 +7670,7 @@ export default function App() {
                                                   </span>
                                                 </td>
 
-                                                <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                                <td className="py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
                                                   {isClubAdmin(activeClub, currentUser) ||
                                                   currentUser.role ===
                                                     "admin" ||
@@ -7719,7 +7717,7 @@ export default function App() {
                                                   )}
                                                 </td>
 
-                                                <td className="py-2 pl-4 pr-4 border-r border-[#2b6e2b]/30 text-right">
+                                                <td className="py-1 sm:py-2 px-2 sm:px-4 text-left sm:text-right border-r border-[#2b6e2b]/30 col-start-1 row-start-2">
                                                   <div className="flex items-center justify-end">
                                                     <span className="text-[12px] text-emerald-300 font-bold tracking-widest inline-block mr-2 opacity-80">
                                                       (
@@ -7743,7 +7741,7 @@ export default function App() {
                                                   </div>
                                                 </td>
 
-                                                <td className="py-2 px-4 text-center exclude-from-share">
+                                                <td className="py-1 sm:py-2 px-2 sm:px-4 text-center exclude-from-share">
                                                   <div className="flex items-center justify-center">
                                                     {isFinished && (
                                                       <button
@@ -7775,7 +7773,7 @@ export default function App() {
                                         toggleBlockExternalMatch(match.id)
                                       }
                                       className={cn(
-                                        "px-4 py-2 rounded-lg transition-colors text-sm font-bold flex items-center gap-2 border",
+                                        "px-2 sm:px-4 py-2 rounded-lg transition-colors text-sm font-bold flex items-center gap-2 border",
                                         match.isBlocked
                                           ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/30"
                                           : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700",
@@ -7795,7 +7793,7 @@ export default function App() {
                                         setExternalMatchToDeleteId(match.id);
                                         setIsDeleteExternalMatchModalOpen(true);
                                       }}
-                                      className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-800/50 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-bold flex items-center gap-2"
+                                      className="px-2 sm:px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-800/50 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-bold flex items-center gap-2"
                                     >
                                       <Trash2 size={16} />
                                       Uit & Thuis verwijderen
@@ -8103,7 +8101,7 @@ export default function App() {
                                       key={club.id}
                                       className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800"
                                     >
-                                      <div className="w-6 h-6 rounded bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden">
+                                      <div className="w-6 h-6 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 p-0.5">
                                         {club.logo ? (
                                           <img
                                             src={club.logo}
@@ -8421,7 +8419,7 @@ export default function App() {
                                 </div>
                               </div>
                             </div>
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto -mx-4 sm:mx-0 px-0">
                               {(() => {
                                 const filteredMatches = finishedMatches
                                   .filter((match) => {
@@ -8516,16 +8514,16 @@ export default function App() {
                                     <table className="w-full text-left">
                                       <thead>
                                         <tr className="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                                          <th className="py-4 pl-6">Datum</th>
-                                          <th className="py-4">Club</th>
-                                          <th className="py-4">Tegenstander</th>
-                                          <th className="py-4 text-center">
+                                          <th className="py-2 sm:py-4 pl-6">Datum</th>
+                                          <th className="py-2 sm:py-4">Club</th>
+                                          <th className="py-2 sm:py-4">Tegenstander</th>
+                                          <th className="py-2 sm:py-4 text-center">
                                             Uitslag
                                           </th>
-                                          <th className="py-4 text-center">
+                                          <th className="py-2 sm:py-4 text-center">
                                             Punten
                                           </th>
-                                          <th className="py-4 pr-6 text-right">
+                                          <th className="py-2 sm:py-4 pr-6 text-right">
                                             Details
                                           </th>
                                         </tr>
@@ -8748,7 +8746,7 @@ export default function App() {
                                 setSelectedSeasonId(season.id);
                                 setActiveTab("matches");
                               }}
-                              className="px-4 py-2 rounded-lg transition-colors text-sm font-bold border bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center gap-2"
+                              className="px-2 sm:px-4 py-2 rounded-lg transition-colors text-sm font-bold border bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center gap-2"
                             >
                               <History size={16} />
                               Wedstrijden
@@ -8763,7 +8761,7 @@ export default function App() {
                                 setSelectedExternalMatchId(null);
                               }}
                               className={cn(
-                                "px-4 py-2 rounded-lg transition-colors text-sm font-bold border",
+                                "px-2 sm:px-4 py-2 rounded-lg transition-colors text-sm font-bold border",
                                 selectedSeasonId === season.id
                                   ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
                                   : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40",
@@ -8824,7 +8822,7 @@ export default function App() {
                                           setActiveShareDropdown(null);
                                           setTimeout(exportStandings, 100);
                                         }}
-                                        className="px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"
+                                        className="px-2 sm:px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"
                                       >
                                         Exporteren als JPG
                                       </button>
@@ -8833,15 +8831,15 @@ export default function App() {
                                 </div>
                               </div>
                               <div className="rounded-xl border border-[#2b6e2b] shadow-sm overflow-hidden">
-                                <div className="overflow-x-auto">
+                                <div className="overflow-x-auto -mx-4 sm:mx-0 px-0">
                                   <table className="w-full border-collapse">
-                                    <thead>
-                                      <tr className="bg-[#163a16] text-[#f1c40f] text-[10px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
+                                    <thead className="hidden sm:table-header-group">
+<tr className="bg-[#163a16] text-[#f1c40f] text-[10px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
                                         <th className="py-[13.5px] pl-4 text-center w-12 border-r border-[#2b6e2b]/30">
                                           Positie
                                         </th>
                                         <th
-                                          className="py-[13.5px] px-4 text-left cursor-pointer hover:text-white transition-colors border-r border-[#2b6e2b]/30"
+                                          className="py-[13.5px] px-2 sm:px-4 text-left cursor-pointer hover:text-white transition-colors border-r border-[#2b6e2b]/30"
                                           onClick={() => handleSort("name")}
                                         >
                                           <div className="flex items-center gap-1">
@@ -8933,7 +8931,7 @@ export default function App() {
                                               ))}
                                           </div>
                                         </th>
-                                        <th className="py-[13.5px] px-4 text-center exclude-from-share border-l border-[#2b6e2b]/30">
+                                        <th className="py-[13.5px] px-2 sm:px-4 text-center exclude-from-share border-l border-[#2b6e2b]/30">
                                           Kas
                                         </th>
                                       </tr>
@@ -9142,7 +9140,7 @@ export default function App() {
                                                 <td className="py-[13.5px] pl-4 text-center text-[#f1c40f] font-black border-r border-[#2b6e2b]/30">
                                                   {index + 1}
                                                 </td>
-                                                <td className="py-[13.5px] px-4 font-bold text-white border-r border-[#2b6e2b]/30">
+                                                <td className="py-[13.5px] px-2 sm:px-4 font-bold text-white border-r border-[#2b6e2b]/30">
                                                   <div className="flex flex-col">
                                                     <span>
                                                       {memberInfo.name}
@@ -9174,7 +9172,7 @@ export default function App() {
                                                     formatDecimal(v)
                                                   }
                                                 />
-                                                <td className="py-[13.5px] px-4 exclude-from-share text-center">
+                                                <td className="py-[13.5px] px-2 sm:px-4 exclude-from-share text-center">
                                                   <button
                                                     disabled={
                                                       !isClubAdmin(activeClub, currentUser)
@@ -9310,7 +9308,7 @@ export default function App() {
                                 <button
                                   onClick={() => toggleBlockSeason(season.id)}
                                   className={cn(
-                                    "px-4 py-2 rounded-lg transition-colors text-sm font-bold flex items-center gap-2 border",
+                                    "px-2 sm:px-4 py-2 rounded-lg transition-colors text-sm font-bold flex items-center gap-2 border",
                                     season.isBlocked
                                       ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/30"
                                       : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700",
@@ -9331,7 +9329,7 @@ export default function App() {
                                       setSeasonToDeleteId(season.id);
                                       setIsDeleteSeasonModalOpen(true);
                                     }}
-                                    className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-800/50 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-bold flex items-center gap-2"
+                                    className="px-2 sm:px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-800/50 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-bold flex items-center gap-2"
                                   >
                                     <Trash2 size={16} />
                                     Seizoen verwijderen
@@ -9485,7 +9483,7 @@ export default function App() {
                                 </span>
                               </div>
 
-                              <div className="flex items-center justify-center gap-2 px-4 shrink-0 text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                              <div className="flex items-center justify-center gap-2 px-2 sm:px-4 shrink-0 text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                                 Gespeeld: {finishedGames.length}{" "}
                                 &nbsp;&bull;&nbsp; Resterend:{" "}
                                 {plannedGames.length}
@@ -9531,7 +9529,7 @@ export default function App() {
                                           100,
                                         );
                                       }}
-                                      className="px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"
+                                      className="px-2 sm:px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"
                                     >
                                       Exporteren als JPG
                                     </button>
@@ -9543,7 +9541,7 @@ export default function App() {
                                           id: extMatch.id,
                                         });
                                       }}
-                                      className="px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"
+                                      className="px-2 sm:px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"
                                     >
                                       Cast Menu
                                     </button>
@@ -9555,78 +9553,72 @@ export default function App() {
                               ref={(el) =>
                                 (extMatchRefs.current[extMatch.id] = el)
                               }
-                              className="overflow-x-auto bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] rounded-2xl shadow-sm border border-[#2b6e2b]"
+                              className="overflow-x-auto -mx-4 sm:mx-0 bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] rounded-2xl shadow-sm border border-[#2b6e2b]"
                             >
                               <table className="w-full border-collapse">
-                                <thead>
-                                  <tr className="bg-[#163a16] text-[#f1c40f] text-[10px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
-                                    <th className="py-4 pl-4 pr-4 text-left border-r border-[#2b6e2b]/30">
+                                <thead className="hidden sm:table-header-group">
+<tr className="bg-[#163a16] text-[#f1c40f] text-[10px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
+                                    <th className="py-2 sm:py-4 px-2 sm:px-4 text-left border-r border-[#2b6e2b]/30">
                                       Speler (Thuis)
                                     </th>
                                     <th
-                                      className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell"
                                       title="Inleg (Thuis)"
                                     >
                                       Inleg
                                     </th>
-                                    <th
-                                      className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
-                                      title="Hoogste Serie"
-                                    >
+                                    <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell" title="Hoogste Serie">
                                       HS
                                     </th>
                                     <th
-                                      className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30"
                                       title="Gemiddelde"
                                     >
                                       Gem.
                                     </th>
-                                    <th className="py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                    <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
                                       Car.
                                     </th>
                                     <th
-                                      className="py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
+                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
                                       title="Punten (Thuis)"
                                     >
                                       Pnt.
                                     </th>
                                     <th
-                                      className="py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
+                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
                                       title="Punten (Uit)"
                                     >
                                       Pnt.
                                     </th>
-                                    <th className="py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                    <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
                                       Car.
                                     </th>
                                     <th
-                                      className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30"
                                       title="Gemiddelde"
                                     >
                                       Gem.
                                     </th>
-                                    <th
-                                      className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
-                                      title="Hoogste Serie"
-                                    >
+                                    <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell" title="Hoogste Serie">
                                       HS
                                     </th>
                                     <th
-                                      className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell"
                                       title="Inleg (Uit)"
                                     >
                                       Inleg
                                     </th>
-                                    <th className="py-4 pl-4 pr-4 text-right border-r border-[#2b6e2b]/30">
+                                    <th className="py-2 sm:py-4 px-2 sm:px-4 text-right border-r border-[#2b6e2b]/30">
                                       Speler (Uit)
                                     </th>
-                                    <th className="py-4 px-4 text-center exclude-from-share">
+                                    <th className="py-2 sm:py-4 px-2 sm:px-4 text-center exclude-from-share">
                                       Actie
                                     </th>
                                   </tr>
                                 </thead>
-                                <tbody>
-                                  {(() => {
+                                <tbody className="block sm:table-row-group">
+{(() => {
                                     let maxPoints =
                                       extMatch.scoringSystem === "driebanden"
                                         ? 2
@@ -9853,9 +9845,9 @@ export default function App() {
                                         return (
                                           <tr
                                             key={mappedMatch.id}
-                                            className="hover:bg-white/5 transition-colors border-b border-[#2b6e2b]/30 last:border-0"
+                                            className="hover:bg-white/5 transition-colors border-b border-[#2b6e2b]/30 last:border-0 grid grid-cols-[1fr_auto_auto_auto_auto] sm:table-row"
                                           >
-                                            <td className="py-2 pl-4 pr-4 border-r border-[#2b6e2b]/30 text-left">
+                                            <td className="py-1 sm:py-2 px-2 sm:px-4 border-r border-[#2b6e2b]/30 text-left col-start-1 row-start-1">
                                               <div className="flex items-center">
                                                 <p
                                                   className="font-bold text-white truncate text-base inline-block mr-2"
@@ -9902,7 +9894,7 @@ export default function App() {
                                               </div>
                                             </td>
 
-                                            <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                            <td className="py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
                                               {isClubAdmin(activeClub, currentUser) ||
                                               currentUser.role === "admin" ||
                                               currentUser.role === "planner" ? (
@@ -9949,7 +9941,7 @@ export default function App() {
                                               )}
                                             </td>
 
-                                            <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-white/50">
+                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-white/50 hidden sm:table-cell">
                                               <div
                                                 className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                 style={{
@@ -9967,7 +9959,7 @@ export default function App() {
                                               </span>
                                             </td>
 
-                                            <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-[#f1c40f]">
+                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-[#f1c40f] hidden sm:table-cell">
                                               <div
                                                 className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                 style={{
@@ -9985,7 +9977,7 @@ export default function App() {
                                               </span>
                                             </td>
 
-                                            <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden">
+                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden">
                                               <div
                                                 className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                 style={{
@@ -9999,7 +9991,7 @@ export default function App() {
                                               </span>
                                             </td>
 
-                                            <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
+                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
                                               <div
                                                 className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                 style={{
@@ -10013,7 +10005,7 @@ export default function App() {
                                               </span>
                                             </td>
 
-                                            <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
+                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
                                               <div
                                                 className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                 style={{
@@ -10027,7 +10019,7 @@ export default function App() {
                                               </span>
                                             </td>
 
-                                            <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden">
+                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden">
                                               <div
                                                 className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                 style={{
@@ -10041,7 +10033,7 @@ export default function App() {
                                               </span>
                                             </td>
 
-                                            <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-[#f1c40f]">
+                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-[#f1c40f] hidden sm:table-cell">
                                               <div
                                                 className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                 style={{
@@ -10059,7 +10051,7 @@ export default function App() {
                                               </span>
                                             </td>
 
-                                            <td className="relative py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-white/50">
+                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-white/50 hidden sm:table-cell">
                                               <div
                                                 className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                 style={{
@@ -10077,7 +10069,7 @@ export default function App() {
                                               </span>
                                             </td>
 
-                                            <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                            <td className="py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
                                               {isClubAdmin(activeClub, currentUser) ||
                                               currentUser.role === "admin" ||
                                               currentUser.role === "planner" ? (
@@ -10122,7 +10114,7 @@ export default function App() {
                                               )}
                                             </td>
 
-                                            <td className="py-2 pl-4 pr-4 border-r border-[#2b6e2b]/30 text-right">
+                                            <td className="py-1 sm:py-2 px-2 sm:px-4 text-left sm:text-right border-r border-[#2b6e2b]/30 col-start-1 row-start-2">
                                               <div className="flex items-center justify-end">
                                                 <span
                                                   onClick={(e) => {
@@ -10169,7 +10161,7 @@ export default function App() {
                                               </div>
                                             </td>
 
-                                            <td className="py-2 px-4 text-center exclude-from-share">
+                                            <td className="py-1 sm:py-2 px-2 sm:px-4 text-center exclude-from-share">
                                               <div className="flex items-center justify-center">
                                                 {!isFinished &&
                                                   !isStarted &&
@@ -10237,7 +10229,7 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="space-y-8">
-                    <div className="sticky top-0 z-40 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md py-4 -mx-4 px-4 border-b border-transparent data-[sticky=true]:border-slate-200 data-[sticky=true]:dark:border-slate-800 transition-colors flex flex-col md:flex-row gap-4">
+                    <div className="sticky top-0 z-40 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md py-4 -mx-4 px-2 sm:px-4 border-b border-transparent data-[sticky=true]:border-slate-200 data-[sticky=true]:dark:border-slate-800 transition-colors flex flex-col md:flex-row gap-4">
                       <div ref={searchDropdownRef} className="relative flex-1">
                         <Search
                           className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -10287,7 +10279,7 @@ export default function App() {
                                       );
                                       setIsMatchSearchDropdownOpen(false);
                                     }}
-                                    className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-3 border-b border-slate-50 last:border-0 dark:border-slate-800/50"
+                                    className="w-full text-left px-2 sm:px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-3 border-b border-slate-50 last:border-0 dark:border-slate-800/50"
                                   >
                                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400 overflow-hidden shrink-0">
                                       {u.avatar ? (
@@ -10540,7 +10532,7 @@ export default function App() {
                                             "Nog niet gespeelde- en afgemelde wedstrijden worden naar de volgende speeldag verplaats en alles wordt opnieuw ingedeeld.",
                                             () => completeMatchDay(activeSeason.id, date.toISOString())
                                           )}
-                                          className="bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 text-slate-800 dark:text-white transition-all shadow-sm flex items-center gap-2 font-bold text-sm h-[42px]"
+                                          className="bg-white dark:bg-slate-900 px-2 sm:px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 text-slate-800 dark:text-white transition-all shadow-sm flex items-center gap-2 font-bold text-sm h-[42px]"
                                         >
                                           <CheckCircle2 size={16} />
                                           Speeldag voltooien
@@ -10556,7 +10548,7 @@ export default function App() {
                                             );
                                             setIsDailyMatchFeesModalOpen(true);
                                           }}
-                                          className="bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 transition-all shadow-sm flex items-center gap-3 group"
+                                          className="bg-white dark:bg-slate-900 px-2 sm:px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 transition-all shadow-sm flex items-center gap-3 group"
                                         >
                                           <div className="text-left">
                                             <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase leading-none mb-1">
@@ -10616,7 +10608,7 @@ export default function App() {
                                             );
                                             setIsAttendanceModalOpen(true);
                                           }}
-                                          className="bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 transition-all shadow-sm flex items-center gap-3 group"
+                                          className="bg-white dark:bg-slate-900 px-2 sm:px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 transition-all shadow-sm flex items-center gap-3 group"
                                         >
                                           <div className="text-left">
                                             <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase leading-none mb-1">
@@ -10667,89 +10659,83 @@ export default function App() {
                                 </div>
 
                                 {!cancelledReason && (
-                                  <div className="overflow-x-auto bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] rounded-2xl shadow-sm border border-[#2b6e2b]">
+                                  <div className="overflow-x-auto -mx-4 sm:mx-0 bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] rounded-2xl shadow-sm border border-[#2b6e2b]">
                                     <table className="w-full border-collapse">
-                                      <thead>
-                                        <tr className="bg-[#163a16] text-[#f1c40f] text-[10px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
-                                          <th className="py-4 pl-4 pr-4 text-left border-r border-[#2b6e2b]/30">
+                                      <thead className="hidden sm:table-header-group">
+<tr className="bg-[#163a16] text-[#f1c40f] text-[10px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
+                                          <th className="py-2 sm:py-4 px-2 sm:px-4 text-left border-r border-[#2b6e2b]/30">
                                             Speler (Wit)
                                           </th>
                                           <th
-                                            className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                            className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell"
                                             title="Inleg"
                                           >
                                             Inleg
                                           </th>
                                           <th
-                                            className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                            className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell"
                                             title="Aanwezig"
                                           >
                                             Aanw.
                                           </th>
-                                          <th
-                                            className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
-                                            title="Hoogste Serie"
-                                          >
+                                          <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell" title="Hoogste Serie">
                                             HS
                                           </th>
                                           <th
-                                            className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                            className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30"
                                             title="Te maken"
                                           >
                                             Te maken
                                           </th>
-                                          <th className="py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                          <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
                                             Car.
                                           </th>
                                           <th
-                                            className="py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
+                                            className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
                                             title="Punten (Wit)"
                                           >
                                             Pnt.
                                           </th>
                                           <th
-                                            className="py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
+                                            className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
                                             title="Punten (Geel)"
                                           >
                                             Pnt.
                                           </th>
-                                          <th className="py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                          <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
                                             Car.
                                           </th>
                                           <th
-                                            className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                            className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30"
                                             title="Te maken"
                                           >
                                             Te maken
                                           </th>
-                                          <th
-                                            className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
-                                            title="Hoogste Serie"
-                                          >
+                                          <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell" title="Hoogste Serie">
                                             HS
                                           </th>
                                           <th
-                                            className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                            className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell"
                                             title="Aanwezig"
                                           >
                                             Aanw.
                                           </th>
                                           <th
-                                            className="py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                            className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell"
                                             title="Inleg"
                                           >
                                             Inleg
                                           </th>
-                                          <th className="py-4 pl-4 pr-4 text-right border-r border-[#2b6e2b]/30">
+                                          <th className="py-2 sm:py-4 px-2 sm:px-4 text-right border-r border-[#2b6e2b]/30">
                                             Speler (Geel)
                                           </th>
-                                          <th className="py-4 px-4 text-center exclude-from-share">
+                                          <th className="py-2 sm:py-4 px-2 sm:px-4 text-center exclude-from-share">
                                             Actie
                                           </th>
                                         </tr>
                                       </thead>
-                                      <tbody>
-                                        {[...matches].sort((a: Match, b: Match) => {
+                                      <tbody className="block sm:table-row-group">
+{[...matches].sort((a: Match, b: Match) => {
                                           const aIsFinished = a.status === 'finished';
                                           const bIsFinished = b.status === 'finished';
                                           
@@ -10860,14 +10846,14 @@ export default function App() {
                                             <tr
                                               key={match.id}
                                               className={cn(
-                                                "hover:bg-white/5 transition-colors border-b border-[#2b6e2b]/30 last:border-0",
+                                                "hover:bg-white/5 transition-colors border-b border-[#2b6e2b]/30 last:border-0 grid grid-cols-[1fr_auto_auto_auto_auto] sm:table-row",
                                                 isMatchBlocked &&
                                                   "opacity-50 grayscale",
                                                 isCancelled && "bg-rose-900/20",
                                               )}
                                             >
                                               {/* Player 1 Details */}
-                                              <td className="py-2 pl-4 pr-4 border-r border-[#2b6e2b]/30 text-left">
+                                              <td className="py-1 sm:py-2 px-2 sm:px-4 border-r border-[#2b6e2b]/30 text-left col-start-1 row-start-1">
                                                 <div className="flex items-center gap-2">
                                                   {isPlanned &&
                                                     (currentUser.role ===
@@ -10911,7 +10897,7 @@ export default function App() {
                                                 </div>
                                               </td>
 
-                                              <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                              <td className="hidden sm:table-cell py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30">
                                                 {isClubAdmin(activeClub, currentUser) ||
                                                 currentUser.role === "admin" ||
                                                 currentUser.role ===
@@ -10948,7 +10934,7 @@ export default function App() {
                                                 )}
                                               </td>
 
-                                              <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                              <td className="py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
                                                 <button
                                                   onClick={(e) => {
                                                     e.stopPropagation();
@@ -10972,7 +10958,7 @@ export default function App() {
                                                 </button>
                                               </td>
 
-                                              <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                              <td className="hidden sm:table-cell py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30">
                                                 {match.turns?.length > 0 ? (
                                                   <span className="font-bold text-white">
                                                     {p1HighestInfo}
@@ -10984,7 +10970,7 @@ export default function App() {
                                                 )}
                                               </td>
 
-                                              <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                              <td className="col-start-2 row-start-1 py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30">
                                                 <span
                                                   onClick={(e) => {
                                                     if (
@@ -11016,7 +11002,7 @@ export default function App() {
                                                 </span>
                                               </td>
 
-                                              <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                              <td className="col-start-3 row-start-1 py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30">
                                                 {isStarted || isFinished ? (
                                                   <span className="font-black text-white text-xl">
                                                     {p1Score}
@@ -11028,19 +11014,19 @@ export default function App() {
                                                 )}
                                               </td>
 
-                                              <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20">
+                                              <td className="col-start-4 row-start-1 py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20">
                                                 <span className="font-black text-[#f1c40f] text-xl">
                                                   {displayHomePoints}
                                                 </span>
                                               </td>
 
-                                              <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20">
+                                              <td className="col-start-4 row-start-2 py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20">
                                                 <span className="font-black text-[#f1c40f] text-xl">
                                                   {displayAwayPoints}
                                                 </span>
                                               </td>
 
-                                              <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                              <td className="col-start-3 row-start-2 py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30">
                                                 {isStarted || isFinished ? (
                                                   <span className="font-black text-white text-xl">
                                                     {p2Score}
@@ -11052,7 +11038,7 @@ export default function App() {
                                                 )}
                                               </td>
 
-                                              <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                              <td className="col-start-2 row-start-2 py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30">
                                                 <span
                                                   onClick={(e) => {
                                                     if (
@@ -11084,7 +11070,7 @@ export default function App() {
                                                 </span>
                                               </td>
 
-                                              <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                              <td className="hidden sm:table-cell py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30">
                                                 {match.turns?.length > 0 ? (
                                                   <span className="font-bold text-white">
                                                     {p2HighestInfo}
@@ -11096,7 +11082,7 @@ export default function App() {
                                                 )}
                                               </td>
 
-                                              <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                              <td className="py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
                                                 <button
                                                   onClick={(e) => {
                                                     e.stopPropagation();
@@ -11120,7 +11106,7 @@ export default function App() {
                                                 </button>
                                               </td>
 
-                                              <td className="py-2 px-2 text-center border-r border-[#2b6e2b]/30">
+                                              <td className="hidden sm:table-cell py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30">
                                                 {isClubAdmin(activeClub, currentUser) ||
                                                 currentUser.role === "admin" ||
                                                 currentUser.role ===
@@ -11157,7 +11143,7 @@ export default function App() {
                                                 )}
                                               </td>
 
-                                              <td className="py-2 pl-4 pr-4 border-r border-[#2b6e2b]/30 text-right">
+                                              <td className="py-1 sm:py-2 px-2 sm:px-4 text-left sm:text-right border-r border-[#2b6e2b]/30 col-start-1 row-start-2">
                                                 <button
                                                   onClick={() => {
                                                     setSelectedProfileId(
@@ -11178,7 +11164,7 @@ export default function App() {
                                                 </button>
                                               </td>
 
-                                              <td className="py-2 px-4 text-center exclude-from-share">
+                                              <td className="col-start-5 row-start-1 row-span-2 flex flex-col justify-center py-1 sm:py-2 px-2 sm:px-4 text-center exclude-from-share">
                                                 <div className="flex items-center justify-center gap-1">
                                                   {!isFinished &&
                                                     !isStarted &&
@@ -11626,7 +11612,7 @@ export default function App() {
                                       : "",
                                   )}
                                 >
-                                  <td className="py-2 text-[11px] text-slate-400">
+                                  <td className="py-1 sm:py-2 text-[11px] text-slate-400">
                                     {idx + 1}
                                   </td>
                                   <td
@@ -11922,12 +11908,12 @@ export default function App() {
                                 </div>
 
                                 {activeTurnIndex === maxTurns - 1 && (
-                                  <div className="px-4 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold uppercase tracking-widest text-sm rounded-full border border-red-200 dark:border-red-800 shadow-sm animate-pulse">
+                                  <div className="px-2 sm:px-4 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold uppercase tracking-widest text-sm rounded-full border border-red-200 dark:border-red-800 shadow-sm animate-pulse">
                                     Laatste beurt!
                                   </div>
                                 )}
                                 {activeTurnIndex === maxTurns - 2 && (
-                                  <div className="px-4 py-1.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 font-bold uppercase tracking-widest text-sm rounded-full border border-orange-200 dark:border-orange-800 shadow-sm animate-pulse relative">
+                                  <div className="px-2 sm:px-4 py-1.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 font-bold uppercase tracking-widest text-sm rounded-full border border-orange-200 dark:border-orange-800 shadow-sm animate-pulse relative">
                                     <div className="absolute inset-0 bg-orange-400/20 rounded-full animate-ping" />
                                     <span className="relative z-10">
                                       Voorlaatste beurt!
@@ -12181,7 +12167,7 @@ export default function App() {
                                 setP2Paid(true);
                                 setIsCancelMatchModalOpen(true);
                               }}
-                              className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+                              className="px-2 sm:px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
                             >
                               Wedstrijd annuleren
                             </button>
@@ -12213,7 +12199,7 @@ export default function App() {
                                       : "",
                                   )}
                                 >
-                                  <td className="py-2 text-[11px] text-yellow-600/70 dark:text-yellow-400/70">
+                                  <td className="py-1 sm:py-2 text-[11px] text-yellow-600/70 dark:text-yellow-400/70">
                                     {idx + 1}
                                   </td>
                                   <td
@@ -12262,7 +12248,7 @@ export default function App() {
                   </h2>
                   <button
                     onClick={() => setIsBoardMessageModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm font-bold"
+                    className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm font-bold"
                   >
                     <Plus size={20} />
                     <span>Bericht aanmaken</span>
@@ -12405,7 +12391,7 @@ export default function App() {
                         <button
                           onClick={() => setTheme("light")}
                           className={cn(
-                            "px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2",
+                            "px-2 sm:px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2",
                             theme === "light"
                               ? "bg-emerald-600 text-white shadow-md"
                               : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
@@ -12417,7 +12403,7 @@ export default function App() {
                         <button
                           onClick={() => setTheme("dark")}
                           className={cn(
-                            "px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2",
+                            "px-2 sm:px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2",
                             theme === "dark"
                               ? "bg-emerald-600 text-white shadow-md"
                               : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
@@ -12555,15 +12541,15 @@ export default function App() {
                         Nog geen betalingen ontvangen.
                       </div>
                     ) : (
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto -mx-4 sm:mx-0 px-0">
                         <table className="w-full text-left border-collapse">
                           <thead>
                             <tr className="border-b border-slate-200 dark:border-slate-700">
-                              <th className="pb-3 pt-4 px-4 font-bold text-sm text-slate-500 dark:text-slate-400">Datum</th>
-                              <th className="pb-3 pt-4 px-4 font-bold text-sm text-slate-500 dark:text-slate-400">Club</th>
-                              <th className="pb-3 pt-4 px-4 font-bold text-sm text-slate-500 dark:text-slate-400">Omschrijving</th>
-                              <th className="pb-3 pt-4 px-4 font-bold text-sm text-slate-500 dark:text-slate-400">Gebruiker (Admin)</th>
-                              <th className="pb-3 pt-4 px-4 font-bold text-sm text-slate-500 dark:text-slate-400 text-right">Bedrag</th>
+                              <th className="pb-3 pt-4 px-2 sm:px-4 font-bold text-sm text-slate-500 dark:text-slate-400">Datum</th>
+                              <th className="pb-3 pt-4 px-2 sm:px-4 font-bold text-sm text-slate-500 dark:text-slate-400">Club</th>
+                              <th className="pb-3 pt-4 px-2 sm:px-4 font-bold text-sm text-slate-500 dark:text-slate-400">Omschrijving</th>
+                              <th className="pb-3 pt-4 px-2 sm:px-4 font-bold text-sm text-slate-500 dark:text-slate-400 hidden sm:table-cell">Gebruiker (Admin)</th>
+                              <th className="pb-3 pt-4 px-2 sm:px-4 font-bold text-sm text-slate-500 dark:text-slate-400 text-right">Bedrag</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -12574,19 +12560,19 @@ export default function App() {
                                 const user = data.users.find((u: User) => u.id === payment.userId);
                                 return (
                                   <tr key={payment.id} className="hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors">
-                                    <td className="py-4 px-4 text-slate-800 dark:text-slate-200">
+                                    <td className="py-4 px-2 sm:px-4 text-slate-800 dark:text-slate-200">
                                       {new Date(payment.date).toLocaleDateString("nl-NL", { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                     </td>
-                                    <td className="py-4 px-4 font-medium text-slate-800 dark:text-white">
+                                    <td className="py-4 px-2 sm:px-4 font-medium text-slate-800 dark:text-white">
                                       {club?.name || "Onbekende club"}
                                     </td>
-                                    <td className="py-4 px-4 text-slate-600 dark:text-slate-400">
+                                    <td className="py-4 px-2 sm:px-4 text-slate-600 dark:text-slate-400">
                                       {payment.description}
                                     </td>
-                                    <td className="py-4 px-4 text-slate-500 dark:text-slate-400">
+                                    <td className="py-4 px-2 sm:px-4 text-slate-500 dark:text-slate-400">
                                       {user?.name || "Onbekende gebruiker"}
                                     </td>
-                                    <td className="py-4 px-4 font-black text-slate-800 dark:text-white text-right">
+                                    <td className="py-4 px-2 sm:px-4 font-black text-slate-800 dark:text-white text-right">
                                       € {(payment.amount / 100).toFixed(2).replace('.', ',')}
                                     </td>
                                   </tr>
@@ -12667,14 +12653,14 @@ export default function App() {
                   {mobileSubmenu === "home" && (
                     <>
                       <button 
-                        className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "home" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                        className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "home" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
                         onClick={() => { setActiveTab("home"); setMobileSubmenu(null); }}
                       >
                         <Home size={20} />
                         Overzicht
                       </button>
                       <button 
-                        className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "notifications" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                        className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "notifications" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
                         onClick={() => { setActiveTab("notifications"); setMobileSubmenu(null); }}
                       >
                         <MessageSquare size={20} />
@@ -12686,7 +12672,7 @@ export default function App() {
                   {mobileSubmenu === "clubs" && (
                     <>
                       <button 
-                        className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "clubs" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                        className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "clubs" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
                         onClick={() => { setActiveTab("clubs"); setMobileSubmenu(null); }}
                       >
                         <Building2 size={20} />
@@ -12696,14 +12682,14 @@ export default function App() {
                         <>
                           <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
                           <button 
-                            className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "members" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                            className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "members" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
                             onClick={() => { setActiveTab("members"); setMobileSubmenu(null); }}
                           >
                             <Users size={20} />
                             Leden
                           </button>
                           <button 
-                            className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "seasons" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                            className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "seasons" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
                             onClick={() => { setActiveTab("seasons"); setMobileSubmenu(null); }}
                           >
                             <Calendar size={20} />
@@ -12711,7 +12697,7 @@ export default function App() {
                           </button>
                           {activeClub?.participatesInExternalMatches && (
                             <button 
-                              className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "external-matches" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                              className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "external-matches" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
                               onClick={() => { setActiveTab("external-matches"); setMobileSubmenu(null); }}
                             >
                               <Trophy size={20} />
@@ -12719,7 +12705,7 @@ export default function App() {
                             </button>
                           )}
                           <button 
-                            className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "matches" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                            className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "matches" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
                             onClick={() => { setActiveTab("matches"); setMobileSubmenu(null); }}
                           >
                             <History size={20} />
@@ -12727,7 +12713,7 @@ export default function App() {
                           </button>
                           {currentUser.role === "admin" && (
                             <button 
-                              className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "cashbook" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                              className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "cashbook" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
                               onClick={() => { setActiveTab("cashbook"); setMobileSubmenu(null); }}
                             >
                               <Wallet size={20} />
@@ -12742,7 +12728,7 @@ export default function App() {
                   {mobileSubmenu === "profile" && (
                     <>
                       <button 
-                        className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "profile" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                        className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "profile" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
                         onClick={() => { setSelectedProfileId(currentUser.id); setActiveTab("profile"); setMobileSubmenu(null); }}
                       >
                         <UserCircle size={20} />
@@ -12754,7 +12740,7 @@ export default function App() {
                   {mobileSubmenu === "settings" && (
                     <>
                       <button 
-                        className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "settings" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                        className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "settings" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
                         onClick={() => { setActiveTab("settings"); setMobileSubmenu(null); }}
                       >
                         <Settings size={20} />
@@ -12762,7 +12748,7 @@ export default function App() {
                       </button>
                       {currentUser.role === 'applicatiebeheerder' && (
                         <button 
-                          className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "manage" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                          className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "manage" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
                           onClick={() => { setActiveTab("manage"); setMobileSubmenu(null); }}
                         >
                           <Users size={20} />
@@ -12771,7 +12757,7 @@ export default function App() {
                       )}
                       <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
                       <button 
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        className="flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                         onClick={() => { auth.signOut(); setMobileSubmenu(null); }}
                       >
                         <LogOut size={20} />
@@ -12859,7 +12845,7 @@ export default function App() {
                         onClick={() => {
                           setNewClubLogo("");
                                                   }}
-                        className="px-4 py-2 text-sm font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                        className="px-2 sm:px-4 py-2 text-sm font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
                       >
                         Logo Verwijderen / Wijzigen
                       </button>
@@ -12874,48 +12860,18 @@ export default function App() {
                         if (!file) return;
                         
                         setLogoError("");
-                                                
+                        
                         if (file.size > 5 * 1024 * 1024) {
                           setLogoError("Bestand is te groot (max 5MB).");
                           e.target.value = '';
                           return;
                         }
                         
-                        const img = new Image();
                         const objectUrl = URL.createObjectURL(file);
-                        img.onload = () => {
-                          const canvas = document.createElement("canvas");
-                          let width = img.width;
-                          let height = img.height;
-                          const MAX_DIMENSION = 400;
-                          
-                          if (width > height && width > MAX_DIMENSION) {
-                            height *= MAX_DIMENSION / width;
-                            width = MAX_DIMENSION;
-                          } else if (height > MAX_DIMENSION) {
-                            width *= MAX_DIMENSION / height;
-                            height = MAX_DIMENSION;
-                          }
-                          
-                          canvas.width = width;
-                          canvas.height = height;
-                          const ctx = canvas.getContext("2d");
-                          if (ctx) {
-                            ctx.drawImage(img, 0, 0, width, height);
-                            const base64String = canvas.toDataURL("image/jpeg", 0.8);
-                            setNewClubLogo(base64String);
-                          } else {
-                            setLogoError("Fout bij het verwerken van de afbeelding.");
-                          }
-                          URL.revokeObjectURL(objectUrl);
-                        };
-                        img.onerror = () => {
-                          setLogoError("Fout bij het lezen van de afbeelding.");
-                          URL.revokeObjectURL(objectUrl);
-                        };
-                        img.src = objectUrl;
+                        setCropperConfig({ isOpen: true, imageSrc: objectUrl, target: "club" });
+                        e.target.value = '';
                       }}
-                      className="w-full text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 dark:file:bg-emerald-900/30 dark:file:text-emerald-400 transition-colors"
+                      className="w-full text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white file:mr-4 file:py-2 file:px-2 sm:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 dark:file:bg-emerald-900/30 dark:file:text-emerald-400 transition-colors"
                     />
                     {logoError && (
                       <p className="mt-1 text-xs text-red-500">{logoError}</p>
@@ -12963,7 +12919,7 @@ export default function App() {
                     setNewClubLogo("");
                     setNewClubParticipatesExternal(false);
                   }}
-                  className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   Annuleren
                 </button>
@@ -12977,7 +12933,7 @@ export default function App() {
                       newClubCoAdminEmails
                     );
                   }}
-                  className="flex-1 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
                 >
                   {editingClubId ? "Opslaan" : "Club Aanmaken"}
                 </button>
@@ -13024,7 +12980,7 @@ export default function App() {
                     type="text"
                     value={newBoardMessageTitle}
                     onChange={(e) => setNewBoardMessageTitle(e.target.value)}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 sm:px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     placeholder="bijv. Belangrijke mededeling"
                   />
                 </div>
@@ -13034,7 +12990,7 @@ export default function App() {
                   <textarea
                     value={newBoardMessageContent}
                     onChange={(e) => setNewBoardMessageContent(e.target.value)}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 min-h-[150px] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 sm:px-4 py-3 min-h-[150px] focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     placeholder="Typ hier het bericht..."
                   />
                 </div>
@@ -13064,7 +13020,7 @@ export default function App() {
                   <div className="flex items-center gap-4">
                     <button 
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                      className="flex items-center gap-2 px-2 sm:px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                     >
                       <Paperclip size={18} /> {newBoardMessageAttachment ? 'Andere bijlage kiezen' : 'Kies bestand...'}
                     </button>
@@ -13539,7 +13495,7 @@ export default function App() {
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                 <button
                   onClick={() => setIsSeasonModalOpen(false)}
-                  className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   Annuleren
                 </button>
@@ -13581,7 +13537,7 @@ export default function App() {
                     });
                     setIsSeasonModalOpen(false);
                   }}
-                  className="flex-1 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Seizoen Starten
                 </button>
@@ -13722,7 +13678,7 @@ export default function App() {
                     setTransactionExpense("");
                     setTransactionDate(format(new Date(), "yyyy-MM-dd"));
                   }}
-                  className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   Annuleren
                 </button>
@@ -13761,7 +13717,7 @@ export default function App() {
                     setTransactionExpense("");
                     setTransactionDate(format(new Date(), "yyyy-MM-dd"));
                   }}
-                  className="flex-1 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
                 >
                   {editingTransactionId ? "Opslaan" : "Toevoegen"}
                 </button>
@@ -13930,7 +13886,7 @@ export default function App() {
                     setNewMemberParticipatesExternal(false);
                     setNewMemberSendInvite(true);
                   }}
-                  className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   Annuleren
                 </button>
@@ -13961,7 +13917,7 @@ export default function App() {
                       );
                     }
                   }}
-                  className="flex-1 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editingMemberId ? "Opslaan" : "Lid Toevoegen"}
                 </button>
@@ -14013,9 +13969,9 @@ export default function App() {
                   <table className="w-full text-sm">
                     <thead className="bg-slate-50 dark:bg-slate-800 sticky top-0 z-10 shadow-sm">
                       <tr>
-                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Datum</th>
-                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Tegenstander</th>
-                        <th className="px-4 py-3 text-right font-medium text-slate-500 dark:text-slate-400">Actie</th>
+                        <th className="px-2 sm:px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Datum</th>
+                        <th className="px-2 sm:px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Tegenstander</th>
+                        <th className="px-2 sm:px-4 py-3 text-right font-medium text-slate-500 dark:text-slate-400">Actie</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -14036,7 +13992,7 @@ export default function App() {
                         if (futureMatches.length === 0) {
                           return (
                             <tr>
-                              <td colSpan={3} className="px-4 py-4 text-center text-slate-500">
+                              <td colSpan={3} className="px-2 sm:px-4 py-4 text-center text-slate-500">
                                 Geen geplande toekomstige wedstrijden gevonden.
                               </td>
                             </tr>
@@ -14049,13 +14005,13 @@ export default function App() {
                           
                           return (
                             <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                              <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
+                              <td className="px-2 sm:px-4 py-3 text-slate-700 dark:text-slate-300">
                                 {format(new Date(m.date), "d MMM yyyy", { locale: nl })}
                               </td>
-                              <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
+                              <td className="px-2 sm:px-4 py-3 text-slate-700 dark:text-slate-300">
                                 {opponent?.name || "Onbekend"}
                               </td>
-                              <td className="px-4 py-3 text-right">
+                              <td className="px-2 sm:px-4 py-3 text-right">
                                 <button
                                   onClick={() => {
                                     moveMatchToDate(m.id, targetDateIso);
@@ -14077,7 +14033,7 @@ export default function App() {
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
                   <button
                     onClick={() => setRescheduleOpponentModal(null)}
-                    className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors font-medium"
+                    className="px-2 sm:px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors font-medium"
                   >
                     Sluiten
                   </button>
@@ -14120,7 +14076,7 @@ export default function App() {
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                 <button
                   onClick={() => setIsDeleteSeasonModalOpen(false)}
-                  className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   Nee
                 </button>
@@ -14128,7 +14084,7 @@ export default function App() {
                   onClick={() =>
                     seasonToDeleteId && deleteSeason(seasonToDeleteId)
                   }
-                  className="flex-1 px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
                 >
                   Ja
                 </button>
@@ -14170,7 +14126,7 @@ export default function App() {
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                 <button
                   onClick={() => setIsDeleteExternalMatchModalOpen(false)}
-                  className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   Nee
                 </button>
@@ -14179,7 +14135,7 @@ export default function App() {
                     externalMatchToDeleteId &&
                     deleteExternalMatch(externalMatchToDeleteId)
                   }
-                  className="flex-1 px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
                 >
                   Ja
                 </button>
@@ -14319,7 +14275,7 @@ export default function App() {
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                 <button
                   onClick={() => setIsUserSettingsModalOpen(false)}
-                  className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   Annuleren
                 </button>
@@ -14333,7 +14289,7 @@ export default function App() {
                       userSettingsParticipatesExternal,
                     )
                   }
-                  className="flex-1 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
                 >
                   Opslaan
                 </button>
@@ -14417,7 +14373,7 @@ export default function App() {
                         confirmModalConfig.onCancel();
                       setIsConfirmModalOpen(false);
                     }}
-                    className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    className="flex-1 px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                   >
                     Nee
                   </button>
@@ -14427,7 +14383,7 @@ export default function App() {
                     confirmModalConfig.onConfirm();
                     setIsConfirmModalOpen(false);
                   }}
-                  className="flex-1 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
                 >
                   {confirmModalConfig.onCancel !== undefined ? "Ja" : "OK"}
                 </button>
@@ -14478,7 +14434,7 @@ export default function App() {
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                 <button
                   onClick={() => setIsPromptModalOpen(false)}
-                  className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   Annuleren
                 </button>
@@ -14487,7 +14443,7 @@ export default function App() {
                     promptModalConfig.onConfirm(promptValue);
                     setIsPromptModalOpen(false);
                   }}
-                  className="flex-1 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
                 >
                   Bevestigen
                 </button>
@@ -14992,7 +14948,7 @@ export default function App() {
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                 <button
                   onClick={() => setIsStartMatchModalOpen(false)}
-                  className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   Annuleren
                 </button>
@@ -15030,7 +14986,7 @@ export default function App() {
                       setSelectedTafelNummer(available || 1);
                     }
                   }}
-                  className="flex-1 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-2 sm:px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Starten
                 </button>
@@ -15107,7 +15063,7 @@ export default function App() {
                     <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                       <button
                         onClick={() => setIsFinishMatchModalOpen(false)}
-                        className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        className="flex-1 px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                       >
                         Nee, ga terug
                       </button>
@@ -15124,7 +15080,7 @@ export default function App() {
                             setIsFinishMatchModalOpen(false);
                           }
                         }}
-                        className="flex-1 px-4 py-2 bg-slate-800 dark:bg-slate-700 text-white font-bold rounded-lg hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors"
+                        className="flex-1 px-2 sm:px-4 py-2 bg-slate-800 dark:bg-slate-700 text-white font-bold rounded-lg hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors"
                       >
                         Ja, afronden
                       </button>
@@ -15206,7 +15162,7 @@ export default function App() {
                     <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                       <button
                         onClick={() => setIsCancelMatchModalOpen(false)}
-                        className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        className="flex-1 px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                       >
                         Nee, ga terug
                       </button>
@@ -15223,7 +15179,7 @@ export default function App() {
                             setIsCancelMatchModalOpen(false);
                           }
                         }}
-                        className="flex-1 px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-lg"
+                        className="flex-1 px-2 sm:px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-lg"
                       >
                         Ja, annuleren
                       </button>
@@ -15419,7 +15375,7 @@ export default function App() {
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50">
                 <button
                   onClick={() => setIsForecastModalOpen(false)}
-                  className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="w-full px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   Sluiten
                 </button>
@@ -15470,7 +15426,7 @@ export default function App() {
                       value={cancelDayReason}
                       onChange={(e) => setCancelDayReason(e.target.value)}
                       placeholder="Bijv. Zaal gesloten, Feestdag, etc."
-                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-rose-500 outline-none transition-all min-h-[100px] resize-none"
+                      className="w-full px-2 sm:px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-rose-500 outline-none transition-all min-h-[100px] resize-none"
                     />
                   </div>
 
@@ -15492,7 +15448,7 @@ export default function App() {
                     setCancelDayReason("");
                     setCancelDayDate(null);
                   }}
-                  className="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   Annuleren
                 </button>
@@ -15507,7 +15463,7 @@ export default function App() {
                       cancelDayReason,
                     )
                   }
-                  className="flex-1 px-4 py-3 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-colors shadow-lg shadow-rose-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-2 sm:px-4 py-3 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-colors shadow-lg shadow-rose-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Afmelden & Herplannen
                 </button>
@@ -15561,7 +15517,7 @@ export default function App() {
                             onChange={(e) =>
                               setNewHomeMatchDate(e.target.value)
                             }
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                            className="w-full px-2 sm:px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                           />
                         </div>
                         <div>
@@ -15573,7 +15529,7 @@ export default function App() {
                             onChange={(e) =>
                               setNewHomeMatchAwayClubId(e.target.value)
                             }
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                            className="w-full px-2 sm:px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                           >
                             <option value="">Kies een club...</option>
                             {data.clubs
@@ -15601,7 +15557,7 @@ export default function App() {
                                 Number(e.target.value),
                               )
                             }
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                            className="w-full px-2 sm:px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                           >
                             <option value={1}>1</option>
                             <option value={2}>2</option>
@@ -15623,7 +15579,7 @@ export default function App() {
                                 parseInt(e.target.value) || 30,
                               )
                             }
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                            className="w-full px-2 sm:px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                           />
                         </div>
                       </div>
@@ -15693,7 +15649,7 @@ export default function App() {
                               onChange={(e) =>
                                 setNewHomeMatchSeasonId(e.target.value)
                               }
-                              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                              className="w-full px-2 sm:px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                             >
                               <option value="">
                                 Niet verwerken in kasboek
@@ -15770,14 +15726,14 @@ export default function App() {
                         setIsHomeMatchModalOpen(false);
                         setHomeMatchStep(1);
                       }}
-                      className="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                      className="flex-1 px-2 sm:px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                     >
                       Annuleren
                     </button>
                     <button
                       disabled={!newHomeMatchAwayClubId || !newHomeMatchDate}
                       onClick={handleNextStepHomeMatch}
-                      className="flex-1 px-4 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 px-2 sm:px-4 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Volgende
                     </button>
@@ -15802,7 +15758,7 @@ export default function App() {
 
                     <div className="space-y-4">
                       {homeMatchPairings.length > 0 && (
-                        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                        <div className="overflow-x-auto -mx-4 sm:mx-0 rounded-none sm:rounded-xl border-y sm:border-x border border-slate-200 dark:border-slate-700">
                           <table className="w-full text-left border-collapse">
                             <thead>
                               <tr className="bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
@@ -15969,7 +15925,7 @@ export default function App() {
                             },
                           ]);
                         }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 dark:border-slate-700 bg-transparent text-slate-500 hover:text-emerald-600 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl transition-all font-bold"
+                        className="w-full flex items-center justify-center gap-2 px-2 sm:px-4 py-3 border-2 border-dashed border-slate-300 dark:border-slate-700 bg-transparent text-slate-500 hover:text-emerald-600 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl transition-all font-bold"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -15992,7 +15948,7 @@ export default function App() {
                   <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
                     <button
                       onClick={() => setHomeMatchStep(1)}
-                      className="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                      className="flex-1 px-2 sm:px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                     >
                       Terug
                     </button>
@@ -16004,7 +15960,7 @@ export default function App() {
                         )
                       }
                       onClick={createHomeMatch}
-                      className="flex-1 px-4 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 px-2 sm:px-4 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Aanmaken
                     </button>
@@ -16129,7 +16085,7 @@ export default function App() {
                 </div>
                 <button
                   onClick={() => setIsAttendanceModalOpen(false)}
-                  className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition-all"
+                  className="w-full px-2 sm:px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition-all"
                 >
                   Klaar
                 </button>
@@ -16630,7 +16586,7 @@ export default function App() {
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800">
                 <button
                   onClick={() => setIsContributionsDetailModalOpen(false)}
-                  className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="w-full px-2 sm:px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   Sluiten
                 </button>
@@ -16705,7 +16661,7 @@ export default function App() {
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex gap-3">
                 <button
                   onClick={() => setIsEditSpeeldagenModalOpen(false)}
-                  className="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex-1 px-2 sm:px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   Annuleren
                 </button>
@@ -16724,7 +16680,7 @@ export default function App() {
                       }
                     );
                   }}
-                  className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-2 sm:px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Opslaan
                 </button>
@@ -17357,7 +17313,7 @@ function SidebarItem({
       onClick={onClick}
       title={collapsed ? label : undefined}
       className={cn(
-        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium",
+        "w-full flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-all font-medium",
         active
           ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 shadow-sm"
           : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200",

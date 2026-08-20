@@ -52,7 +52,7 @@ export function ImageCropperModal({ isOpen, imageSrc, onClose, onCropComplete }:
             </div>
             
             <div className="relative flex-1 bg-black">
-              <Cropper
+              <Cropper restrictPosition={false} minZoom={0.2} maxZoom={1.8}
                 image={imageSrc}
                 crop={crop}
                 zoom={zoom}
@@ -71,8 +71,8 @@ export function ImageCropperModal({ isOpen, imageSrc, onClose, onCropComplete }:
                 <input
                   type="range"
                   value={zoom}
-                  min={1}
-                  max={3}
+                  min={0.2}
+                  max={1.8}
                   step={0.1}
                   aria-labelledby="Zoom"
                   onChange={(e) => setZoom(Number(e.target.value))}
@@ -140,5 +140,5 @@ async function getCroppedImg(
     finalHeight
   );
 
-  return canvas.toDataURL('image/jpeg', 0.8);
+  return canvas.toDataURL('image/png');
 }

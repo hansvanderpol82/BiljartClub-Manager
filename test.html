@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div class="overflow-x-auto w-full">
+    <table class="w-full">
+      <thead class="hidden sm:table-header-group">
+        <tr>
+          <th>P1</th><th>Car1</th><th>Pnt1</th><th>Pnt2</th><th>Car2</th><th>P2</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody class="block sm:table-row-group">
+        <tr class="grid grid-cols-[1fr_auto_auto_auto] sm:table-row border-b">
+          <td class="col-start-1 row-start-1 border">Player 1 Name</td>
+          <td class="col-start-2 row-start-1 border">Car 1</td>
+          <td class="col-start-3 row-start-1 border">Pnt 1</td>
+          <td class="col-start-3 row-start-2 border">Pnt 2</td>
+          <td class="col-start-2 row-start-2 border">Car 2</td>
+          <td class="col-start-1 row-start-2 border">Player 2 Name</td>
+          <td class="col-start-4 row-start-1 row-span-2 border flex items-center justify-center">Action</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
