@@ -150,3 +150,30 @@ export interface AppPayment {
   clubId?: string;
   userId: string;
 }
+
+export interface BoardMessageReply {
+  id: string;
+  authorId: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface BoardMessage {
+  id: string;
+  title: string;
+  content: string;
+  attachment?: {
+    name: string;
+    type: string;
+    dataUrl: string;
+  };
+  authorId: string;
+  targetClubId?: string;
+  targetRoles?: ('applicatiebeheerder' | 'admin' | 'planner' | 'member')[];
+  createdAt: string;
+  readBy: string[];
+  keptOnHomeBy: string[];
+  archivedBy: string[];
+  deletedBy: string[];
+  replies: BoardMessageReply[];
+}

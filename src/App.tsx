@@ -57,6 +57,8 @@ import {
   Home,
   Pencil,
   Edit,
+  MessageSquare,
+  Paperclip,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toJpeg } from "html-to-image";
@@ -85,6 +87,7 @@ import { auth, googleProvider, db } from "./lib/firebase";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { signInWithEmailAndPassword, signInWithPopup, User as FirebaseUser, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { Login } from "./components/Login";
+import { BoardMessageCard } from "./components/BoardMessageCard";
 import {
   User,
   Club,
@@ -93,6 +96,8 @@ import {
   MemberStats,
   SeasonMember,
   Transaction,
+  BoardMessage,
+  BoardMessageReply,
 } from "./types";
 
 
@@ -105,6 +110,8 @@ const HomeTab = ({
   setSelectedSeasonId,
   setData,
   handleRescheduleUnplayedMatches,
+  handleBoardMessageAction,
+  executeAddBoardMessageReply,
 }: {
   data: any;
   currentUser: User;
@@ -113,6 +120,8 @@ const HomeTab = ({
   setSelectedSeasonId: (id: string) => void;
   setData: any;
   handleRescheduleUnplayedMatches: any;
+  handleBoardMessageAction: (msgId: string, action: "read" | "keep" | "archive" | "delete", value?: boolean) => void;
+  executeAddBoardMessageReply: (msgId: string, content: string) => void;
 }) => {
   const [isAbsenceModalOpen, setIsAbsenceModalOpen] = useState(false);
   const [absenceDate, setAbsenceDate] = useState("");
@@ -128,6 +137,24 @@ const HomeTab = ({
   const openSeasons = data.seasons.filter(
     (s: Season) => s.status === 'open' && !s.isBlocked && userClubs.some((c: Club) => c.id === s.clubId)
   );
+
+  const allBoardMessages = data.boardMessages || [];
+  const accessibleBoardMessages = allBoardMessages.filter((m: BoardMessage) => {
+    // Check deletion and archive
+    if (m.deletedBy?.includes(currentUser.id) || m.archivedBy?.includes(currentUser.id)) return false;
+    
+    // Check club targeting
+    if (m.targetClubId && !userClubs.some((c: Club) => c.id === m.targetClubId) && currentUser.role !== "applicatiebeheerder") return false;
+    
+    // Check role targeting
+    if (m.targetRoles && m.targetRoles.length > 0 && !m.targetRoles.includes(currentUser.role)) return false;
+
+    return true;
+  }).sort((a: BoardMessage, b: BoardMessage) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const activeHomeMessages = accessibleBoardMessages.filter((m: BoardMessage) => {
+    return !m.readBy?.includes(currentUser.id) || m.keptOnHomeBy?.includes(currentUser.id);
+  });
 
   const notifications = data.notifications || [];
   const activeNotifications = notifications.filter(
@@ -303,6 +330,28 @@ const HomeTab = ({
           Welkom, {currentUser.shortName || currentUser.name}
         </h2>
       </div>
+
+      {activeHomeMessages.length > 0 && (
+        <div className="mb-8 space-y-4">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <MessageSquare size={20} className="text-emerald-500" />
+            Nieuw op het Prikbord
+          </h3>
+          <div className="space-y-4">
+            {activeHomeMessages.map((msg: BoardMessage) => (
+              <BoardMessageCard 
+                key={msg.id} 
+                message={msg} 
+                currentUser={currentUser} 
+                users={data.users} 
+                onAction={handleBoardMessageAction}
+                onReply={executeAddBoardMessageReply}
+                showKeepOnHomeOption={true}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {activeNotifications.length > 0 && (
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 shadow-sm space-y-4">
@@ -994,7 +1043,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!authUser) {
+    const isCast = new URLSearchParams(window.location.search).get("cast") === "true";
+    if (!authUser && !isCast) {
       setDataLoaded(false);
       return;
     }
@@ -1269,6 +1319,13 @@ export default function App() {
   const [newClubCoAdminEmails, setNewClubCoAdminEmails] = useState("");
   const [editingClubId, setEditingClubId] = useState<string | null>(null);
   const [isSeasonModalOpen, setIsSeasonModalOpen] = useState(false);
+  const [isBoardMessageModalOpen, setIsBoardMessageModalOpen] = useState(false);
+  const [newBoardMessageTitle, setNewBoardMessageTitle] = useState("");
+  const [newBoardMessageContent, setNewBoardMessageContent] = useState("");
+  const [newBoardMessageTargetClub, setNewBoardMessageTargetClub] = useState<string>("all");
+  const [newBoardMessageTargetRoles, setNewBoardMessageTargetRoles] = useState<string[]>([]);
+  const [newBoardMessageAttachment, setNewBoardMessageAttachment] = useState<{name: string, type: string, dataUrl: string} | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [newSeasonName, setNewSeasonName] = useState("");
   const [newSeasonSpeeldagen, setNewSeasonSpeeldagen] = useState<string[]>([
     "maandag",
@@ -1448,6 +1505,7 @@ export default function App() {
   const [isClubsSubmenuOpen, setIsClubsSubmenuOpen] = useState(true);
   const [isSeasonsSubmenuOpen, setIsSeasonsSubmenuOpen] = useState(true);
   const [isSettingsSubmenuOpen, setIsSettingsSubmenuOpen] = useState(false);
+  const [isHomeSubmenuOpen, setIsHomeSubmenuOpen] = useState(true);
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     const saved = localStorage.getItem("theme");
     return (saved as "light" | "dark") || "light";
@@ -2198,7 +2256,28 @@ export default function App() {
     }
   }, [isSeasonModalOpen, activeClub, data.users]);
 
-  if (authLoading) {
+
+  const appUserClubs = useMemo(() => {
+    if (!currentUser || !data?.clubs) return [];
+    return data.clubs.filter((c: Club) => 
+      (c.memberIds || []).includes(currentUser.id) || 
+      (currentUser.role === 'applicatiebeheerder' && c.allowAppAdminAccess)
+    );
+  }, [currentUser, data?.clubs]);
+
+  const accessibleBoardMessages = useMemo(() => {
+    if (!currentUser || !data?.boardMessages) return [];
+    return data.boardMessages.filter((m: BoardMessage) => {
+      if (m.deletedBy?.includes(currentUser.id) || m.archivedBy?.includes(currentUser.id)) return false;
+      if (m.targetClubId && !appUserClubs.some((c: Club) => c.id === m.targetClubId) && currentUser.role !== "applicatiebeheerder") return false;
+      if (m.targetRoles && m.targetRoles.length > 0 && !m.targetRoles.includes(currentUser.role)) return false;
+      return true;
+    }).sort((a: BoardMessage, b: BoardMessage) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [currentUser, data?.boardMessages, appUserClubs]);
+
+  const isCastQuery = new URLSearchParams(window.location.search).get("cast") === "true";
+
+  if (authLoading && !isCastQuery) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-4">
         <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -2207,7 +2286,7 @@ export default function App() {
     );
   }
 
-  if (!authUser) {
+  if (!authUser && !isCastQuery) {
     return <Login />;
   }
 
@@ -2419,6 +2498,91 @@ export default function App() {
         }));
       },
     );
+  };
+
+  const executeCreateBoardMessage = () => {
+    if (!newBoardMessageTitle || !newBoardMessageContent) return;
+
+    const userClubs = data.clubs.filter((c: Club) => 
+      (c.memberIds || []).includes(currentUser.id) || 
+      (currentUser.role === 'applicatiebeheerder' && c.allowAppAdminAccess)
+    );
+    const targetClub = selectedClubId || (userClubs.length > 0 ? userClubs[0].id : undefined);
+
+    const newMsg: BoardMessage = {
+      id: Math.random().toString(36).substr(2, 9),
+      title: newBoardMessageTitle,
+      content: newBoardMessageContent,
+      authorId: currentUser.id,
+      attachment: newBoardMessageAttachment || undefined,
+      targetClubId: currentUser.role === "applicatiebeheerder" ? undefined : targetClub,
+      targetRoles: newBoardMessageTargetRoles.length > 0 ? newBoardMessageTargetRoles as any[] : undefined,
+      createdAt: new Date().toISOString(),
+      readBy: [],
+      keptOnHomeBy: [],
+      archivedBy: [],
+      deletedBy: [],
+      replies: []
+    };
+
+    setData((prev: any) => ({
+      ...prev,
+      boardMessages: [newMsg, ...(prev.boardMessages || [])]
+    }));
+
+    setIsBoardMessageModalOpen(false);
+    setNewBoardMessageTitle("");
+    setNewBoardMessageContent("");
+    setNewBoardMessageTargetClub("all");
+    setNewBoardMessageTargetRoles([]);
+    setNewBoardMessageAttachment(null);
+  };
+
+  const handleBoardMessageAction = (msgId: string, action: "read" | "keep" | "archive" | "delete", value?: boolean) => {
+    setData((prev: any) => {
+      const messages = prev.boardMessages || [];
+      return {
+        ...prev,
+        boardMessages: messages.map((m: BoardMessage) => {
+          if (m.id !== msgId) return m;
+          const uId = currentUser.id;
+          
+          let { readBy, keptOnHomeBy, archivedBy, deletedBy } = m;
+          
+          if (action === "read") {
+            if (!readBy.includes(uId)) readBy = [...readBy, uId];
+          } else if (action === "keep") {
+            if (value && !keptOnHomeBy.includes(uId)) keptOnHomeBy = [...keptOnHomeBy, uId];
+            if (!value) keptOnHomeBy = keptOnHomeBy.filter(id => id !== uId);
+          } else if (action === "archive") {
+            if (!archivedBy.includes(uId)) archivedBy = [...archivedBy, uId];
+          } else if (action === "delete") {
+            if (!deletedBy.includes(uId)) deletedBy = [...deletedBy, uId];
+          }
+          
+          return { ...m, readBy, keptOnHomeBy, archivedBy, deletedBy };
+        })
+      };
+    });
+  };
+
+  const executeAddBoardMessageReply = (msgId: string, content: string) => {
+    setData((prev: any) => {
+      const messages = prev.boardMessages || [];
+      return {
+        ...prev,
+        boardMessages: messages.map((m: BoardMessage) => {
+          if (m.id !== msgId) return m;
+          const newReply: BoardMessageReply = {
+            id: Math.random().toString(36).substr(2, 9),
+            authorId: currentUser.id,
+            content,
+            createdAt: new Date().toISOString()
+          };
+          return { ...m, replies: [...(m.replies || []), newReply] };
+        })
+      };
+    });
   };
 
   const executeCreateSeason = (seasonData: Partial<Season>) => {
@@ -5525,9 +5689,35 @@ export default function App() {
             icon={<Home size={20} />}
             label="Home"
             active={activeTab === "home"}
-            onClick={() => setActiveTab("home")}
+            onClick={() => {
+              setActiveTab("home");
+              setIsHomeSubmenuOpen(!isHomeSubmenuOpen);
+            }}
             collapsed={isSidebarCollapsed}
+            hasSubmenu={true}
+            submenuOpen={isHomeSubmenuOpen}
           />
+          <AnimatePresence initial={false}>
+            {isHomeSubmenuOpen && (
+              <motion.div
+                key="home-submenu"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden space-y-2 pl-4"
+              >
+                <SidebarItem
+                  icon={<MessageSquare size={20} />}
+                  label="Prikbord"
+                  isSubItem
+                  active={activeTab === "notifications"}
+                  onClick={() => setActiveTab("notifications")}
+                  collapsed={isSidebarCollapsed}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
           <SidebarItem
             icon={<Building2 size={20} />}
             label="Clubs"
@@ -5633,13 +5823,8 @@ export default function App() {
             icon={<Settings size={20} />}
             label="Instellingen"
             active={activeTab === "settings"}
-            onClick={() => {
-              setActiveTab("settings");
-              setIsSettingsSubmenuOpen(!isSettingsSubmenuOpen);
-            }}
+            onClick={() => setActiveTab("settings")}
             collapsed={isSidebarCollapsed}
-            hasSubmenu={true}
-            submenuOpen={isSettingsSubmenuOpen}
           />
           {currentUser.role === 'applicatiebeheerder' && (
             <SidebarItem
@@ -5650,27 +5835,6 @@ export default function App() {
               collapsed={isSidebarCollapsed}
             />
           )}
-          <AnimatePresence initial={false}>
-            {isSettingsSubmenuOpen && (
-              <motion.div
-                key="settings-submenu"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden space-y-2 pl-4"
-              >
-                <SidebarItem
-                  icon={<Bell size={20} />}
-                  label="Meldinghistorie"
-                  isSubItem
-                  active={activeTab === "notifications"}
-                  onClick={() => setActiveTab("notifications")}
-                  collapsed={isSidebarCollapsed}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
           <SidebarItem
             icon={<LogOut size={20} />}
             label="Uitloggen"
@@ -5949,6 +6113,8 @@ export default function App() {
                 setSelectedSeasonId={setSelectedSeasonId}
                 setData={setData}
                 handleRescheduleUnplayedMatches={handleRescheduleUnplayedMatches}
+                handleBoardMessageAction={handleBoardMessageAction}
+                executeAddBoardMessageReply={executeAddBoardMessageReply}
               />
             )}
             {activeTab === "clubs" && (
@@ -12025,14 +12191,38 @@ export default function App() {
               >
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                    <Bell size={24} className="text-emerald-500" />
-                    Meldinghistorie
+                    <MessageSquare size={24} className="text-emerald-500" />
+                    Prikbord
                   </h2>
+                  <button
+                    onClick={() => setIsBoardMessageModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm font-bold"
+                  >
+                    <Plus size={20} />
+                    <span>Bericht aanmaken</span>
+                  </button>
                 </div>
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-8 text-center">
-                  <BellOff size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
-                  <p className="text-slate-500 dark:text-slate-400">Er zijn nog geen meldingen.</p>
-                </div>
+
+                {accessibleBoardMessages.length === 0 ? (
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-8 text-center">
+                    <MessageSquare size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                    <p className="text-slate-500 dark:text-slate-400">Er zijn nog geen berichten op het prikbord.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {accessibleBoardMessages.map((msg: BoardMessage) => (
+                      <BoardMessageCard 
+                        key={msg.id} 
+                        message={msg} 
+                        currentUser={currentUser} 
+                        users={data.users} 
+                        onAction={handleBoardMessageAction}
+                        onReply={executeAddBoardMessageReply}
+                        showKeepOnHomeOption={true}
+                      />
+                    ))}
+                  </div>
+                )}
               </motion.div>
             )}
             {activeTab === "settings" && (
@@ -12351,15 +12541,6 @@ export default function App() {
                         Deze module is gereserveerd voor het beheren van kortingscodes en actietarieven voor clubs. (Binnenkort beschikbaar)
                       </p>
                     </div>
-                    <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 opacity-70">
-                      <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
-                        <Mail size={20} className="text-blue-500" />
-                        Berichten naar Clubs
-                      </h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Deze module is gereserveerd om systeemberichten en updates te communiceren naar club-admins. (Binnenkort beschikbaar)
-                      </p>
-                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -12655,6 +12836,156 @@ export default function App() {
                   className="flex-1 px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
                 >
                   {editingClubId ? "Opslaan" : "Club Aanmaken"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Board Message Modal */}
+      <AnimatePresence>
+        {isBoardMessageModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsBoardMessageModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                  <MessageSquare size={24} className="text-emerald-500" />
+                  Nieuw Bericht Aanmaken
+                </h3>
+                <button
+                  onClick={() => setIsBoardMessageModalOpen(false)}
+                  className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto space-y-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Titel</label>
+                  <input
+                    type="text"
+                    value={newBoardMessageTitle}
+                    onChange={(e) => setNewBoardMessageTitle(e.target.value)}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="bijv. Belangrijke mededeling"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Inhoud</label>
+                  <textarea
+                    value={newBoardMessageContent}
+                    onChange={(e) => setNewBoardMessageContent(e.target.value)}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 min-h-[150px] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Typ hier het bericht..."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Bijlage toevoegen (Optioneel)</label>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef}
+                    className="hidden" 
+                    accept="image/*,application/pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setNewBoardMessageAttachment({
+                            name: file.name,
+                            type: file.type,
+                            dataUrl: event.target?.result as string
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }} 
+                  />
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      <Paperclip size={18} /> {newBoardMessageAttachment ? 'Andere bijlage kiezen' : 'Kies bestand...'}
+                    </button>
+                    {newBoardMessageAttachment && (
+                      <span className="text-sm text-slate-500 truncate max-w-[200px]">
+                        {newBoardMessageAttachment.name}
+                      </span>
+                    )}
+                    {newBoardMessageAttachment && (
+                       <button 
+                         onClick={() => setNewBoardMessageAttachment(null)}
+                         className="text-red-500 hover:text-red-600 p-1"
+                         title="Verwijder bijlage"
+                       >
+                         <X size={16} />
+                       </button>
+                    )}
+                  </div>
+                </div>
+
+
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Zichtbaar voor (Optioneel)</label>
+                  <div className="flex flex-col gap-2 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                    {[
+                      { id: 'admin', label: 'Admins' },
+                      { id: 'planner', label: 'Planners' },
+                      { id: 'member', label: 'Leden' },
+                    ].map(role => (
+                      <label key={role.id} className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newBoardMessageTargetRoles.includes(role.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewBoardMessageTargetRoles(prev => [...prev, role.id]);
+                            } else {
+                              setNewBoardMessageTargetRoles(prev => prev.filter(r => r !== role.id));
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{role.label}</span>
+                      </label>
+                    ))}
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Laat leeg om naar alle soorten leden te sturen.</p>
+                  </div>
+                </div>
+
+              </div>
+
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-end gap-3">
+                <button
+                  onClick={() => setIsBoardMessageModalOpen(false)}
+                  className="px-6 py-2 rounded-xl text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Annuleren
+                </button>
+                <button
+                  onClick={executeCreateBoardMessage}
+                  disabled={!newBoardMessageTitle || !newBoardMessageContent}
+                  className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  Plaats Bericht
                 </button>
               </div>
             </motion.div>
