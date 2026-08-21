@@ -408,7 +408,7 @@ const HomeTab = ({
               const matchesOnNextDate = nextDate ? plannedMatches.filter((m: Match) => m.date === nextDate) : [];
               
               return (
-                <div key={`upcoming-${season.id}`} className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div key={`upcoming-${season.id}`} className="bg-white dark:bg-slate-900 sm:rounded-2xl p-4 sm:p-6 border-y sm:border border-slate-200 dark:border-slate-800 shadow-sm -mx-4 sm:mx-0">
                   <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                     <Calendar size={20} className="text-emerald-500" />
                     Aankomende Wedstrijden
@@ -490,7 +490,7 @@ const HomeTab = ({
               
               return (
                 <div key={`standings-${season.id}`} className="space-y-8">
-                  <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                  <div className="bg-white dark:bg-slate-900 sm:rounded-2xl p-4 sm:p-6 border-y sm:border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between -mx-4 sm:mx-0">
                     <div>
                       <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-1">
                         <Wallet size={20} className={isPaid ? "text-emerald-500" : "text-amber-500"} />
@@ -510,7 +510,7 @@ const HomeTab = ({
                     </div>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="bg-white dark:bg-slate-900 sm:rounded-2xl p-4 sm:p-6 border-y sm:border border-slate-200 dark:border-slate-800 shadow-sm -mx-4 sm:mx-0">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                       <Trophy size={20} className="text-amber-500" />
                       Tussenstand
@@ -519,10 +519,10 @@ const HomeTab = ({
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
-                            <th className="pb-2 font-medium w-8">#</th>
+                            <th className="pb-2 font-medium w-8 pl-4 sm:pl-0">#</th>
                             <th className="pb-2 font-medium">Naam</th>
                             <th className="pb-2 font-medium text-right">Pnt</th>
-                            <th className="pb-2 font-medium text-right">Gem</th>
+                            <th className="pb-2 font-medium text-right pr-4 sm:pr-0">Gem</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -531,13 +531,13 @@ const HomeTab = ({
                               "transition-colors",
                               stat.userId === currentUser.id ? "bg-emerald-50/50 dark:bg-emerald-900/10" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
                             )}>
-                              <td className="py-1 sm:py-2.5 text-slate-400 font-bold">{idx + 1}</td>
+                              <td className="py-1 sm:py-2.5 text-slate-400 font-bold pl-4 sm:pl-0">{idx + 1}</td>
                               <td className={cn(
                                 "py-2.5 font-medium",
                                 stat.userId === currentUser.id ? "text-emerald-700 dark:text-emerald-400 font-bold" : "text-slate-700 dark:text-slate-300"
                               )}>{stat.name}</td>
                               <td className="py-1 sm:py-2.5 text-right font-bold text-slate-800 dark:text-white">{stat.totalPoints}</td>
-                              <td className="py-1 sm:py-2.5 text-right text-slate-500">{formatDecimal(stat.currentAvg, 3)}</td>
+                              <td className="py-1 sm:py-2.5 text-right text-slate-500 pr-4 sm:pr-0">{formatDecimal(stat.currentAvg, 3)}</td>
                             </tr>
                           ))}
                           
@@ -547,14 +547,14 @@ const HomeTab = ({
                                 <td colSpan={4} className="py-1 text-center text-slate-300 dark:text-slate-600">...</td>
                               </tr>
                               <tr className="bg-emerald-50/50 dark:bg-emerald-900/10 transition-colors">
-                                <td className="py-1 sm:py-2.5 text-slate-400 font-bold">{userStandingIndex + 1}</td>
+                                <td className="py-1 sm:py-2.5 text-slate-400 font-bold pl-4 sm:pl-0">{userStandingIndex + 1}</td>
                                 <td className="py-1 sm:py-2.5 font-bold text-emerald-700 dark:text-emerald-400">
                                   {standings[userStandingIndex].name}
                                 </td>
                                 <td className="py-1 sm:py-2.5 text-right font-bold text-slate-800 dark:text-white">
                                   {standings[userStandingIndex].totalPoints}
                                 </td>
-                                <td className="py-1 sm:py-2.5 text-right text-slate-500">
+                                <td className="py-1 sm:py-2.5 text-right text-slate-500 pr-4 sm:pr-0">
                                   {formatDecimal(standings[userStandingIndex].currentAvg, 3)}
                                 </td>
                               </tr>
@@ -1542,6 +1542,7 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isClubsSubmenuOpen, setIsClubsSubmenuOpen] = useState(true);
   const [isSeasonsSubmenuOpen, setIsSeasonsSubmenuOpen] = useState(true);
+  const [isExternalMatchesSubmenuOpen, setIsExternalMatchesSubmenuOpen] = useState(false);
   const [isSettingsSubmenuOpen, setIsSettingsSubmenuOpen] = useState(false);
   const [isHomeSubmenuOpen, setIsHomeSubmenuOpen] = useState(true);
   const [theme, setTheme] = useState<"light" | "dark">(() => {
@@ -4030,14 +4031,14 @@ export default function App() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-[#163a16]/80 text-[#f1c40f] text-sm font-black uppercase tracking-widest border-b border-white/10">
-                    <th className="py-2 sm:py-4 pl-6 text-center w-16 border-r border-white/10">
+                    <th className="hidden sm:table-cell py-2 sm:py-4 pl-6 text-center w-16 border-r border-white/10">
                       #
                     </th>
-                    <th className="py-2 sm:py-4 px-6 text-left border-r border-white/10">
+                    <th className="hidden sm:table-cell py-2 sm:py-4 px-6 text-left border-r border-white/10">
                       Naam
                     </th>
-                    <th className="py-2 sm:py-4 px-2 sm:px-4 text-center border-r border-white/10">
-                      Caramboles
+                    <th className="hidden sm:table-cell py-2 sm:py-4 px-2 sm:px-4 text-center border-r border-white/10">
+                      <span className="sm:hidden">Car.</span><span className="hidden sm:inline">Caramboles</span>
                     </th>
                     <th className="py-2 sm:py-4 px-2 sm:px-4 text-center border-r border-white/10">
                       Wedstrijden
@@ -4045,8 +4046,8 @@ export default function App() {
                     <th className="py-2 sm:py-4 px-2 sm:px-4 text-center border-r border-white/10 hidden sm:table-cell">
                       Hoogste Serie
                     </th>
-                    <th className="py-2 sm:py-4 px-2 sm:px-4 text-center border-r border-white/10">
-                      Punten
+                    <th className="hidden sm:table-cell py-2 sm:py-4 px-2 sm:px-4 text-center border-r border-white/10">
+                      <span className="sm:hidden">Pnt.</span><span className="hidden sm:inline">Punten</span>
                     </th>
                     <th className="py-2 sm:py-4 px-6 text-center hidden sm:table-cell">Gemiddelde</th>
                   </tr>
@@ -5824,16 +5825,6 @@ export default function App() {
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden space-y-2 pl-4"
                   >
-                    {activeClub?.participatesInExternalMatches && (
-                      <SidebarItem
-                        icon={<Trophy size={20} />}
-                        label="Uit & Thuis"
-                        isSubItem
-                        active={activeTab === "external-matches"}
-                        onClick={() => setActiveTab("external-matches")}
-                        collapsed={isSidebarCollapsed}
-                      />
-                    )}
                     <SidebarItem
                       icon={<History size={20} />}
                       label="Wedstrijden"
@@ -5845,6 +5836,45 @@ export default function App() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {activeClub?.participatesInExternalMatches && (
+                <>
+                  <SidebarItem
+                    icon={<Trophy size={20} />}
+                    label="Uit & Thuis"
+                    isSubItem
+                    active={activeTab === "external-matches"}
+                    onClick={() => {
+                      setActiveTab("external-matches");
+                      setIsExternalMatchesSubmenuOpen(!isExternalMatchesSubmenuOpen);
+                    }}
+                    collapsed={isSidebarCollapsed}
+                    hasSubmenu={true}
+                    submenuOpen={isExternalMatchesSubmenuOpen}
+                  />
+                  <AnimatePresence initial={false}>
+                    {isExternalMatchesSubmenuOpen && (
+                      <motion.div
+                        key="external-matches-submenu"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden space-y-2 pl-4"
+                      >
+                        <SidebarItem
+                          icon={<History size={20} />}
+                          label="Wedstrijden"
+                          isSubItem
+                          active={activeTab === "external-matches-games"}
+                          onClick={() => setActiveTab("external-matches-games")}
+                          collapsed={isSidebarCollapsed}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              )}
               {currentUser.role === "admin" && (
                 <SidebarItem
                   icon={<Wallet size={20} />}
@@ -5952,6 +5982,10 @@ export default function App() {
               {activeTab === "seasons" && (activeClub?.name || "Seizoenen")}
               {activeTab === "matches" &&
                 `Wedstrijden ${activeSeason ? `(${activeSeason.name})` : ""}`}
+              {activeTab === "external-matches-games" && "Uit & Thuis Wedstrijden"}
+              
+              
+              
               {activeTab === "members" && `Leden`}
               {activeTab === "profile" && "Profiel"}
               {activeTab === "settings" && "Instellingen"}
@@ -6001,7 +6035,7 @@ export default function App() {
             )}
 
             {/* Matches overview buttons moved to top */}
-            {activeTab === "matches" &&
+            {(activeTab === "matches" || activeTab === "external-matches-games") &&
               !liveMatchId &&
               (selectedSeasonId || selectedExternalMatchId) && (
                 <>
@@ -6152,18 +6186,33 @@ export default function App() {
                 )}
               </button>
               
-              {currentUser.avatar ? (
-                <img
-                  src={currentUser.avatar}
-                  alt={currentUser.name}
-                  className="h-8 w-8 rounded-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold">
-                  {(currentUser.shortName || currentUser.name)?.[0] || "?"}
-                </div>
-              )}
+              <button
+                onClick={() => {
+                  setUserSettingsEmail(currentUser.email);
+                  setUserSettingsShortName(currentUser.shortName || "");
+                  setUserSettingsAvg(currentUser.baseAverage);
+                  setUserSettingsAvatar(currentUser.avatar || "");
+                  setUserSettingsParticipatesExternal(
+                    currentUser.participatesInExternalMatches ?? false,
+                  );
+                  setIsUserSettingsModalOpen(true);
+                }}
+                className="focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-full shrink-0"
+                title="Gebruikersinstellingen"
+              >
+                {currentUser.avatar ? (
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="h-8 w-8 rounded-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold">
+                    {(currentUser.shortName || currentUser.name)?.[0] || "?"}
+                  </div>
+                )}
+              </button>
             </div>
           </div>
         </header>
@@ -6734,16 +6783,15 @@ export default function App() {
 
                 <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
                   <table className="w-full text-left">
-                    <thead>
+                    <thead className="hidden sm:table-header-group">
                       <tr className="bg-slate-50 dark:bg-slate-800/50 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                         <th className="py-2 sm:py-4 pl-6 text-left">Naam</th>
                         <th className="py-2 sm:py-4 text-left">Rol</th>
-                        <th className="py-2 sm:py-4 text-left hidden sm:table-cell">Email</th>
-                        <th className="py-2 sm:py-4 text-left hidden sm:table-cell">Start Gemiddelde</th>
+                        <th className="py-2 sm:py-4 text-left">Email</th>
                         <th className="py-2 sm:py-4 pr-6 text-right">Acties</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                    <tbody className="flex flex-col sm:table-row-group divide-y divide-slate-50 dark:divide-slate-800 w-full">
                       {(activeClub.memberIds || []).map((memberId) => {
                         const member = data.users.find(
                           (u: User) => u.id === memberId,
@@ -6751,22 +6799,102 @@ export default function App() {
                         return (
                           <tr
                             key={memberId}
+                            onClick={() => {
+                              setSelectedProfileId(memberId);
+                              setActiveTab("profile");
+                            }}
                             className={cn(
-                              "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors",
+                              "flex flex-col sm:table-row p-4 sm:p-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors w-full cursor-pointer",
                               member?.active === false ? "opacity-50 grayscale bg-slate-50/50 dark:bg-slate-900/50" : ""
                             )}
                           >
-                            <td className="py-4 pl-6">
-                              <div className="flex flex-col">
-                                <button
-                                  onClick={() => {
-                                    setSelectedProfileId(memberId);
-                                    setActiveTab("profile");
-                                  }}
-                                  className="font-medium text-slate-800 dark:text-slate-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors text-left"
-                                >
+                            <td className="sm:hidden flex flex-col gap-2 w-full">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-medium text-slate-800 dark:text-slate-100">
                                   {member?.shortName || member?.name}
-                                </button>
+                                </span>
+                                {member?.shortName && member?.name && member.shortName !== member.name && (
+                                  <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                                    ({member.name})
+                                  </span>
+                                )}
+                                <div className="flex items-center gap-1 ml-auto sm:ml-1">
+                                  {member?.role === "admin" && (
+                                    <div className="p-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-md" title="Beheerder"><ShieldCheck size={14} /></div>
+                                  )}
+                                  {member?.role === "planner" && (
+                                    <div className="p-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-md" title="Planner"><Calendar size={14} /></div>
+                                  )}
+                                  {member?.role === "member" && (
+                                    <div className="p-1 bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 rounded-md" title="Speler"><UserIcon size={14} /></div>
+                                  )}
+                                  {member?.active === false && (
+                                    <div className="p-1 px-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md text-[10px] font-bold" title="Inactief">Inactief</div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {member?.email && (
+                                <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                                  {member.email}
+                                </div>
+                              )}
+                              
+                              <div className="flex justify-start gap-2 mt-2">
+                                {(isClubAdmin(activeClub, currentUser) ||
+                                  currentUser.role === "admin" ||
+                                  currentUser.role === "planner") &&
+                                  member?.id !== currentUser.id && (
+                                    <>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingMemberId(member!.id);
+                                          setNewMemberName(member!.name);
+                                          setNewMemberShortName(member!.shortName || "");
+                                          setNewMemberEmail(member!.email);
+                                          setNewMemberAvg(member!.baseAverage);
+                                          setNewMemberRole(member!.role);
+                                          setNewMemberParticipatesExternal(member!.participatesInExternalMatches ?? false);
+                                          setNewMemberActive(member!.active ?? true);
+                                          setIsMemberModalOpen(true);
+                                        }}
+                                        className="flex-1 sm:flex-none flex justify-center items-center gap-2 p-2 px-3 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors bg-slate-100 dark:bg-slate-800"
+                                        title="Wijzigen"
+                                      >
+                                        <Pencil size={16} />
+                                        <span className="text-xs font-bold">Wijzigen</span>
+                                      </button>
+                                      {member?.email && (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); sendInviteEmail(activeClub, member); }}
+                                          className="flex-1 sm:flex-none flex justify-center items-center gap-2 p-2 px-3 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors bg-slate-100 dark:bg-slate-800"
+                                          title="Stuur Uitnodiging"
+                                        >
+                                          <Mail size={16} />
+                                          <span className="text-xs font-bold">Uitnodigen</span>
+                                        </button>
+                                      )}
+                                      {currentUser.role === 'applicatiebeheerder' && (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); removeMemberFromClub(activeClub.id, member!.id); }}
+                                          className="p-2 px-3 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors bg-slate-100 dark:bg-slate-800"
+                                          title="Verwijderen"
+                                        >
+                                          <Trash2 size={16} />
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
+                              </div>
+                            </td>
+
+                            {/* Desktop Layout */}
+                            <td className="py-4 pl-6 hidden sm:table-cell">
+                              <div className="flex flex-col">
+                                <span className="font-medium text-slate-800 dark:text-slate-100 text-left">
+                                  {member?.shortName || member?.name}
+                                </span>
                                 {member?.shortName &&
                                   member?.name &&
                                   member.shortName !== member.name && (
@@ -6776,7 +6904,7 @@ export default function App() {
                                   )}
                               </div>
                             </td>
-                            <td className="py-4">
+                            <td className="py-4 hidden sm:table-cell">
                               <div className="flex items-center gap-2">
                                 {member?.role === "admin" && (
                                   <div
@@ -6812,31 +6940,19 @@ export default function App() {
                                 )}
                               </div>
                             </td>
-                            <td className="py-4 text-slate-500 dark:text-slate-400">
+                            <td className="py-4 text-slate-500 dark:text-slate-400 hidden sm:table-cell">
                               {member?.email}
                             </td>
-                            <td className="py-4 text-slate-500 dark:text-slate-400">
-                              {formatNumber(member?.baseAverage || 0)}
-                            </td>
-                            <td className="py-4 pr-6 text-right">
+                            <td className="py-4 pr-6 text-right hidden sm:table-cell">
                               <div className="flex justify-end gap-2">
-                                <button
-                                  onClick={() => {
-                                    setSelectedProfileId(memberId);
-                                    setActiveTab("profile");
-                                  }}
-                                  className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
-                                  title="Bekijk Profiel"
-                                >
-                                  <UserCircle size={18} />
-                                </button>
                                 {(isClubAdmin(activeClub, currentUser) ||
                                   currentUser.role === "admin" ||
                                   currentUser.role === "planner") &&
                                   member?.id !== currentUser.id && (
                                     <>
                                       <button
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                          e.stopPropagation();
                                           setEditingMemberId(member!.id);
                                           setNewMemberName(member!.name);
                                           setNewMemberShortName(
@@ -6860,7 +6976,7 @@ export default function App() {
                                       </button>
                                       {member?.email && (
                                         <button
-                                          onClick={() => sendInviteEmail(activeClub, member)}
+                                          onClick={(e) => { e.stopPropagation(); sendInviteEmail(activeClub, member); }}
                                           className="p-2 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                                           title="Stuur Uitnodiging"
                                         >
@@ -6869,12 +6985,7 @@ export default function App() {
                                       )}
                                       {currentUser.role === 'applicatiebeheerder' && (
                                         <button
-                                          onClick={() =>
-                                            removeMemberFromClub(
-                                              activeClub.id,
-                                              member!.id,
-                                            )
-                                          }
+                                          onClick={(e) => { e.stopPropagation(); removeMemberFromClub(activeClub.id, member!.id); }}
                                           className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
                                           title="Verwijderen"
                                         >
@@ -6904,7 +7015,7 @@ export default function App() {
               >
                 <div className="flex items-center justify-between mb-8">
                   <div>
-                    <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">
+                    <h2 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">
                       Uit & Thuiswedstrijden
                     </h2>
                     <p className="text-slate-500 dark:text-slate-400 mt-2">
@@ -6942,7 +7053,7 @@ export default function App() {
                         className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-sm"
                       >
                         <Plus size={20} />
-                        <span>Nieuwe Thuiswedstrijd</span>
+                        <span className="hidden sm:inline">Nieuwe Thuiswedstrijd</span>
                       </button>
                     )}
                   </div>
@@ -7060,7 +7171,7 @@ export default function App() {
                         return (
                           <div
                             key={match.id}
-                            className="bg-white dark:bg-slate-900 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden relative"
+                            className="bg-white dark:bg-slate-900 sm:rounded-3xl shadow-lg border-y sm:border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden relative -mx-4 sm:mx-0"
                           >
                             {match.isBlocked && (
                               <div className="absolute top-4 right-4 z-10">
@@ -7082,37 +7193,48 @@ export default function App() {
                                   </span>
                                 </div>
 
-                                <div className="flex items-start justify-between w-full mt-8 md:mt-10 mb-1">
-                                  <div className="flex items-start gap-2 flex-1 justify-start">
-                                    <h3 className="text-base md:text-xl font-black text-slate-800 dark:text-white uppercase truncate text-left mt-1">
-                                      {homeClub?.name}
-                                    </h3>
-                                    <span className="text-emerald-500 font-black text-base md:text-xl ml-1 mt-1">
-                                      ({listExtHomePointsTotal})
-                                    </span>
-                                  </div>
+                                <div className="flex flex-col gap-4 w-full mt-6 md:mt-10 mb-1">
+                                  {/* Teams and Stats row */}
+                                  <div className="flex flex-col md:flex-row items-center justify-between w-full gap-2 md:gap-0">
+                                    {/* Home */}
+                                    <div className="flex flex-row items-center gap-2 flex-1 justify-center md:justify-start overflow-hidden">
+                                      <h3 className="text-sm md:text-xl font-black text-slate-800 dark:text-white uppercase truncate max-w-full">
+                                        {homeClub?.name}
+                                      </h3>
+                                      <span className="text-emerald-500 font-black text-sm md:text-xl shrink-0">
+                                        ({listExtHomePointsTotal})
+                                      </span>
+                                    </div>
 
-                                  <div className="flex items-center justify-center gap-1 md:gap-2 px-1 md:px-2 sm:px-4 shrink-0 text-[9px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pt-2">
-                                    Gespeeld: {fGames.length} &nbsp;&bull;&nbsp;
-                                    Resterend: {pGames.length}
-                                  </div>
-
-                                  <div className="flex flex-col items-end gap-2 flex-1 justify-end">
-                                    <div className="flex items-center gap-2">
-                                      <h3 className="text-base md:text-xl font-black text-slate-800 dark:text-white uppercase truncate text-right">
+                                    {/* Away */}
+                                    <div className="flex flex-row items-center gap-2 flex-1 justify-center md:justify-end overflow-hidden order-2 md:order-3">
+                                      <h3 className="text-sm md:text-xl font-black text-slate-800 dark:text-white uppercase truncate md:text-right max-w-full md:order-2">
                                         {awayClub?.name}
                                       </h3>
-                                      <span className="text-amber-500 font-black text-base md:text-xl ml-1">
+                                      <span className="text-amber-500 font-black text-sm md:text-xl shrink-0 md:order-1">
                                         ({listExtAwayPointsTotal})
                                       </span>
                                     </div>
+
+                                    {/* Center Stats */}
+                                    <div className="flex flex-row items-center justify-center shrink-0 px-2 md:px-4 order-3 md:order-2 mt-1 md:mt-0">
+                                      <div className="text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center flex flex-row items-center gap-2">
+                                        <span>Gespeeld: {fGames.length}</span>
+                                        <span className="text-slate-300 dark:text-slate-600">&bull;</span>
+                                        <span>Resterend: {pGames.length}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Buttons row */}
+                                  <div className="flex flex-row items-center justify-center md:justify-end gap-2 w-full mt-2">
                                     <button
                                       onClick={() => {
                                         setSelectedSeasonId(null);
                                         setSelectedExternalMatchId(match.id);
-                                        setActiveTab("matches"); // Assuming "matches" will show games for the external match if selectedExternalMatchId is set
+                                        setActiveTab("external-matches-games");
                                       }}
-                                      className="px-3 py-1 md:px-2 sm:px-4 md:py-1.5 rounded-lg transition-colors text-[10px] md:text-xs font-bold border bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center gap-1.5 md:gap-2"
+                                      className="flex-1 md:flex-none px-3 py-2 md:px-4 md:py-2 rounded-lg transition-colors text-[11px] md:text-xs font-bold border bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center justify-center gap-1.5 md:gap-2"
                                     >
                                       <History size={14} />
                                       Wedstrijden
@@ -7127,7 +7249,7 @@ export default function App() {
                                         setSelectedSeasonId(null);
                                       }}
                                       className={cn(
-                                        "px-3 py-1 md:px-2 sm:px-4 md:py-1.5 rounded-lg transition-colors text-[10px] md:text-xs font-bold border",
+                                        "flex-1 md:flex-none px-3 py-2 md:px-4 md:py-2 rounded-lg transition-colors text-[11px] md:text-xs font-bold border flex items-center justify-center gap-1.5 md:gap-2",
                                         selectedExternalMatchId === match.id
                                           ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
                                           : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40",
@@ -7141,9 +7263,8 @@ export default function App() {
                                 </div>
                               </div>
                             </div>
-
                             {selectedExternalMatchId === match.id && (
-                              <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 space-y-4">
+<div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 space-y-4">
                                 <div className="flex items-center justify-between mb-4">
                                   <h4 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                                     Partijen ({(match.games || []).length})
@@ -7196,13 +7317,13 @@ export default function App() {
                                   ref={(el) =>
                                     (extMatchRefs.current[match.id] = el)
                                   }
-                                  className="overflow-x-auto -mx-4 sm:mx-0 bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] rounded-2xl shadow-sm border border-[#2b6e2b]"
+                                  className="overflow-x-auto -mx-4 sm:mx-0 bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] sm:rounded-2xl shadow-sm border-y sm:border border-[#2b6e2b]"
                                 >
                                   <table className="w-full border-collapse">
-                                    <thead className="hidden sm:table-header-group">
-<tr className="bg-[#163a16] text-[#f1c40f] text-[10px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
+                                    <thead className="">
+<tr className="bg-[#163a16] text-[#f1c40f] text-[9px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b] grid grid-cols-[1fr_72px_72px] sm:table-row">
                                         <th className="py-2 sm:py-4 px-2 sm:px-4 text-left border-r border-[#2b6e2b]/30">
-                                          Speler (Thuis)
+                                          <span className="sm:hidden">Speler</span><span className="hidden sm:inline">Speler (Thuis)</span>
                                         </th>
                                         <th
                                           className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell"
@@ -7216,16 +7337,16 @@ export default function App() {
                                         <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
                                           Gemiddelde
                                         </th>
-                                        <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
-                                          Caramboles
+                                        <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 w-[72px] sm:w-[88px]">
+                                          <span className="sm:hidden">Car.</span><span className="hidden sm:inline">Caramboles</span>
                                         </th>
-                                        <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20">
+                                        <th className="hidden sm:table-cell py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 w-[72px] sm:w-[88px]">
+                                          <span className="sm:hidden">Pnt.</span><span className="hidden sm:inline">Punten</span>
+                                        </th>
+                                        <th className="hidden sm:table-cell py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 w-[72px] sm:w-[88px]">
                                           Punten
                                         </th>
-                                        <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20">
-                                          Punten
-                                        </th>
-                                        <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                        <th className="hidden sm:table-cell py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 w-[72px] sm:w-[88px]">
                                           Caramboles
                                         </th>
                                         <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
@@ -7240,12 +7361,10 @@ export default function App() {
                                         >
                                           Inleg
                                         </th>
-                                        <th className="py-2 sm:py-4 px-2 sm:px-4 text-right border-r border-[#2b6e2b]/30">
+                                        <th className="hidden sm:table-cell py-2 sm:py-4 px-2 sm:px-4 text-right border-r border-[#2b6e2b]/30">
                                           Speler (Uit)
                                         </th>
-                                        <th className="py-2 sm:py-4 px-2 sm:px-4 text-center exclude-from-share">
-                                          Actie
-                                        </th>
+                                        
                                       </tr>
                                     </thead>
                                     <tbody className="block sm:table-row-group">
@@ -7473,9 +7592,8 @@ export default function App() {
                                             }
 
                                             return (
-                                              <tr key={game.id} className="hover:bg-white/5 transition-colors border-b border-[#2b6e2b]/30 last:border-0 grid grid-cols-[1fr_auto_auto_auto] sm:table-row"
-                                              >
-                                                <td className="py-1 sm:py-2 px-2 sm:px-4 border-r border-[#2b6e2b]/30 text-left col-start-1 row-start-1">
+                                              <tr key={game.id} onClick={() => { if (isFinished) setLiveMatchId(game.id); }} className={cn("transition-colors border-b border-[#2b6e2b]/30 last:border-0 grid grid-cols-[1fr_72px_72px] sm:table-row", isFinished ? "cursor-pointer hover:bg-white/10" : "hover:bg-white/5")}>
+                                                <td className="col-start-1 row-start-1 sm:col-auto sm:row-auto py-1 sm:py-2 px-2 sm:px-4 border-r border-[#2b6e2b]/30 text-left">
                                                   <div className="flex items-center">
                                                     <p
                                                       className="font-bold text-white truncate text-base inline-block mr-2"
@@ -7582,7 +7700,7 @@ export default function App() {
                                                   </span>
                                                 </td>
 
-                                                <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden">
+                                                <td className="col-start-2 row-start-1 sm:col-auto sm:row-auto relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden ">
                                                   <div
                                                     className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                     style={{
@@ -7596,7 +7714,7 @@ export default function App() {
                                                   </span>
                                                 </td>
 
-                                                <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
+                                                <td className="col-start-3 row-start-1 sm:col-auto sm:row-auto relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
                                                   <div
                                                     className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                     style={{
@@ -7608,7 +7726,7 @@ export default function App() {
                                                   </span>
                                                 </td>
 
-                                                <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
+                                                <td className="col-start-3 row-start-2 sm:col-auto sm:row-auto relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
                                                   <div
                                                     className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                     style={{
@@ -7620,7 +7738,7 @@ export default function App() {
                                                   </span>
                                                 </td>
 
-                                                <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden">
+                                                <td className="col-start-2 row-start-2 sm:col-auto sm:row-auto relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden ">
                                                   <div
                                                     className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                     style={{
@@ -7717,19 +7835,10 @@ export default function App() {
                                                   )}
                                                 </td>
 
-                                                <td className="py-1 sm:py-2 px-2 sm:px-4 text-left sm:text-right border-r border-[#2b6e2b]/30 col-start-1 row-start-2">
-                                                  <div className="flex items-center justify-end">
-                                                    <span className="text-[12px] text-emerald-300 font-bold tracking-widest inline-block mr-2 opacity-80">
-                                                      (
-                                                      {formatNumber(
-                                                        game.awayTarget ??
-                                                          p2?.baseAverage ??
-                                                          0,
-                                                      )}
-                                                      )
-                                                    </span>
+                                                <td className="col-start-1 row-start-2 sm:col-auto sm:row-auto py-1 sm:py-2 px-2 sm:px-4 text-left border-r border-[#2b6e2b]/30">
+                                                  <div className="flex items-center">
                                                     <p
-                                                      className="font-bold text-white truncate text-base inline-block"
+                                                      className="font-bold text-white truncate text-base inline-block mr-2"
                                                       title={
                                                         p2?.name || "Onbekend"
                                                       }
@@ -7738,26 +7847,17 @@ export default function App() {
                                                         p2?.name ||
                                                         "Onbekend"}
                                                     </p>
+                                                    <span className="text-[12px] text-emerald-300 font-bold tracking-widest inline-block opacity-80">
+                                                      (
+                                                      {formatNumber(
+                                                        awayTargetForCalc,
+                                                      )}
+                                                      )
+                                                    </span>
                                                   </div>
                                                 </td>
 
-                                                <td className="py-1 sm:py-2 px-2 sm:px-4 text-center exclude-from-share">
-                                                  <div className="flex items-center justify-center">
-                                                    {isFinished && (
-                                                      <button
-                                                        onClick={() =>
-                                                          setLiveMatchId(
-                                                            game.id,
-                                                          )
-                                                        }
-                                                        className="w-8 h-8 bg-blue-500 text-white font-bold rounded-full hover:bg-blue-600 transition-colors flex items-center justify-center shadow-lg shadow-blue-500/20"
-                                                        title="Details"
-                                                      >
-                                                        <Search size={14} />
-                                                      </button>
-                                                    )}
-                                                  </div>
-                                                </td>
+                                                
                                               </tr>
                                             );
                                           },
@@ -7788,16 +7888,18 @@ export default function App() {
                                         ? "Uit & Thuis voltooid ongedaan maken"
                                         : "Uit & Thuis voltooid"}
                                     </button>
-                                    <button
-                                      onClick={() => {
-                                        setExternalMatchToDeleteId(match.id);
-                                        setIsDeleteExternalMatchModalOpen(true);
-                                      }}
-                                      className="px-2 sm:px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-800/50 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-bold flex items-center gap-2"
-                                    >
-                                      <Trash2 size={16} />
-                                      Uit & Thuis verwijderen
-                                    </button>
+                                    {currentUser.role === 'applicatiebeheerder' && (
+                                      <button
+                                        onClick={() => {
+                                          setExternalMatchToDeleteId(match.id);
+                                          setIsDeleteExternalMatchModalOpen(true);
+                                        }}
+                                        className="px-2 sm:px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-800/50 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-bold flex items-center gap-2"
+                                      >
+                                        <Trash2 size={16} />
+                                        Uit & Thuis verwijderen
+                                      </button>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -8167,7 +8269,7 @@ export default function App() {
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
                                 Start Gem.
                               </p>
-                              <p className="text-2xl font-black text-slate-800 dark:text-white">
+                              <p className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
                                 {profileUser.baseAverage}
                               </p>
                             </div>
@@ -8183,7 +8285,7 @@ export default function App() {
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
                                 Gespeeld
                               </p>
-                              <p className="text-2xl font-black text-slate-800 dark:text-white">
+                              <p className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
                                 {finishedMatches.length}
                               </p>
                             </div>
@@ -8191,7 +8293,7 @@ export default function App() {
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
                                 Caramboles
                               </p>
-                              <p className="text-2xl font-black text-slate-800 dark:text-white">
+                              <p className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
                                 {totalCaramboles}
                               </p>
                             </div>
@@ -8199,7 +8301,7 @@ export default function App() {
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
                                 Gem. Car.
                               </p>
-                              <p className="text-2xl font-black text-slate-800 dark:text-white">
+                              <p className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
                                 {avgCarambolesPerMatch}
                               </p>
                             </div>
@@ -8207,7 +8309,7 @@ export default function App() {
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
                                 Gem. Beurten
                               </p>
-                              <p className="text-2xl font-black text-slate-800 dark:text-white">
+                              <p className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
                                 {avgTurnsPerMatch}
                               </p>
                             </div>
@@ -8718,7 +8820,7 @@ export default function App() {
                     .map((season: Season) => (
                       <div
                         key={season.id}
-                        className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm transition-colors"
+                        className="bg-white dark:bg-slate-900 sm:rounded-xl border-y sm:border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm transition-colors -mx-4 sm:mx-0"
                       >
                         <div className="p-4 md:p-6 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                           <div>
@@ -8775,11 +8877,11 @@ export default function App() {
                         </div>
 
                         {selectedSeasonId === season.id && (
-                          <div className="p-6 space-y-8">
+                          <div className="py-6 sm:p-6 space-y-8">
                             {/* Standings Table */}
                             <div
                               ref={standingsRef}
-                              className="bg-white dark:bg-slate-900 rounded-2xl p-6"
+                              className="bg-white dark:bg-slate-900 sm:rounded-2xl p-4 sm:p-6"
                             >
                               <div className="flex justify-between items-start mb-6">
                                 <div>
@@ -8830,13 +8932,13 @@ export default function App() {
                                   )}
                                 </div>
                               </div>
-                              <div className="rounded-xl border border-[#2b6e2b] shadow-sm overflow-hidden">
+                              <div className="sm:rounded-xl border-y sm:border border-[#2b6e2b] shadow-sm overflow-hidden -mx-4 sm:mx-0">
                                 <div className="overflow-x-auto -mx-4 sm:mx-0 px-0">
                                   <table className="w-full border-collapse">
-                                    <thead className="hidden sm:table-header-group">
-<tr className="bg-[#163a16] text-[#f1c40f] text-[10px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
+                                    <thead >
+<tr className="bg-[#163a16] text-[#f1c40f] text-[9px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
                                         <th className="py-[13.5px] pl-4 text-center w-12 border-r border-[#2b6e2b]/30">
-                                          Positie
+                                          <span className="sm:hidden">#</span><span className="hidden sm:inline">Positie</span>
                                         </th>
                                         <th
                                           className="py-[13.5px] px-2 sm:px-4 text-left cursor-pointer hover:text-white transition-colors border-r border-[#2b6e2b]/30"
@@ -8860,7 +8962,7 @@ export default function App() {
                                           }
                                         >
                                           <div className="flex items-center justify-center gap-1">
-                                            Caramboles{" "}
+                                            <span className="sm:hidden">Car.</span><span className="hidden sm:inline">Caramboles</span>{" "}
                                             {sortConfig?.field ===
                                               "caramboles" &&
                                               (sortConfig.direction ===
@@ -8876,7 +8978,7 @@ export default function App() {
                                           onClick={() => handleSort("matches")}
                                         >
                                           <div className="flex items-center justify-center gap-1">
-                                            Wedstrijden{" "}
+                                            <span className="sm:hidden">Gesp.</span><span className="hidden sm:inline">Wedstrijden</span>{" "}
                                             {sortConfig?.field === "matches" &&
                                               (sortConfig.direction ===
                                               "asc" ? (
@@ -8891,7 +8993,7 @@ export default function App() {
                                           onClick={() => handleSort("highest")}
                                         >
                                           <div className="flex items-center justify-center gap-1">
-                                            Hoogste serie{" "}
+                                            <span className="sm:hidden">Hs.</span><span className="hidden sm:inline">Hoogste serie</span>{" "}
                                             {sortConfig?.field === "highest" &&
                                               (sortConfig.direction ===
                                               "asc" ? (
@@ -8906,7 +9008,7 @@ export default function App() {
                                           onClick={() => handleSort("points")}
                                         >
                                           <div className="flex items-center justify-center gap-1">
-                                            Punten{" "}
+                                            <span className="sm:hidden">Pnt.</span><span className="hidden sm:inline">Punten</span>{" "}
                                             {sortConfig?.field === "points" &&
                                               (sortConfig.direction ===
                                               "asc" ? (
@@ -8921,7 +9023,7 @@ export default function App() {
                                           onClick={() => handleSort("average")}
                                         >
                                           <div className="flex items-center justify-center gap-1">
-                                            Gemiddelde{" "}
+                                            <span className="sm:hidden">Gem.</span><span className="hidden sm:inline">Gemiddelde</span>{" "}
                                             {sortConfig?.field === "average" &&
                                               (sortConfig.direction ===
                                               "asc" ? (
@@ -9207,7 +9309,7 @@ export default function App() {
                             </div>
 
                             {/* Season Properties Overview */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
                               <button
                                 onClick={() => {
                                   if (currentUser.role === "admin" || currentUser.role === "planner") {
@@ -9216,7 +9318,7 @@ export default function App() {
                                   }
                                 }}
                                 className={cn(
-                                  "text-left p-4 rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500",
+                                  "col-span-2 md:col-span-1 text-left p-4 rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500",
                                   (currentUser.role === "admin" || currentUser.role === "planner")
                                     ? "bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer active:scale-95"
                                     : "bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-800/50 cursor-default"
@@ -9345,7 +9447,7 @@ export default function App() {
               </motion.div>
             )}
 
-            {activeTab === "matches" && !liveMatchId && (
+            {((activeTab === "matches" || activeTab === "external-matches-games") && !liveMatchId) && (
               <motion.div
                 key="matches-list"
                 initial={{ opacity: 0, x: 20 }}
@@ -9353,15 +9455,14 @@ export default function App() {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
-                {!selectedSeasonId && !selectedExternalMatchId ? (
+                {(activeTab === "matches" && !selectedSeasonId) ? (
                   <div className="bg-white dark:bg-slate-900 p-12 rounded-xl border border-slate-200 dark:border-slate-800 text-center transition-colors">
                     <Calendar
                       size={48}
                       className="mx-auto text-slate-300 dark:text-slate-700 mb-4"
                     />
                     <p className="text-slate-500 dark:text-slate-400">
-                      Selecteer eerst een seizoen of een uit/thuis wedstrijd om
-                      de wedstrijden te bekijken.
+                      Selecteer eerst een seizoen om de wedstrijden te bekijken.
                     </p>
                     <div className="flex justify-center gap-4 mt-6">
                       <button
@@ -9370,17 +9471,27 @@ export default function App() {
                       >
                         Naar Seizoenen
                       </button>
-                      {activeClub?.participatesInExternalMatches && (
-                        <button
-                          onClick={() => setActiveTab("external-matches")}
-                          className="text-amber-600 dark:text-amber-400 font-bold hover:underline"
-                        >
-                          Naar Uit & Thuis
-                        </button>
-                      )}
                     </div>
                   </div>
-                ) : selectedExternalMatchId ? (
+                ) : (activeTab === "external-matches-games" && !selectedExternalMatchId) ? (
+                  <div className="bg-white dark:bg-slate-900 p-12 rounded-xl border border-slate-200 dark:border-slate-800 text-center transition-colors">
+                    <Calendar
+                      size={48}
+                      className="mx-auto text-slate-300 dark:text-slate-700 mb-4"
+                    />
+                    <p className="text-slate-500 dark:text-slate-400">
+                      Selecteer eerst een uit/thuis wedstrijd om de wedstrijden te bekijken.
+                    </p>
+                    <div className="flex justify-center gap-4 mt-6">
+                      <button
+                        onClick={() => setActiveTab("external-matches")}
+                        className="text-amber-600 dark:text-amber-400 font-bold hover:underline"
+                      >
+                        Naar Uit & Thuis
+                      </button>
+                    </div>
+                  </div>
+                ) : activeTab === "external-matches-games" ? (
                   <div className="space-y-8">
                     {(() => {
                       const extMatch = data.externalMatches?.find(
@@ -9472,9 +9583,9 @@ export default function App() {
 
                       return (
                         <>
-                          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 mb-8 flex flex-col items-center relative">
-                            <div className="flex items-center justify-between w-full mt-4 mb-2">
-                              <div className="flex items-center gap-2 flex-1 justify-start">
+                          <div className="bg-white dark:bg-slate-900 sm:rounded-2xl p-4 sm:p-6 shadow-sm border-y sm:border border-slate-200 dark:border-slate-800 mb-8 flex flex-col items-center relative -mx-4 sm:mx-0">
+                            <div className="flex flex-col md:flex-row items-center justify-between w-full mt-4 mb-2 gap-2 md:gap-0">
+                              <div className="flex items-center gap-2 flex-1 justify-center md:justify-start">
                                 <h3 className="text-lg md:text-xl font-black text-slate-800 dark:text-white uppercase truncate text-left">
                                   {homeClub?.name}
                                 </h3>
@@ -9483,19 +9594,19 @@ export default function App() {
                                 </span>
                               </div>
 
-                              <div className="flex items-center justify-center gap-2 px-2 sm:px-4 shrink-0 text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                                Gespeeld: {finishedGames.length}{" "}
-                                &nbsp;&bull;&nbsp; Resterend:{" "}
-                                {plannedGames.length}
-                              </div>
-
-                              <div className="flex items-center gap-2 flex-1 justify-end">
-                                <h3 className="text-lg md:text-xl font-black text-slate-800 dark:text-white uppercase truncate text-right">
+                              <div className="flex items-center gap-2 flex-1 justify-center md:justify-end order-2 md:order-3">
+                                <h3 className="text-lg md:text-xl font-black text-slate-800 dark:text-white uppercase truncate md:text-right md:order-2">
                                   {awayClub?.name}
                                 </h3>
-                                <span className="text-amber-500 font-black text-lg md:text-xl ml-1">
+                                <span className="text-amber-500 font-black text-lg md:text-xl ml-1 md:order-1">
                                   ({viewExtAwayPointsTotal})
                                 </span>
+                              </div>
+
+                              <div className="flex items-center justify-center gap-2 px-2 sm:px-4 shrink-0 text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest order-3 md:order-2 mt-1 md:mt-0">
+                                <span>Gespeeld: {finishedGames.length}</span>
+                                <span className="text-slate-300 dark:text-slate-600">&bull;</span>
+                                <span>Resterend: {plannedGames.length}</span>
                               </div>
                             </div>
                           </div>
@@ -9553,13 +9664,12 @@ export default function App() {
                               ref={(el) =>
                                 (extMatchRefs.current[extMatch.id] = el)
                               }
-                              className="overflow-x-auto -mx-4 sm:mx-0 bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] rounded-2xl shadow-sm border border-[#2b6e2b]"
+                              className="overflow-x-auto -mx-4 sm:mx-0 bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] sm:rounded-2xl shadow-sm border-y sm:border border-[#2b6e2b]"
                             >
                               <table className="w-full border-collapse">
-                                <thead className="hidden sm:table-header-group">
-<tr className="bg-[#163a16] text-[#f1c40f] text-[10px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
+                                <thead className=""><tr className="bg-[#163a16] text-[#f1c40f] text-[9px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b] grid grid-cols-[1fr_72px_72px] sm:table-row">
                                     <th className="py-2 sm:py-4 px-2 sm:px-4 text-left border-r border-[#2b6e2b]/30">
-                                      Speler (Thuis)
+                                      <span className="sm:hidden">Speler</span><span className="hidden sm:inline">Speler (Thuis)</span>
                                     </th>
                                     <th
                                       className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell"
@@ -9571,31 +9681,31 @@ export default function App() {
                                       HS
                                     </th>
                                     <th
-                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                      className="hidden sm:table-cell py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30"
                                       title="Gemiddelde"
                                     >
                                       Gem.
                                     </th>
-                                    <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
-                                      Car.
+                                    <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 w-[72px] sm:w-[88px]">
+                                      <span className="sm:hidden">Car.</span><span className="hidden sm:inline">Car.</span>
                                     </th>
                                     <th
-                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
+                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 w-[72px] sm:w-[88px]"
                                       title="Punten (Thuis)"
                                     >
-                                      Pnt.
+                                      <span className="sm:hidden">Pnt.</span><span className="hidden sm:inline">Pnt.</span>
                                     </th>
                                     <th
-                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
+                                      className="hidden sm:table-cell py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 w-[72px] sm:w-[88px]"
                                       title="Punten (Uit)"
                                     >
                                       Pnt.
                                     </th>
-                                    <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                    <th className="hidden sm:table-cell py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 w-[72px] sm:w-[88px]">
                                       Car.
                                     </th>
                                     <th
-                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                      className="hidden sm:table-cell py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30"
                                       title="Gemiddelde"
                                     >
                                       Gem.
@@ -9609,12 +9719,10 @@ export default function App() {
                                     >
                                       Inleg
                                     </th>
-                                    <th className="py-2 sm:py-4 px-2 sm:px-4 text-right border-r border-[#2b6e2b]/30">
+                                    <th className="hidden sm:table-cell py-2 sm:py-4 px-2 sm:px-4 text-right border-r border-[#2b6e2b]/30">
                                       Speler (Uit)
                                     </th>
-                                    <th className="py-2 sm:py-4 px-2 sm:px-4 text-center exclude-from-share">
-                                      Actie
-                                    </th>
+                                    
                                   </tr>
                                 </thead>
                                 <tbody className="block sm:table-row-group">
@@ -9845,9 +9953,17 @@ export default function App() {
                                         return (
                                           <tr
                                             key={mappedMatch.id}
-                                            className="hover:bg-white/5 transition-colors border-b border-[#2b6e2b]/30 last:border-0 grid grid-cols-[1fr_auto_auto_auto_auto] sm:table-row"
+                                            onClick={() => {
+                                              if (isFinished || isStarted) {
+                                                setLiveMatchId(match.id);
+                                              } else if (!isFinished && !isStarted && (isClubAdmin(activeClub, currentUser) || currentUser.role === "admin" || currentUser.role === "planner" || currentUser.role === "user")) {
+                                                setMatchToStartId(match.id);
+                                                setIsStartMatchModalOpen(true);
+                                              }
+                                            }}
+                                            className={cn("transition-colors border-b border-[#2b6e2b]/30 last:border-0 grid grid-cols-[1fr_72px_72px] sm:table-row", (isFinished || isStarted || (!isFinished && !isStarted && (isClubAdmin(activeClub, currentUser) || currentUser.role === "admin" || currentUser.role === "planner" || currentUser.role === "user"))) ? "cursor-pointer hover:bg-white/10" : "hover:bg-white/5")}
                                           >
-                                            <td className="py-1 sm:py-2 px-2 sm:px-4 border-r border-[#2b6e2b]/30 text-left col-start-1 row-start-1">
+                                            <td className="col-start-1 row-start-1 sm:col-auto sm:row-auto py-1 sm:py-2 px-2 sm:px-4 border-r border-[#2b6e2b]/30 text-left">
                                               <div className="flex items-center">
                                                 <p
                                                   className="font-bold text-white truncate text-base inline-block mr-2"
@@ -9977,7 +10093,7 @@ export default function App() {
                                               </span>
                                             </td>
 
-                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden">
+                                            <td className="col-start-2 row-start-1 sm:col-auto sm:row-auto relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden ">
                                               <div
                                                 className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                 style={{
@@ -9991,7 +10107,7 @@ export default function App() {
                                               </span>
                                             </td>
 
-                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
+                                            <td className="col-start-3 row-start-1 sm:col-auto sm:row-auto relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
                                               <div
                                                 className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                 style={{
@@ -10005,7 +10121,7 @@ export default function App() {
                                               </span>
                                             </td>
 
-                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
+                                            <td className="col-start-3 row-start-2 sm:col-auto sm:row-auto relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
                                               <div
                                                 className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                 style={{
@@ -10019,7 +10135,7 @@ export default function App() {
                                               </span>
                                             </td>
 
-                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden">
+                                            <td className="col-start-2 row-start-2 sm:col-auto sm:row-auto relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden ">
                                               <div
                                                 className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
                                                 style={{
@@ -10114,9 +10230,16 @@ export default function App() {
                                               )}
                                             </td>
 
-                                            <td className="py-1 sm:py-2 px-2 sm:px-4 text-left sm:text-right border-r border-[#2b6e2b]/30 col-start-1 row-start-2">
-                                              <div className="flex items-center justify-end">
-                                                <span
+                                            <td className="col-start-1 row-start-2 sm:col-auto sm:row-auto py-1 sm:py-2 px-2 sm:px-4 text-left border-r border-[#2b6e2b]/30">
+                                              <div className="flex items-center ">
+                                                <p
+                                                  className="font-bold text-white truncate text-base inline-block"
+                                                  title={p2?.name || "Onbekend"}
+                                                >
+                                                  {p2?.shortName ||
+                                                    p2?.name ||
+                                                    "Onbekend"}
+                                                </p>                                                <span
                                                   onClick={(e) => {
                                                     if (
                                                       !isFinished &&
@@ -10150,70 +10273,10 @@ export default function App() {
                                                   )}
                                                   )
                                                 </span>
-                                                <p
-                                                  className="font-bold text-white truncate text-base inline-block"
-                                                  title={p2?.name || "Onbekend"}
-                                                >
-                                                  {p2?.shortName ||
-                                                    p2?.name ||
-                                                    "Onbekend"}
-                                                </p>
                                               </div>
                                             </td>
 
-                                            <td className="py-1 sm:py-2 px-2 sm:px-4 text-center exclude-from-share">
-                                              <div className="flex items-center justify-center">
-                                                {!isFinished &&
-                                                  !isStarted &&
-                                                  (isClubAdmin(activeClub, currentUser) ||
-                                                    currentUser.role ===
-                                                      "admin" ||
-                                                    currentUser.role ===
-                                                      "planner" ||
-                                                    currentUser.role ===
-                                                      "user") && (
-                                                    <button
-                                                      onClick={() => {
-                                                        setMatchToStartId(
-                                                          match.id,
-                                                        );
-                                                        setIsStartMatchModalOpen(
-                                                          true,
-                                                        );
-                                                      }}
-                                                      className="w-8 h-8 bg-emerald-600 dark:bg-emerald-500 text-white font-bold rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors flex items-center justify-center shadow-lg shadow-emerald-600/20"
-                                                      title="Starten"
-                                                    >
-                                                      <Play
-                                                        size={14}
-                                                        className="ml-0.5"
-                                                      />
-                                                    </button>
-                                                  )}
-                                                {isStarted && (
-                                                  <button
-                                                    onClick={() =>
-                                                      setLiveMatchId(match.id)
-                                                    }
-                                                    className="w-8 h-8 bg-[#f1c40f] text-[#064e3b] font-bold rounded-full hover:bg-[#d4ac0d] transition-colors flex items-center justify-center shadow-lg shadow-[#f1c40f]/20"
-                                                    title="Naar Live View"
-                                                  >
-                                                    <Tv size={14} />
-                                                  </button>
-                                                )}
-                                                {isFinished && (
-                                                  <button
-                                                    onClick={() =>
-                                                      setLiveMatchId(match.id)
-                                                    }
-                                                    className="w-8 h-8 bg-blue-500 text-white font-bold rounded-full hover:bg-blue-600 transition-colors flex items-center justify-center shadow-lg shadow-blue-500/20"
-                                                    title="Details"
-                                                  >
-                                                    <Search size={14} />
-                                                  </button>
-                                                )}
-                                              </div>
-                                            </td>
+                                            
                                           </tr>
                                         );
                                       },
@@ -10523,21 +10586,7 @@ export default function App() {
                                   </div>
 
                                   <div className="flex items-center gap-3">
-                                    {isSameDay(date, new Date()) &&
-                                      activeSeason &&
-                                      !cancelledReason && (
-                                        <button
-                                          onClick={() => showConfirm(
-                                            "Speeldag Voltooien",
-                                            "Nog niet gespeelde- en afgemelde wedstrijden worden naar de volgende speeldag verplaats en alles wordt opnieuw ingedeeld.",
-                                            () => completeMatchDay(activeSeason.id, date.toISOString())
-                                          )}
-                                          className="bg-white dark:bg-slate-900 px-2 sm:px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 text-slate-800 dark:text-white transition-all shadow-sm flex items-center gap-2 font-bold text-sm h-[42px]"
-                                        >
-                                          <CheckCircle2 size={16} />
-                                          Speeldag voltooien
-                                        </button>
-                                      )}
+
                                     {isSameDay(date, new Date()) &&
                                       activeSeason &&
                                       !cancelledReason && (
@@ -10574,9 +10623,7 @@ export default function App() {
                                               </span>
                                             </div>
                                           </div>
-                                          <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 group-hover:text-emerald-500 transition-colors">
-                                            <CreditCard size={18} />
-                                          </div>
+                                          
                                         </button>
                                       )}
 
@@ -10650,21 +10697,19 @@ export default function App() {
                                               </span>
                                             </div>
                                           </div>
-                                          <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 group-hover:text-emerald-500 transition-colors">
-                                            <Users size={18} />
-                                          </div>
+                                          
                                         </button>
                                       )}
                                   </div>
                                 </div>
 
                                 {!cancelledReason && (
-                                  <div className="overflow-x-auto -mx-4 sm:mx-0 bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] rounded-2xl shadow-sm border border-[#2b6e2b]">
+                                  <div className="overflow-x-auto -mx-4 sm:mx-0 bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] sm:rounded-2xl shadow-sm border-y sm:border border-[#2b6e2b]">
                                     <table className="w-full border-collapse">
-                                      <thead className="hidden sm:table-header-group">
-<tr className="bg-[#163a16] text-[#f1c40f] text-[10px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
+                                      <thead className="">
+<tr className="bg-[#163a16] text-[#f1c40f] text-[9px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b] grid grid-cols-[1fr_48px_48px_48px_56px] sm:table-row">
                                           <th className="py-2 sm:py-4 px-2 sm:px-4 text-left border-r border-[#2b6e2b]/30">
-                                            Speler (Wit)
+                                            <span className="sm:hidden">Speler</span><span className="hidden sm:inline">Speler (Wit)</span>
                                           </th>
                                           <th
                                             className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell"
@@ -10685,28 +10730,28 @@ export default function App() {
                                             className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30"
                                             title="Te maken"
                                           >
-                                            Te maken
+                                            <span className="sm:hidden">TM</span><span className="hidden sm:inline">Te maken</span>
                                           </th>
-                                          <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
-                                            Car.
+                                          <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 w-[72px] sm:w-[88px]">
+                                            <span className="sm:hidden">Car.</span><span className="hidden sm:inline">Car.</span>
                                           </th>
                                           <th
                                             className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
                                             title="Punten (Wit)"
                                           >
-                                            Pnt.
+                                            <span className="sm:hidden">Pnt.</span><span className="hidden sm:inline">Pnt.</span>
                                           </th>
                                           <th
-                                            className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
+                                            className="hidden sm:table-cell py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
                                             title="Punten (Geel)"
                                           >
                                             Pnt.
                                           </th>
-                                          <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                          <th className="hidden sm:table-cell py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 w-[72px] sm:w-[88px]">
                                             Car.
                                           </th>
                                           <th
-                                            className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                            className="hidden sm:table-cell py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30"
                                             title="Te maken"
                                           >
                                             Te maken
@@ -10726,11 +10771,11 @@ export default function App() {
                                           >
                                             Inleg
                                           </th>
-                                          <th className="py-2 sm:py-4 px-2 sm:px-4 text-right border-r border-[#2b6e2b]/30">
+                                          <th className="hidden sm:table-cell py-2 sm:py-4 px-2 sm:px-4 text-right border-r border-[#2b6e2b]/30">
                                             Speler (Geel)
                                           </th>
                                           <th className="py-2 sm:py-4 px-2 sm:px-4 text-center exclude-from-share">
-                                            Actie
+                                            <span className="sm:hidden">Actie</span><span className="hidden sm:inline">Actie</span>
                                           </th>
                                         </tr>
                                       </thead>
@@ -10846,7 +10891,7 @@ export default function App() {
                                             <tr
                                               key={match.id}
                                               className={cn(
-                                                "hover:bg-white/5 transition-colors border-b border-[#2b6e2b]/30 last:border-0 grid grid-cols-[1fr_auto_auto_auto_auto] sm:table-row",
+                                                "hover:bg-white/5 transition-colors border-b border-[#2b6e2b]/30 last:border-0 grid grid-cols-[1fr_48px_48px_48px_56px] sm:table-row",
                                                 isMatchBlocked &&
                                                   "opacity-50 grayscale",
                                                 isCancelled && "bg-rose-900/20",
@@ -11407,7 +11452,7 @@ export default function App() {
               </motion.div>
             )}
 
-            {activeTab === "matches" && liveMatchId && (
+            {((activeTab === "matches" || activeTab === "external-matches-games") && liveMatchId) && (
               <motion.div
                 key="live-match"
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -11643,9 +11688,9 @@ export default function App() {
                       </div>
 
                       <div className="flex-1 min-w-0 space-y-6">
-                        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl transition-colors">
-                          <div className="flex justify-between items-center mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
-                            <div className="flex items-center gap-4">
+                        <div className="bg-white dark:bg-slate-900 p-3 sm:p-6 rounded-none sm:rounded-2xl border-y sm:border border-slate-200 dark:border-slate-800 shadow-xl transition-colors -mx-4 sm:mx-0">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-4 sm:mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
+                            <div className="flex items-center gap-3 sm:gap-4">
                               <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
                                 <Calendar size={24} />
                               </div>
@@ -11662,7 +11707,7 @@ export default function App() {
                                 </p>
                               </div>
                             </div>
-                            <div className="flex gap-8">
+                            <div className="flex gap-4 sm:gap-8 w-full sm:w-auto justify-between sm:justify-end">
                               <div className="text-right">
                                 <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">
                                   Tafel
@@ -11708,12 +11753,12 @@ export default function App() {
                             </div>
                           </div>
 
-                          <div className="flex justify-between items-center mb-8">
+                          <div className="flex justify-between items-center mb-4 sm:mb-8">
                             <div className="text-center flex-1">
                               <p className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase mb-2">
                                 Speler 1
                               </p>
-                              <h3 className="text-3xl font-black text-slate-800 dark:text-slate-100">
+                              <h3 className="text-xl sm:text-3xl font-black text-slate-800 dark:text-slate-100">
                                 {p1?.shortName || p1?.name}
                               </h3>
                               <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full text-xs font-bold">
@@ -11721,12 +11766,12 @@ export default function App() {
                                 {formatNumber(match?.player1AvgBefore || 0)}
                               </div>
                             </div>
-                            <div className="w-px h-16 bg-slate-100 dark:bg-slate-800 mx-8" />
+                            <div className="w-px h-16 bg-slate-100 dark:bg-slate-800 mx-2 sm:mx-8" />
                             <div className="text-center flex-1">
                               <p className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase mb-2">
                                 Speler 2
                               </p>
-                              <h3 className="text-3xl font-black text-slate-800 dark:text-slate-100">
+                              <h3 className="text-xl sm:text-3xl font-black text-slate-800 dark:text-slate-100">
                                 {p2?.shortName || p2?.name}
                               </h3>
                               <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-full text-xs font-bold">
@@ -11736,26 +11781,26 @@ export default function App() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-6 mb-8">
+                          <div className="grid grid-cols-2 gap-2 sm:gap-6 mb-4 sm:mb-8">
                             <div
                               className={cn(
-                                "bg-slate-50 dark:bg-slate-800/30 p-6 rounded-2xl text-center transition-all",
+                                "bg-slate-50 dark:bg-slate-800/30 p-2 sm:p-6 rounded-xl sm:rounded-2xl text-center transition-all",
                                 activeScoringPlayer === 1 &&
                                   "ring-4 ring-slate-200 dark:ring-slate-700",
                               )}
                             >
-                              <div className="flex justify-center items-center gap-10 mb-1">
+                              <div className="flex justify-center items-center gap-2 sm:gap-10 mb-1">
                                 <div className="text-center">
-                                  <div className="text-6xl font-black text-slate-800 dark:text-slate-100">
+                                  <div className="text-3xl sm:text-6xl font-black text-slate-800 dark:text-slate-100">
                                     {formatNumber(p1Confirmed)}
                                   </div>
                                   <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
                                     Caramboles
                                   </div>
                                 </div>
-                                <div className="w-px h-12 bg-slate-200 dark:bg-slate-700 opacity-50" />
+                                <div className="w-px h-8 sm:h-12 bg-slate-200 dark:bg-slate-700 opacity-50" />
                                 <div className="text-center">
-                                  <div className="text-6xl font-black text-slate-800 dark:text-slate-100">
+                                  <div className="text-3xl sm:text-6xl font-black text-slate-800 dark:text-slate-100">
                                     {formatNumber(
                                       calculatePoints(
                                         p1Confirmed,
@@ -11773,17 +11818,17 @@ export default function App() {
                               </div>
                               <div className="min-h-[1.5rem] flex items-center justify-center mb-4">
                                 {activeScoringPlayer === 1 && (
-                                  <div className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                                  <div className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400">
                                     ({formatNumber(currentTurnP1)})
                                   </div>
                                 )}
                               </div>
-                              <div className="grid grid-cols-2 gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+                              <div className="grid grid-cols-2 gap-1 sm:gap-2 pt-2 sm:pt-4 border-t border-slate-100 dark:border-slate-800">
                                 <div>
                                   <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
                                     Hoogste
                                   </p>
-                                  <p className="text-2xl font-black text-slate-700 dark:text-slate-300">
+                                  <p className="text-lg sm:text-2xl font-black text-slate-700 dark:text-slate-300">
                                     {Math.max(
                                       0,
                                       ...(match?.turns
@@ -11796,7 +11841,7 @@ export default function App() {
                                   <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
                                     Gem
                                   </p>
-                                  <p className="text-2xl font-black text-slate-700 dark:text-slate-300">
+                                  <p className="text-lg sm:text-2xl font-black text-slate-700 dark:text-slate-300">
                                     {formatDecimal(
                                       p1CompletedTurns > 0
                                         ? p1Confirmed / p1CompletedTurns
@@ -11809,23 +11854,23 @@ export default function App() {
                             </div>
                             <div
                               className={cn(
-                                "bg-yellow-50 dark:bg-yellow-900/10 p-6 rounded-2xl text-center transition-all",
+                                "bg-yellow-50 dark:bg-yellow-900/10 p-2 sm:p-6 rounded-xl sm:rounded-2xl text-center transition-all",
                                 activeScoringPlayer === 2 &&
                                   "ring-4 ring-yellow-200 dark:ring-yellow-800",
                               )}
                             >
-                              <div className="flex justify-center items-center gap-10 mb-1">
+                              <div className="flex justify-center items-center gap-2 sm:gap-10 mb-1">
                                 <div className="text-center">
-                                  <div className="text-6xl font-black text-yellow-600 dark:text-yellow-400">
+                                  <div className="text-3xl sm:text-6xl font-black text-yellow-600 dark:text-yellow-400">
                                     {formatNumber(p2Confirmed)}
                                   </div>
                                   <div className="text-[10px] font-bold text-yellow-400 dark:text-yellow-500 uppercase">
                                     Caramboles
                                   </div>
                                 </div>
-                                <div className="w-px h-12 bg-yellow-400/30" />
+                                <div className="w-px h-8 sm:h-12 bg-yellow-400/30" />
                                 <div className="text-center">
-                                  <div className="text-6xl font-black text-yellow-600 dark:text-yellow-400">
+                                  <div className="text-3xl sm:text-6xl font-black text-yellow-600 dark:text-yellow-400">
                                     {formatNumber(
                                       calculatePoints(
                                         p2Confirmed,
@@ -11843,17 +11888,17 @@ export default function App() {
                               </div>
                               <div className="min-h-[1.5rem] flex items-center justify-center mb-4">
                                 {activeScoringPlayer === 2 && (
-                                  <div className="text-lg font-black text-yellow-600 dark:text-yellow-400">
+                                  <div className="text-base sm:text-lg font-black text-yellow-600 dark:text-yellow-400">
                                     ({formatNumber(currentTurnP2)})
                                   </div>
                                 )}
                               </div>
-                              <div className="grid grid-cols-2 gap-2 pt-4 border-t border-yellow-100 dark:border-yellow-900/30">
+                              <div className="grid grid-cols-2 gap-1 sm:gap-2 pt-2 sm:pt-4 border-t border-yellow-100 dark:border-yellow-900/30">
                                 <div>
                                   <p className="text-[10px] font-bold text-yellow-400 dark:text-yellow-500 uppercase">
                                     Hoogste
                                   </p>
-                                  <p className="text-2xl font-black text-yellow-700 dark:text-yellow-300">
+                                  <p className="text-lg sm:text-2xl font-black text-yellow-700 dark:text-yellow-300">
                                     {Math.max(
                                       0,
                                       ...(match?.turns
@@ -11866,7 +11911,7 @@ export default function App() {
                                   <p className="text-[10px] font-bold text-yellow-400 dark:text-yellow-500 uppercase">
                                     Gem
                                   </p>
-                                  <p className="text-2xl font-black text-yellow-700 dark:text-yellow-300">
+                                  <p className="text-lg sm:text-2xl font-black text-yellow-700 dark:text-yellow-300">
                                     {formatDecimal(
                                       p2CompletedTurns > 0
                                         ? p2Confirmed / p2CompletedTurns
@@ -11899,7 +11944,7 @@ export default function App() {
                               </div>
                             </div>
                           ) : (
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 relative">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 relative">
                               <div className="flex flex-col items-center space-y-4">
                                 <div className="flex items-center gap-4 text-slate-400 dark:text-slate-500 uppercase font-black text-xs tracking-widest">
                                   <div className="h-px w-8 bg-slate-200 dark:bg-slate-700" />
@@ -11922,8 +11967,8 @@ export default function App() {
                                 )}
 
                                 <div className="text-center">
-                                  <div className="relative">
-                                    <div className="flex items-center gap-4 mb-4 md:mb-0 md:absolute md:-left-14 md:top-1/2 md:-translate-y-1/2 md:flex-col justify-center">
+                                  <div className="relative flex justify-center items-center gap-3 md:block">
+                                    <div className="flex flex-col gap-3 md:absolute md:-left-14 md:top-1/2 md:-translate-y-1/2 justify-center">
                                       <button
                                         onClick={triggerNiceBallAnimation}
                                         title="Mooie bal!"
@@ -11962,13 +12007,13 @@ export default function App() {
                                       }}
                                       placeholder="0"
                                       className={cn(
-                                        "w-36 h-36 rounded-3xl text-6xl font-black text-center outline-none transition-all border-4 shadow-2xl [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+                                        "w-24 h-24 sm:w-36 sm:h-36 rounded-2xl sm:rounded-3xl text-4xl sm:text-6xl font-black text-center outline-none transition-all border-4 shadow-2xl [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
                                         activeScoringPlayer === 1
                                           ? "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:ring-4 focus:ring-slate-500/20"
                                           : "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-300 focus:ring-4 focus:ring-yellow-500/20",
                                       )}
                                     />
-                                    <div className="flex items-center gap-4 mt-4 md:mt-0 md:absolute md:-right-14 md:top-1/2 md:-translate-y-1/2 md:flex-col">
+                                    <div className="flex flex-col gap-3 md:absolute md:-right-14 md:top-1/2 md:-translate-y-1/2 justify-center">
                                       <button
                                         onClick={() => {
                                           if (activeScoringPlayer === 1)
@@ -12620,7 +12665,7 @@ export default function App() {
             icon={<UserCircle size={22} />}
             label="Profiel"
             active={activeTab === "profile"}
-            onClick={() => setMobileSubmenu(mobileSubmenu === "profile" ? null : "profile")}
+            onClick={() => { setSelectedProfileId(currentUser.id); setActiveTab("profile"); setMobileSubmenu(null); }}
           />
           <MobileNavTab
             icon={<Settings size={22} />}
@@ -12695,22 +12740,31 @@ export default function App() {
                             <Calendar size={20} />
                             Seizoenen
                           </button>
-                          {activeClub?.participatesInExternalMatches && (
-                            <button 
-                              className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "external-matches" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
-                              onClick={() => { setActiveTab("external-matches"); setMobileSubmenu(null); }}
-                            >
-                              <Trophy size={20} />
-                              Uit & Thuis
-                            </button>
-                          )}
                           <button 
-                            className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "matches" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                            className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold pl-12", activeTab === "matches" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
                             onClick={() => { setActiveTab("matches"); setMobileSubmenu(null); }}
                           >
                             <History size={20} />
                             Wedstrijden
                           </button>
+                          {activeClub?.participatesInExternalMatches && (
+                            <>
+                              <button 
+                                className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "external-matches" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                                onClick={() => { setActiveTab("external-matches"); setMobileSubmenu(null); }}
+                              >
+                                <Trophy size={20} />
+                                Uit & Thuis
+                              </button>
+                              <button 
+                                className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold pl-12", activeTab === "external-matches-games" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                                onClick={() => { setActiveTab("external-matches-games"); setMobileSubmenu(null); }}
+                              >
+                                <History size={20} />
+                                Wedstrijden
+                              </button>
+                            </>
+                          )}
                           {currentUser.role === "admin" && (
                             <button 
                               className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "cashbook" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
@@ -12725,17 +12779,7 @@ export default function App() {
                     </>
                   )}
 
-                  {mobileSubmenu === "profile" && (
-                    <>
-                      <button 
-                        className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold", activeTab === "profile" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
-                        onClick={() => { setSelectedProfileId(currentUser.id); setActiveTab("profile"); setMobileSubmenu(null); }}
-                      >
-                        <UserCircle size={20} />
-                        Mijn Profiel
-                      </button>
-                    </>
-                  )}
+
 
                   {mobileSubmenu === "settings" && (
                     <>
@@ -14532,8 +14576,8 @@ export default function App() {
                       </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-8 space-y-8">
-                      <div className="grid grid-cols-2 gap-8">
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-4 sm:space-y-8">
+                      <div className="grid grid-cols-2 gap-4 sm:gap-8">
                         <div className="space-y-4">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 font-bold border border-slate-200 dark:border-slate-700">
@@ -14549,31 +14593,31 @@ export default function App() {
                             </div>
                           </div>
                           <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-2 sm:p-4 rounded-xl border border-slate-100 dark:border-slate-800">
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
                                 Totaal
                               </p>
-                              <p className="text-2xl font-black text-slate-800 dark:text-slate-100">
+                              <p className="text-lg sm:text-2xl font-black text-slate-800 dark:text-slate-100">
                                 {formatNumber(p1Total)}
                               </p>
                             </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-2 sm:p-4 rounded-xl border border-slate-100 dark:border-slate-800">
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
                                 Hoogste Serie
                               </p>
-                              <p className="text-2xl font-black text-slate-800 dark:text-white">
+                              <p className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
                                 {formatNumber(p1MaxSerie)}
                               </p>
                             </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-2 sm:p-4 rounded-xl border border-slate-100 dark:border-slate-800">
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
                                 Gemiddelde
                               </p>
-                              <p className="text-2xl font-black text-slate-800 dark:text-white">
+                              <p className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
                                 {p1Avg}
                               </p>
                             </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-2 sm:p-4 rounded-xl border border-slate-100 dark:border-slate-800">
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
                                 Punten
                               </p>
@@ -14607,7 +14651,7 @@ export default function App() {
                             </div>
                           </div>
                           <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-2 sm:p-4 rounded-xl border border-slate-100 dark:border-slate-800">
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
                                 Totaal
                               </p>
@@ -14615,23 +14659,23 @@ export default function App() {
                                 {formatNumber(p2Total)}
                               </p>
                             </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-2 sm:p-4 rounded-xl border border-slate-100 dark:border-slate-800">
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
                                 Hoogste Serie
                               </p>
-                              <p className="text-2xl font-black text-slate-800 dark:text-white">
+                              <p className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
                                 {formatNumber(p2MaxSerie)}
                               </p>
                             </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-2 sm:p-4 rounded-xl border border-slate-100 dark:border-slate-800">
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
                                 Gemiddelde
                               </p>
-                              <p className="text-2xl font-black text-slate-800 dark:text-white">
+                              <p className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
                                 {p2Avg}
                               </p>
                             </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-2 sm:p-4 rounded-xl border border-slate-100 dark:border-slate-800">
                               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
                                 Punten
                               </p>

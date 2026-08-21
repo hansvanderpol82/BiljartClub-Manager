@@ -1,0 +1,107 @@
+                            >
+                              <table className="w-full border-collapse">
+                                <thead className="hidden sm:table-header-group">
+<tr className="bg-[#163a16] text-[#f1c40f] text-[10px] sm:text-xs font-black uppercase tracking-widest border-b border-[#2b6e2b]">
+                                    <th className="py-2 sm:py-4 px-2 sm:px-4 text-left border-r border-[#2b6e2b]/30">
+                                      Speler (Thuis)
+                                    </th>
+                                    <th
+                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell"
+                                      title="Inleg (Thuis)"
+                                    >
+                                      Inleg
+                                    </th>
+                                    <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell" title="Hoogste Serie">
+                                      HS
+                                    </th>
+                                    <th
+                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                      title="Gemiddelde"
+                                    >
+                                      Gem.
+                                    </th>
+                                    <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                      Car.
+                                    </th>
+                                    <th
+                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
+                                      title="Punten (Thuis)"
+                                    >
+                                      Pnt.
+                                    </th>
+                                    <th
+                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20"
+                                      title="Punten (Uit)"
+                                    >
+                                      Pnt.
+                                    </th>
+                                    <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30">
+                                      Car.
+                                    </th>
+                                    <th
+                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30"
+                                      title="Gemiddelde"
+                                    >
+                                      Gem.
+                                    </th>
+                                    <th className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell" title="Hoogste Serie">
+                                      HS
+                                    </th>
+                                    <th
+                                      className="py-2 sm:py-4 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell"
+                                      title="Inleg (Uit)"
+                                    >
+                                      Inleg
+                                    </th>
+                                    <th className="py-2 sm:py-4 px-2 sm:px-4 text-right border-r border-[#2b6e2b]/30">
+                                      Speler (Uit)
+                                    </th>
+                                    
+                                  </tr>
+                                </thead>
+                                <tbody className="block sm:table-row-group">
+{(() => {
+                                    let maxPoints =
+                                      extMatch.scoringSystem === "driebanden"
+                                        ? 2
+                                        : 12;
+                                    let maxCar = 1;
+                                    let maxAvg = 0.1;
+                                    let maxHighest = 1;
+
+                                    (extMatch.games || []).forEach(
+                                      (match: any) => {
+                                        const isFinished =
+                                          match.status === "finished";
+                                        const isStarted =
+                                          match.status === "started";
+                                        const p1TurnTotal =
+                                          match.turns?.reduce(
+                                            (acc: number, t: any) =>
+                                              acc + (t.player1 || 0),
+                                            0,
+                                          ) || 0;
+                                        const p2TurnTotal =
+                                          match.turns?.reduce(
+                                            (acc: number, t: any) =>
+                                              acc + (t.player2 || 0),
+                                            0,
+                                          ) || 0;
+
+                                        const p1Score = isFinished
+                                          ? myClubIsHome
+                                            ? match.homeScore || 0
+                                            : match.awayScore || 0
+                                          : isStarted
+                                            ? p1TurnTotal
+                                            : myClubIsHome
+                                              ? match.homeScore || 0
+                                              : match.awayScore || 0;
+                                        const p2Score = isFinished
+                                          ? myClubIsHome
+                                            ? match.awayScore || 0
+                                            : match.homeScore || 0
+                                          : isStarted
+                                            ? p2TurnTotal
+                                            : myClubIsHome
+                                              ? match.awayScore || 0

@@ -1,0 +1,366 @@
+                                            myClubIsHome ? p1Score : p2Score,
+                                            myClubIsHome ? p1Target : p2Target,
+                                            extMatch.scoringSystem,
+                                          );
+                                        }
+
+                                        // Map external game to internal Match structure for the UI component
+                                        const mappedMatch = {
+                                          id: match.id,
+                                          player1Id: p1?.id || "",
+                                          player2Id: p2?.id || "",
+                                          status: match.status,
+                                          player1Score: p1Score,
+                                          player2Score: p2Score,
+                                          player1AvgBefore: p1Target,
+                                          player2AvgBefore: p2Target,
+                                          isExternal: true, // Custom flag to handle actions differently if needed later
+                                          extMatchId: extMatch.id,
+                                        };
+
+                                        return (
+                                          <tr
+                                            key={mappedMatch.id}
+                                            onClick={() => {
+                                              if (isFinished || isStarted) {
+                                                setLiveMatchId(match.id);
+                                              } else if (!isFinished && !isStarted && (isClubAdmin(activeClub, currentUser) || currentUser.role === "admin" || currentUser.role === "planner" || currentUser.role === "user")) {
+                                                setMatchToStartId(match.id);
+                                                setIsStartMatchModalOpen(true);
+                                              }
+                                            }}
+                                            className={cn("transition-colors border-b border-[#2b6e2b]/30 last:border-0 grid grid-cols-[1fr_72px_72px] sm:table-row", (isFinished || isStarted || (!isFinished && !isStarted && (isClubAdmin(activeClub, currentUser) || currentUser.role === "admin" || currentUser.role === "planner" || currentUser.role === "user"))) ? "cursor-pointer hover:bg-white/10" : "hover:bg-white/5")}
+                                          >
+                                            <td className="col-start-1 row-start-1 sm:col-auto sm:row-auto py-1 sm:py-2 px-2 sm:px-4 border-r border-[#2b6e2b]/30 text-left">
+                                              <div className="flex items-center">
+                                                <p
+                                                  className="font-bold text-white truncate text-base inline-block mr-2"
+                                                  title={p1?.name || "Onbekend"}
+                                                >
+                                                  {p1?.shortName ||
+                                                    p1?.name ||
+                                                    "Onbekend"}
+                                                </p>
+                                                <span
+                                                  onClick={(e) => {
+                                                    if (
+                                                      !isFinished &&
+                                                      !isStarted
+                                                    ) {
+                                                      e.stopPropagation();
+                                                      handleUpdateExternalMatchTarget(
+                                                        extMatch,
+                                                        match,
+                                                        myClubIsHome,
+                                                        1,
+                                                      );
+                                                    }
+                                                  }}
+                                                  className={cn(
+                                                    "text-[12px] font-bold tracking-widest inline-block",
+                                                    !isFinished &&
+                                                      !isStarted &&
+                                                      (currentUser.role ===
+                                                        "admin" ||
+                                                        currentUser.role ===
+                                                          "planner" ||
+                                                        isClubAdmin(activeClub, currentUser))
+                                                      ? "cursor-pointer text-emerald-300 hover:text-emerald-100 transition-colors"
+                                                      : "text-emerald-300 opacity-80",
+                                                  )}
+                                                >
+                                                  (
+                                                  {formatNumber(
+                                                    mappedMatch.player1AvgBefore,
+                                                  )}
+                                                  )
+                                                </span>
+                                              </div>
+                                            </td>
+
+                                            <td className="py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
+                                              {isClubAdmin(activeClub, currentUser) ||
+                                              currentUser.role === "admin" ||
+                                              currentUser.role === "planner" ? (
+                                                <button
+                                                  onClick={() =>
+                                                    toggleExternalMatchPayment(
+                                                      extMatch.id,
+                                                      match.id,
+                                                      myClubIsHome
+                                                        ? true
+                                                        : false,
+                                                    )
+                                                  }
+                                                  className={cn(
+                                                    "w-5 h-5 mx-auto rounded-md flex items-center justify-center border text-[9px]",
+                                                    match[
+                                                      myClubIsHome
+                                                        ? "homePlayerPaid"
+                                                        : "awayPlayerPaid"
+                                                    ]
+                                                      ? "bg-emerald-500/20 text-emerald-400 border-emerald-500"
+                                                      : "bg-rose-500/20 text-rose-400 border-rose-500 hover:bg-rose-500/40",
+                                                  )}
+                                                  title={`Inleg: ${match[myClubIsHome ? "homePlayerPaid" : "awayPlayerPaid"] ? "Betaald" : "Niet betaald"}`}
+                                                >
+                                                  <Banknote size={10} />
+                                                </button>
+                                              ) : (
+                                                <div
+                                                  className={cn(
+                                                    "w-5 h-5 mx-auto rounded-md flex items-center justify-center border text-[9px]",
+                                                    match[
+                                                      myClubIsHome
+                                                        ? "homePlayerPaid"
+                                                        : "awayPlayerPaid"
+                                                    ]
+                                                      ? "bg-emerald-500/20 text-emerald-400 border-emerald-500 opacity-60"
+                                                      : "bg-rose-500/20 text-rose-400 border-rose-500 opacity-60",
+                                                  )}
+                                                  title={`Inleg: ${match[myClubIsHome ? "homePlayerPaid" : "awayPlayerPaid"] ? "Betaald" : "Niet betaald"}`}
+                                                >
+                                                  <Banknote size={10} />
+                                                </div>
+                                              )}
+                                            </td>
+
+                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-white/50 hidden sm:table-cell">
+                                              <div
+                                                className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
+                                                style={{
+                                                  width: `${(p1HighestInfo / maxHighest) * 100}%`,
+                                                }}
+                                              />
+                                              <span className="relative z-10">
+                                                {match.turns?.length > 0 ? (
+                                                  <span className="font-bold text-white">
+                                                    {p1HighestInfo}
+                                                  </span>
+                                                ) : (
+                                                  "-"
+                                                )}
+                                              </span>
+                                            </td>
+
+                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-[#f1c40f] hidden sm:table-cell">
+                                              <div
+                                                className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
+                                                style={{
+                                                  width: `${(p1AvgInfo / maxAvg) * 100}%`,
+                                                }}
+                                              />
+                                              <span className="relative z-10">
+                                                {match.turns?.length > 0 ? (
+                                                  <span className="font-bold">
+                                                    {p1AvgInfo.toFixed(3)}
+                                                  </span>
+                                                ) : (
+                                                  "-"
+                                                )}
+                                              </span>
+                                            </td>
+
+                                            <td className="col-start-2 row-start-1 sm:col-auto sm:row-auto relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden ">
+                                              <div
+                                                className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
+                                                style={{
+                                                  width: `${(p1Score / maxCar) * 100}%`,
+                                                }}
+                                              />
+                                              <span className="relative z-10 font-black text-white text-xl">
+                                                {isStarted || isFinished
+                                                  ? p1Score || 0
+                                                  : "-"}
+                                              </span>
+                                            </td>
+
+                                            <td className="col-start-3 row-start-1 sm:col-auto sm:row-auto relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
+                                              <div
+                                                className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
+                                                style={{
+                                                  width: `${(((typeof (myClubIsHome ? displayHomePoints : displayAwayPoints) === "number" ? (myClubIsHome ? displayHomePoints : displayAwayPoints) : 0) as number) / maxPoints) * 100}%`,
+                                                }}
+                                              />
+                                              <span className="relative z-10 font-black text-[#f1c40f] text-xl">
+                                                {myClubIsHome
+                                                  ? displayHomePoints
+                                                  : displayAwayPoints}
+                                              </span>
+                                            </td>
+
+                                            <td className="col-start-3 row-start-2 sm:col-auto sm:row-auto relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 bg-black/20 overflow-hidden">
+                                              <div
+                                                className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
+                                                style={{
+                                                  width: `${(((typeof (myClubIsHome ? displayAwayPoints : displayHomePoints) === "number" ? (myClubIsHome ? displayAwayPoints : displayHomePoints) : 0) as number) / maxPoints) * 100}%`,
+                                                }}
+                                              />
+                                              <span className="relative z-10 font-black text-[#f1c40f] text-xl">
+                                                {myClubIsHome
+                                                  ? displayAwayPoints
+                                                  : displayHomePoints}
+                                              </span>
+                                            </td>
+
+                                            <td className="col-start-2 row-start-2 sm:col-auto sm:row-auto relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden ">
+                                              <div
+                                                className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
+                                                style={{
+                                                  width: `${(p2Score / maxCar) * 100}%`,
+                                                }}
+                                              />
+                                              <span className="relative z-10 font-black text-white text-xl">
+                                                {isStarted || isFinished
+                                                  ? p2Score || 0
+                                                  : "-"}
+                                              </span>
+                                            </td>
+
+                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-[#f1c40f] hidden sm:table-cell">
+                                              <div
+                                                className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
+                                                style={{
+                                                  width: `${(p2AvgInfo / maxAvg) * 100}%`,
+                                                }}
+                                              />
+                                              <span className="relative z-10">
+                                                {match.turns?.length > 0 ? (
+                                                  <span className="font-bold">
+                                                    {p2AvgInfo.toFixed(3)}
+                                                  </span>
+                                                ) : (
+                                                  "-"
+                                                )}
+                                              </span>
+                                            </td>
+
+                                            <td className="relative py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 overflow-hidden text-white/50 hidden sm:table-cell">
+                                              <div
+                                                className="absolute inset-y-1 left-0 bg-[#2b6e2b]/60 transition-all duration-500"
+                                                style={{
+                                                  width: `${(p2HighestInfo / maxHighest) * 100}%`,
+                                                }}
+                                              />
+                                              <span className="relative z-10">
+                                                {match.turns?.length > 0 ? (
+                                                  <span className="font-bold text-white">
+                                                    {p2HighestInfo}
+                                                  </span>
+                                                ) : (
+                                                  "-"
+                                                )}
+                                              </span>
+                                            </td>
+
+                                            <td className="py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
+                                              {isClubAdmin(activeClub, currentUser) ||
+                                              currentUser.role === "admin" ||
+                                              currentUser.role === "planner" ? (
+                                                <button
+                                                  onClick={() =>
+                                                    toggleExternalMatchPayment(
+                                                      extMatch.id,
+                                                      match.id,
+                                                      !myClubIsHome,
+                                                    )
+                                                  }
+                                                  className={cn(
+                                                    "w-5 h-5 mx-auto rounded-md flex items-center justify-center border text-[9px]",
+                                                    match[
+                                                      !myClubIsHome
+                                                        ? "homePlayerPaid"
+                                                        : "awayPlayerPaid"
+                                                    ]
+                                                      ? "bg-emerald-500/20 text-emerald-400 border-emerald-500"
+                                                      : "bg-rose-500/20 text-rose-400 border-rose-500 hover:bg-rose-500/40",
+                                                  )}
+                                                  title={`Inleg: ${match[!myClubIsHome ? "homePlayerPaid" : "awayPlayerPaid"] ? "Betaald" : "Niet betaald"}`}
+                                                >
+                                                  <Banknote size={10} />
+                                                </button>
+                                              ) : (
+                                                <div
+                                                  className={cn(
+                                                    "w-5 h-5 mx-auto rounded-md flex items-center justify-center border text-[9px]",
+                                                    match[
+                                                      !myClubIsHome
+                                                        ? "homePlayerPaid"
+                                                        : "awayPlayerPaid"
+                                                    ]
+                                                      ? "bg-emerald-500/20 text-emerald-400 border-emerald-500 opacity-60"
+                                                      : "bg-rose-500/20 text-rose-400 border-rose-500 opacity-60",
+                                                  )}
+                                                  title={`Inleg: ${match[!myClubIsHome ? "homePlayerPaid" : "awayPlayerPaid"] ? "Betaald" : "Niet betaald"}`}
+                                                >
+                                                  <Banknote size={10} />
+                                                </div>
+                                              )}
+                                            </td>
+
+                                            <td className="col-start-1 row-start-2 sm:col-auto sm:row-auto py-1 sm:py-2 px-2 sm:px-4 text-left border-r border-[#2b6e2b]/30">
+                                              <div className="flex items-center ">
+                                                <p
+                                                  className="font-bold text-white truncate text-base inline-block"
+                                                  title={p2?.name || "Onbekend"}
+                                                >
+                                                  {p2?.shortName ||
+                                                    p2?.name ||
+                                                    "Onbekend"}
+                                                </p>                                                <span
+                                                  onClick={(e) => {
+                                                    if (
+                                                      !isFinished &&
+                                                      !isStarted
+                                                    ) {
+                                                      e.stopPropagation();
+                                                      handleUpdateExternalMatchTarget(
+                                                        extMatch,
+                                                        match,
+                                                        myClubIsHome,
+                                                        2,
+                                                      );
+                                                    }
+                                                  }}
+                                                  className={cn(
+                                                    "text-[12px] font-bold tracking-widest inline-block mr-2",
+                                                    !isFinished &&
+                                                      !isStarted &&
+                                                      (currentUser.role ===
+                                                        "admin" ||
+                                                        currentUser.role ===
+                                                          "planner" ||
+                                                        isClubAdmin(activeClub, currentUser))
+                                                      ? "cursor-pointer text-emerald-300 hover:text-emerald-100 transition-colors"
+                                                      : "text-emerald-300 opacity-80",
+                                                  )}
+                                                >
+                                                  (
+                                                  {formatNumber(
+                                                    mappedMatch.player2AvgBefore,
+                                                  )}
+                                                  )
+                                                </span>
+                                              </div>
+                                            </td>
+
+                                            
+                                          </tr>
+                                        );
+                                      },
+                                    );
+                                  })()}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    <div className="sticky top-0 z-40 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md py-4 -mx-4 px-2 sm:px-4 border-b border-transparent data-[sticky=true]:border-slate-200 data-[sticky=true]:dark:border-slate-800 transition-colors flex flex-col md:flex-row gap-4">
+                      <div ref={searchDropdownRef} className="relative flex-1">
+                        <Search
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
