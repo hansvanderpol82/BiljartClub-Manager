@@ -38,6 +38,7 @@ export interface Transaction {
   amount: number;
   type: 'manual' | 'contribution' | 'match_fee';
   userId?: string;
+  receiptData?: string;
 }
 
 export interface Season {
@@ -81,6 +82,8 @@ export interface Match {
   turns: { player1: number; player2: number }[];
   player1Paid: boolean;
   player2Paid: boolean;
+  activeScorerId?: string;
+  activeScorerName?: string;
 }
 
 export interface MemberStats {
@@ -111,6 +114,8 @@ export interface ExternalMatchGame {
   date?: string;
   homePlayerPaid?: boolean;
   awayPlayerPaid?: boolean;
+  activeScorerId?: string;
+  activeScorerName?: string;
 }
 
 export interface ExternalMatch {
@@ -132,7 +137,7 @@ export interface ExternalMatch {
 
 export interface Notification {
   id: string;
-  type: 'absence_request' | 'absence_approved' | 'system';
+  type: 'absence_request' | 'absence_approved' | 'system' | 'privacy_deletion_request';
   title: string;
   message: string;
   forRole?: ('applicatiebeheerder' | 'admin' | 'planner' | 'member')[];

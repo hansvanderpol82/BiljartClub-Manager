@@ -1,13 +1,13 @@
 const fs = require('fs');
-let content = fs.readFileSync('src/App.tsx', 'utf-8');
-const oldBlock = fs.readFileSync('tr2_block.txt', 'utf-8');
-const newBlock = fs.readFileSync('tr2_block_fixed.txt', 'utf-8');
 
-if (content.includes(oldBlock)) {
-  content = content.replace(oldBlock, newBlock);
-  console.log("Successfully replaced block.");
-} else {
-  console.log("Error: oldBlock not found in App.tsx!");
-}
+let app = fs.readFileSync('src/App.tsx', 'utf-8');
+let fixed = fs.readFileSync('fixed_kasboek.tsx', 'utf-8');
 
-fs.writeFileSync('src/App.tsx', content);
+// The original extracted lines are exactly 6665 to 7050. Let's just find the same block and replace it.
+// The easiest is to split the app into lines, take 0 to 6664, append fixed, append the rest.
+
+let lines = app.split('\n');
+let before = lines.slice(0, 6664).join('\n');
+let after = lines.slice(7050).join('\n'); // 7050 means we skipped 7050 lines (0 to 7049).
+
+fs.writeFileSync('src/App.tsx', before + '\n' + fixed + '\n' + after);
