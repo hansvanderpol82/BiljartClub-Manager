@@ -57,6 +57,7 @@ export interface Season {
   aantalTafels: number;
   status: 'open' | 'closed';
   isBlocked?: boolean;
+  aanvangstijd?: string;
   attendance?: Record<string, string[]>;
   cancelledDays?: Record<string, string>;
   initialBalanceType?: 'manual' | 'carryover';

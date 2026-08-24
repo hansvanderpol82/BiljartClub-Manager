@@ -25,6 +25,7 @@ import {
   LayoutDashboard,
   UserCircle,
   LogOut,
+  Download,
   Image as ImageIcon,
   Clock,
   Tv,
@@ -134,6 +135,84 @@ const HomeTab = ({
   const [substitutePlayerId, setSubstitutePlayerId] = useState<string>("");
 
   const rescheduleRef = useRef(handleRescheduleUnplayedMatches);
+
+  // ONE-TIME FIX FOR MERGED ANTOON
+  useEffect(() => {
+    if ((currentUser?.role === 'admin' || currentUser?.role === 'applicatiebeheerder') && data?.matches && !localStorage.getItem('antoon_fix_applied_3')) {
+      const antoon = data.users.find(u => u.name === 'Antoon');
+      if (!antoon) return;
+      
+      const bandSeason = data.seasons.find(s => s.name.includes('Bandstoten 2026'));
+      if (!bandSeason) return;
+
+      const nameToAvg = { "Antoon": 34, "Martien": 30, "Ad": 7, "Jo": 7, "Mustafa": 16, "Hassan": 26, "Yusuf": 15, "Yasar": 38 };
+      
+      const missingNames = Object.keys(nameToAvg).filter(name => !data.users.some(u => u.name === name || u.shortName === name));
+      if (missingNames.length > 0) {
+        console.log("Waiting for user to add missing users:", missingNames);
+        return; // wait until they are added
+      }
+      
+      const avgToUserId = {};
+      Object.keys(nameToAvg).forEach(name => {
+        const u = data.users.find(u => u.name === name || u.shortName === name);
+        if (u) avgToUserId[nameToAvg[name]] = u.id;
+      });
+      
+      const adId = data.users.find(u => u.name === 'Ad' || u.shortName === 'Ad').id;
+      const joId = data.users.find(u => u.name === 'Jo' || u.shortName === 'Jo').id;
+
+      // The exact assignment of Ad vs Jo for the 18 slots of average 7
+      const assignment = ['Ad', 'Ad', 'Ad', 'Ad', 'Ad', 'Jo', 'Ad', 'Ad', 'Jo', 'Ad', 'Jo', 'Jo', 'Jo', 'Jo', 'Jo', 'Jo', 'Ad', 'Jo'];
+      let slotIdx = 0;
+      
+      let matchesChanged = false;
+      const newMatches = data.matches.map(m => {
+        if (m.seasonId !== bandSeason.id) return m;
+        let changed = false;
+        const mCopy = { ...m };
+        
+        if (mCopy.player1Id === antoon.id) {
+          if (mCopy.player1AvgBefore === 7) {
+             mCopy.player1Id = assignment[slotIdx] === 'Ad' ? adId : joId;
+             slotIdx++;
+          } else {
+             mCopy.player1Id = avgToUserId[mCopy.player1AvgBefore] || antoon.id;
+          }
+          changed = true;
+        }
+        if (mCopy.player2Id === antoon.id) {
+          if (mCopy.player2AvgBefore === 7) {
+             mCopy.player2Id = assignment[slotIdx] === 'Ad' ? adId : joId;
+             slotIdx++;
+          } else {
+             mCopy.player2Id = avgToUserId[mCopy.player2AvgBefore] || antoon.id;
+          }
+          changed = true;
+        }
+        if (changed) matchesChanged = true;
+        return mCopy;
+      });
+      
+      if (matchesChanged) {
+        // We also need to fix the members in the season
+        const newSeasonMembers = [...bandSeason.members];
+        Object.keys(nameToAvg).forEach(name => {
+           const u = data.users.find(u => u.name === name || u.shortName === name);
+           if (u && !newSeasonMembers.some(sm => sm.userId === u.id)) {
+               newSeasonMembers.push({ userId: u.id, currentAverage: nameToAvg[name], paidContributie: false });
+           }
+        });
+        
+        const newSeasons = data.seasons.map(s => s.id === bandSeason.id ? { ...s, members: newSeasonMembers } : s);
+        
+        console.log("Applying Antoon matches fix...");
+        setData(prev => ({ ...prev, matches: newMatches, seasons: newSeasons }));
+        localStorage.setItem('antoon_fix_applied_3', 'true');
+      }
+    }
+  }, [currentUser, data]);
+
   useEffect(() => {
     rescheduleRef.current = handleRescheduleUnplayedMatches;
   }, [handleRescheduleUnplayedMatches]);
@@ -212,11 +291,12 @@ const HomeTab = ({
   const handleAbsenceSubmit = () => {
     if (!absenceDate || !absenceSeasonId) return;
 
+    const formattedDate = new Date(absenceDate).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const newNotification = {
       id: "notif_" + Date.now().toString(),
       type: 'absence_request',
       title: 'Nieuwe Afmelding',
-      message: `${currentUser.name} heeft zich afgemeld voor speeldag: ${absenceDate}.`,
+      message: `${currentUser.name} heeft zich afgemeld voor ${formattedDate}`,
       forRole: ['admin', 'planner'],
       forUserId: currentUser.id,
       readBy: [],
@@ -353,7 +433,7 @@ const HomeTab = ({
     const potentialSubstitutes = futureMatches.map((m: Match) => {
       const subId = m.player1Id === opponentId ? m.player2Id : m.player1Id;
       return data.users.find((u: User) => u.id === subId);
-    }).filter(Boolean);
+    }).filter(Boolean).filter((user, index, self) => self.findIndex(u => u?.id === user?.id) === index);
 
     return (
       <div className="space-y-4">
@@ -432,7 +512,7 @@ const HomeTab = ({
               <div key={n.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex justify-between items-center">
                 <div>
                   <p className="font-bold text-slate-800 dark:text-white">{n.title}</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{n.message}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{formatNotificationMessage(n.message)}</p>
                 </div>
                 <button 
                   onClick={() => setActiveNotification(n)}
@@ -469,8 +549,24 @@ const HomeTab = ({
               );
               
               const upcomingDates = [...new Set(plannedMatches.map((m: Match) => m.date))].sort();
-              const todayStr = new Date().toISOString().split('T')[0];
-              const nextDate = upcomingDates.find(d => (d as string) >= todayStr) || upcomingDates[0];
+              const now = new Date();
+              const nextDate = upcomingDates.find(d => {
+                 const matchDateStr = d as string;
+                 const aanvangstijd = season.aanvangstijd || "19:00";
+                 const [hours, minutes] = aanvangstijd.split(":");
+                 const matchDeadline = new Date(matchDateStr);
+                 matchDeadline.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                 return matchDeadline > now;
+              }) || upcomingDates[0];
+              
+              const isPastDeadline = nextDate ? (() => {
+                 const matchDateStr = nextDate as string;
+                 const aanvangstijd = season.aanvangstijd || "19:00";
+                 const [hours, minutes] = aanvangstijd.split(":");
+                 const matchDeadline = new Date(matchDateStr);
+                 matchDeadline.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                 return now > matchDeadline;
+              })() : true;
               
               const matchesOnNextDate = nextDate ? plannedMatches.filter((m: Match) => m.date === nextDate) : [];
               
@@ -515,16 +611,18 @@ const HomeTab = ({
                         })}
                       </div>
                       <div className="flex gap-2 mt-4">
-                        <button
-                          onClick={() => {
-                            setAbsenceSeasonId(season.id);
-                            setAbsenceDate(nextDate as string);
-                            setIsAbsenceModalOpen(true);
-                          }}
-                          className="flex-1 text-center text-sm font-bold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg py-2 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
-                        >
-                          Afmelden
-                        </button>
+                        {!isPastDeadline && (
+                          <button
+                            onClick={() => {
+                              setAbsenceSeasonId(season.id);
+                              setAbsenceDate(nextDate as string);
+                              setIsAbsenceModalOpen(true);
+                            }}
+                            className="flex-1 text-center text-sm font-bold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg py-2 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                          >
+                            Afmelden
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setSelectedClubId(season.clubId);
@@ -1074,6 +1172,24 @@ const isClubAdmin = (club: Club | null | undefined, user: User | null | undefine
   return club.adminId === user.id || (club.coAdminEmails || []).includes(user.email);
 };
 
+const formatNotificationMessage = (msg: string) => {
+  if (msg?.includes("heeft zich afgemeld voor speeldag: ")) {
+    const parts = msg.split("heeft zich afgemeld voor speeldag: ");
+    if (parts.length === 2) {
+      const datePart = parts[1].replace(/\.$/, "").trim();
+      try {
+        const dateObj = new Date(datePart);
+        if (!isNaN(dateObj.getTime())) {
+          return `${parts[0]}heeft zich afgemeld voor ${dateObj.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+  return msg;
+};
+
 export default function App() {
   const uniqueById = (arr: any[]) => {
     if (!arr) return [];
@@ -1136,9 +1252,6 @@ export default function App() {
           const parsed = JSON.parse(parsedDataStr);
           if (!parsed.notifications) parsed.notifications = [];
 
-          // ---------------------------------------------------------
-          // DATA MIGRATION & DEDUPLICATION (Fix for Frank de Bruijn)
-          // ---------------------------------------------------------
           parsed.externalMatches = uniqueById((parsed.externalMatches || initialData.externalMatches).filter(Boolean));
           parsed.matches = uniqueById((parsed.matches || initialData.matches).filter(Boolean));
           parsed.seasons = uniqueById((parsed.seasons || initialData.seasons).filter(Boolean));
@@ -1321,6 +1434,32 @@ export default function App() {
 
   const [inviteClubId, setInviteClubId] = useState(() => new URLSearchParams(window.location.search).get('invite') || null);
   const [showInviteWelcome, setShowInviteWelcome] = useState(!!inviteClubId);
+
+  
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+    }
+    setDeferredPrompt(null);
+  };
 
   const [prikbordTab, setPrikbordTab] = useState<"berichten" | "afmeldhistorie">("berichten");
   const [activeTab, setActiveTab] = useState<
@@ -1560,6 +1699,7 @@ export default function App() {
   const [newBoardMessageAttachment, setNewBoardMessageAttachment] = useState<{name: string, type: string, dataUrl: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newSeasonName, setNewSeasonName] = useState("");
+  const [newSeasonAanvangstijd, setNewSeasonAanvangstijd] = useState("19:00");
   const [newSeasonSpeeldagen, setNewSeasonSpeeldagen] = useState<string[]>([
     "maandag",
   ]);
@@ -1598,6 +1738,7 @@ export default function App() {
   const [showClosedSeasons, setShowClosedSeasons] = useState(false);
   const [collapsedCashbookSeasons, setCollapsedCashbookSeasons] = useState<string[]>([]);
   const [showBlockedSeasons, setShowBlockedSeasons] = useState(false);
+  const [showInactiveMembers, setShowInactiveMembers] = useState(false);
   const [showBlockedExternalMatches, setShowBlockedExternalMatches] =
     useState(false);
   const [isDeleteSeasonModalOpen, setIsDeleteSeasonModalOpen] = useState(false);
@@ -1809,6 +1950,7 @@ export default function App() {
   const [promptValue, setPromptValue] = useState("");
   const [isEditSpeeldagenModalOpen, setIsEditSpeeldagenModalOpen] = useState(false);
   const [editSeasonSpeeldagen, setEditSeasonSpeeldagen] = useState<string[]>([]);
+  const [editSeasonAanvangstijd, setEditSeasonAanvangstijd] = useState<string>("19:00");
   const [sortConfig, setSortConfig] = useState<{
     field: string;
     direction: "asc" | "desc";
@@ -2952,6 +3094,7 @@ export default function App() {
     setNewSeasonInitialBalanceAmount(0);
     setNewSeasonCarryoverSeasonId("");
     setNewSeasonScoringSystem("default");
+    setNewSeasonAanvangstijd("19:00");
   };
 
   const createSeason = (seasonData: Partial<Season>) => {
@@ -3612,11 +3755,11 @@ export default function App() {
     }));
   };
 
-  const updateSeasonSpeeldagen = (seasonId: string, newSpeeldagen: string[], requireReschedule: boolean) => {
+  const updateSeasonSpeeldagen = (seasonId: string, newSpeeldagen: string[], newAanvangstijd: string, requireReschedule: boolean) => {
     setData((prev: any) => ({
       ...prev,
       seasons: prev.seasons.map((s: Season) =>
-        s.id === seasonId ? { ...s, speeldagen: newSpeeldagen } : s
+        s.id === seasonId ? { ...s, speeldagen: newSpeeldagen, aanvangstijd: newAanvangstijd } : s
       ),
     }));
     
@@ -6209,6 +6352,14 @@ export default function App() {
               </AnimatePresence>
             </>
           )}
+{isInstallable && (
+            <SidebarItem
+              icon={<Download size={20} />}
+              label="Installeer App"
+              onClick={handleInstallClick}
+              collapsed={isSidebarCollapsed}
+            />
+          )}
           <SidebarItem
             icon={<LogOut size={20} />}
             label="Uitloggen"
@@ -7143,15 +7294,27 @@ export default function App() {
                   <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
                     Leden van {activeClub.name}
                   </h2>
-                  {isClubAdmin(activeClub, currentUser) && (
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => setIsMemberModalOpen(true)}
-                      className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                      onClick={() => setShowInactiveMembers(!showInactiveMembers)}
+                      className="hidden md:flex items-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
+                      title={showInactiveMembers ? "Inactieve leden verbergen" : "Inactieve leden tonen"}
                     >
-                      <UserPlus size={20} />
-                      <span>Nieuw Lid Toevoegen</span>
+                      {showInactiveMembers ? <Lock size={16} /> : <Unlock size={16} />}
+                      <span className="hidden sm:inline">
+                        {showInactiveMembers ? "Verbergen" : "Tonen"}
+                      </span>
                     </button>
-                  )}
+                    {isClubAdmin(activeClub, currentUser) && (
+                      <button
+                        onClick={() => setIsMemberModalOpen(true)}
+                        className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                      >
+                        <UserPlus size={20} />
+                        <span>Nieuw Lid Toevoegen</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
@@ -7165,12 +7328,13 @@ export default function App() {
                       </tr>
                     </thead>
                     <tbody className="flex flex-col sm:table-row-group divide-y divide-slate-50 dark:divide-slate-800 w-full">
-                      {(activeClub.memberIds || []).map((memberId) => {
-                        const member = data.users.find(
-                          (u: User) => u.id === memberId,
-                        );
-                        return (
-                          <tr
+                      {(activeClub.memberIds || [])
+                        .map((memberId) => data.users.find((u: User) => u.id === memberId))
+                        .filter((member) => member && (showInactiveMembers ? true : member.active !== false))
+                        .map((member) => {
+                          const memberId = member.id;
+                          return (
+                            <tr
                             key={memberId}
                             onClick={() => {
                               setSelectedProfileId(memberId);
@@ -9687,6 +9851,7 @@ export default function App() {
                                 onClick={() => {
                                   if (currentUser.role === "admin" || currentUser.role === "planner") {
                                     setEditSeasonSpeeldagen(season.speeldagen || []);
+                                    setEditSeasonAanvangstijd(season.aanvangstijd || "19:00");
                                     setIsEditSpeeldagenModalOpen(true);
                                   }
                                 }}
@@ -12746,7 +12911,7 @@ export default function App() {
                               </span>
                             </div>
                             <p className="text-slate-600 dark:text-slate-300 text-sm">
-                              {notif.message}
+                              {formatNotificationMessage(notif.message)}
                             </p>
                           </div>
                         ))}
@@ -13247,7 +13412,16 @@ export default function App() {
                         </>
                       )}
                       <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
-                      <button 
+{isInstallable && (
+                        <button 
+                          className="flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                          onClick={() => { handleInstallClick(); setMobileSubmenu(null); }}
+                        >
+                          <Download size={20} />
+                          Installeer App
+                        </button>
+                      )}
+                      <button
                         className="flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                         onClick={() => { auth.signOut(); setMobileSubmenu(null); }}
                       >
@@ -13655,6 +13829,18 @@ export default function App() {
                       </div>
                     </div>
 
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
+                        Aanvangstijd wedstrijden
+                      </label>
+                      <input
+                        type="time"
+                        value={newSeasonAanvangstijd}
+                        onChange={(e) => setNewSeasonAanvangstijd(e.target.value)}
+                        className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-colors"
+                      />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
@@ -14016,6 +14202,7 @@ export default function App() {
                       name: newSeasonName,
                       members: newSeasonMemberIds as any,
                       speeldagen: newSeasonSpeeldagen,
+                      aanvangstijd: newSeasonAanvangstijd,
                       matchesPerPair: newSeasonMatchesPerPair,
                       beurtenPerWedstrijd: newSeasonBeurten,
                       wedstrijdenPerSpeeldag: newSeasonMatchesPerDay,
@@ -17267,6 +17454,18 @@ export default function App() {
                       ))}
                     </div>
                   </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-2">
+                      Aanvangstijd wedstrijden
+                    </label>
+                    <input
+                      type="time"
+                      value={editSeasonAanvangstijd}
+                      onChange={(e) => setEditSeasonAanvangstijd(e.target.value)}
+                      className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-colors"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -17282,13 +17481,13 @@ export default function App() {
                   onClick={() => {
                     setIsEditSpeeldagenModalOpen(false);
                     showConfirm(
-                      "Speeldagen gewijzigd",
-                      "Wil je de nog niet gespeelde wedstrijden automatisch herindelen op basis van de nieuwe speeldagen?",
+                      "Instellingen gewijzigd",
+                      "Wil je de nog niet gespeelde wedstrijden automatisch herindelen op basis van de eventueel nieuwe speeldagen?",
                       () => {
-                        updateSeasonSpeeldagen(activeSeason.id, editSeasonSpeeldagen, true);
+                        updateSeasonSpeeldagen(activeSeason.id, editSeasonSpeeldagen, editSeasonAanvangstijd, true);
                       },
                       () => {
-                        updateSeasonSpeeldagen(activeSeason.id, editSeasonSpeeldagen, false);
+                        updateSeasonSpeeldagen(activeSeason.id, editSeasonSpeeldagen, editSeasonAanvangstijd, false);
                       }
                     );
                   }}
