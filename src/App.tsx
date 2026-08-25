@@ -17568,15 +17568,17 @@ export default function App() {
                       updateGlobalCastState(newState);
                     } catch (err: any) {
                       console.log("Presentation cancelled or failed:", err);
-                      if (err.name === 'NotFoundError') {
-                        // No screens found, fallback to new tab
+                      if (err.name !== 'AbortError') {
+                        // Fallback to new tab if not explicitly cancelled by user
                         updateGlobalCastState(newState);
+                        if (err.name === 'NotSupportedError') {
+                          alert('Direct casten wordt niet volledig ondersteund door deze browser/telefoon. Het grote scherm wordt geopend in een nieuw tabblad. Gebruik de ingebouwde scherm-cast functie van je telefoon (zoals Smart View of AirPlay) om dit naar de TV te sturen.');
+                        }
                         window.open(castUrl.toString(), '_blank');
-                      } else {
-                        // User cancelled, do nothing
                       }
                     }
                   } else {
+                    alert('Direct casten wordt niet ondersteund door deze browser (bijv. iPhone/Safari). Het grote scherm wordt geopend in een nieuw tabblad. Gebruik scherm-weergave (Screen Mirroring) om dit naar de TV te sturen.');
                     updateGlobalCastState(newState);
                     window.open(castUrl.toString(), '_blank');
                   }
