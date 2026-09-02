@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import ExcelModule from "./components/ExcelModule";
 import { PaymentModal } from "./components/PaymentModal";
 import { ImageCropperModal } from "./components/ImageCropperModal";
 import { ManageAccountsTab } from "./components/ManageAccountsTab";
@@ -40,6 +41,7 @@ import {
   Search,
   TrendingUp,
   Eye,
+  Info,
   Gift,
   XCircle,
   X,
@@ -1228,6 +1230,8 @@ export default function App() {
   const dataRef = useRef(data);
   useEffect(() => { dataRef.current = data; }, [data]);
 
+
+
   const [authUser, setAuthUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
@@ -1393,6 +1397,40 @@ export default function App() {
   }, [authUser]);
 
   const [currentUser, setCurrentUser] = useState<User>(data.users[0]);
+
+  useEffect(() => {
+    if (dataLoaded && currentUser && (currentUser.role === "applicatiebeheerder" || currentUser.role === "admin") && data?.matches?.length > 0) {
+      const hansJrId = "9yaorw2vb";
+      const frankId = data.users.find(u => u.name.toLowerCase().includes("frank"))?.id;
+      
+      if (frankId) {
+        const badMatches = data.matches.filter(m => 
+          m.date.startsWith("2026-04-09") && (m.player1Id === hansJrId || m.player2Id === hansJrId)
+        );
+        
+        if (badMatches.length > 0) {
+          console.log("Removing bad matches for Hans jr and Frank on 2026-04-09", badMatches);
+          
+          const newMatches = data.matches.filter(m => !(
+            m.date.startsWith("2026-04-09") && (m.player1Id === hansJrId || m.player2Id === hansJrId)
+          ));
+          
+          const newData = { ...data, matches: newMatches };
+          
+          // Actually persist to firestore
+          import("firebase/firestore").then(({ doc, setDoc }) => {
+            import("./lib/firebase").then(({ db }) => {
+              const docRef = doc(db, "appData", "main");
+              setDoc(docRef, { data: JSON.stringify(newData) })
+                .then(() => console.log("Successfully removed bad matches from Firestore"))
+                .catch(e => console.error("Error removing bad matches", e));
+            });
+          });
+        }
+      }
+    }
+  }, [dataLoaded, currentUser, data]);
+
 
   useEffect(() => {
     if (authUser && data.users) {
@@ -1736,6 +1774,7 @@ export default function App() {
   const [newSeasonScoringSystem, setNewSeasonScoringSystem] = useState<
     "default" | "driebanden"
   >("default");
+  const [showScoringInfoModal, setShowScoringInfoModal] = useState(false);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [transactionSeasonId, setTransactionSeasonId] = useState<string | null>(
     null,
@@ -7782,6 +7821,23 @@ export default function App() {
 
                                   {/* Buttons row */}
                                   <div className="flex flex-row items-center justify-center md:justify-end gap-2 w-full mt-2">
+                                    {currentUser?.email === "info@hans-apps.com" && (
+                                      <button
+                                        onClick={() => {
+                                          if (window.confirm(`Weet je zeker dat je deze uit/thuis wedstrijd wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
+                                            setData((prev) => ({
+                                              ...prev,
+                                              externalMatches: (prev.externalMatches || []).filter((m) => m.id !== match.id)
+                                            }));
+                                          }
+                                        }}
+                                        className="flex-1 md:flex-none px-3 py-2 md:px-4 md:py-2 rounded-lg transition-colors text-[11px] md:text-xs font-bold border bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/30 hover:bg-red-100 dark:hover:bg-red-900/40 flex items-center justify-center gap-1.5 md:gap-2"
+                                        title="Wedstrijd verwijderen"
+                                      >
+                                        <Trash2 size={14} />
+                                        <span className="hidden sm:inline">Verwijderen</span>
+                                      </button>
+                                    )}
                                     <button
                                       onClick={() => {
                                         setSelectedSeasonId(null);
@@ -9397,6 +9453,24 @@ export default function App() {
                             </p>
                           </div>
                           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                            {currentUser?.email === "info@hans-apps.com" && (
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(`Weet je zeker dat je het seizoen '${season.name}' en alle bijbehorende interne wedstrijden wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
+                                    setData((prev) => ({
+                                      ...prev,
+                                      seasons: prev.seasons.filter((s) => s.id !== season.id),
+                                      matches: prev.matches.filter((m) => m.seasonId !== season.id)
+                                    }));
+                                  }
+                                }}
+                                className="px-2 sm:px-4 py-2 rounded-lg transition-colors text-sm font-bold border bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/30 hover:bg-red-100 dark:hover:bg-red-900/40 flex items-center gap-2"
+                                title="Seizoen verwijderen"
+                              >
+                                <Trash2 size={16} />
+                                <span className="hidden sm:inline">Verwijderen</span>
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 setSelectedSeasonId(season.id);
@@ -9883,7 +9957,7 @@ export default function App() {
                                   Speeldagen
                                 </p>
                                 <div className="flex flex-wrap gap-1">
-                                  {season.speeldagen.map((day) => (
+                                  {(season.speeldagen || []).map((day) => (
                                     <span
                                       key={day}
                                       className="px-2 py-0.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs font-medium text-slate-600 dark:text-slate-300 capitalize"
@@ -13159,6 +13233,8 @@ export default function App() {
                   </div>
                 )}
 
+                <ExcelModule activeClub={activeClub} currentUser={currentUser} data={data} setData={setData} />
+                
                 {/* Over sectie */}
                 <div className="mt-12 mb-8 pt-8 border-t border-slate-200 dark:border-slate-800 text-center">
                   <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-2">Over</h3>
@@ -13507,6 +13583,69 @@ export default function App() {
                     Begrepen
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      
+      {/* Scoring System Info Modal */}
+      <AnimatePresence>
+        {showScoringInfoModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowScoringInfoModal(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                <h3 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+                  <Info className="text-emerald-500" size={24} />
+                  Puntentelling Systemen
+                </h3>
+                <button
+                  onClick={() => setShowScoringInfoModal(false)}
+                  className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto space-y-6">
+                <div>
+                  <h4 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-2">
+                    <Trophy size={16} className="text-emerald-500" />
+                    Standaard (10 punten systeem)
+                  </h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Bij dit systeem speelt men een van tevoren vastgesteld aantal caramboles of beurten. Het resulterende moyenne bepaalt het aantal punten. Winnaar krijgt altijd 10 punten.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-2">
+                    <TrendingUp size={16} className="text-blue-500" />
+                    Driebanden
+                  </h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Bij dit systeem wordt gekeken naar een berekening van procentueel gemaakte caramboles ten opzichte van het op te leggen aantal caramboles, gebaseerd op het basis moyenne van de speler. 
+                  </p>
+                </div>
+              </div>
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
+                <button
+                  onClick={() => setShowScoringInfoModal(false)}
+                  className="w-full py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white font-bold rounded-xl transition-colors"
+                >
+                  Sluiten
+                </button>
               </div>
             </motion.div>
           </div>
@@ -14045,9 +14184,14 @@ export default function App() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-2">
-                        Puntentelling Systeem
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">
+                          Puntentelling Systeem
+                        </label>
+                        <button type="button" onClick={() => setShowScoringInfoModal(true)} className="text-slate-400 hover:text-emerald-500 flex items-center gap-1 transition-colors">
+                          <Info size={14} /> <span className="text-[10px] uppercase font-bold">Info</span>
+                        </button>
+                      </div>
                       <div className="flex gap-4">
                         <button
                           onClick={() => setNewSeasonScoringSystem("default")}
@@ -14080,9 +14224,7 @@ export default function App() {
                           <TrendingUp size={20} />
                           <div>
                             <p className="text-sm font-bold">Driebanden</p>
-                            <p className="text-[10px] opacity-70">
-                              BOG/KOT Reglement
-                            </p>
+                            
                           </div>
                         </button>
                       </div>
@@ -16463,9 +16605,14 @@ export default function App() {
                       {/* Right Column */}
                       <div className="space-y-8 mt-6 md:mt-0">
                         <div>
-                          <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
-                            Puntentelling Systeem
-                          </label>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                              Puntentelling Systeem
+                            </label>
+                            <button type="button" onClick={() => setShowScoringInfoModal(true)} className="text-slate-400 hover:text-emerald-500 flex items-center gap-1 transition-colors">
+                              <Info size={14} /> <span className="text-[10px] uppercase font-bold">Info</span>
+                            </button>
+                          </div>
                           <div className="flex gap-4">
                             <button
                               onClick={() =>

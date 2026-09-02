@@ -1,17 +1,13 @@
 const fs = require('fs');
-let content = fs.readFileSync('src/App.tsx', 'utf-8');
+let content = fs.readFileSync('src/App.tsx', 'utf8');
 
-const searchState = `  const [transactionDate, setTransactionDate] = useState(
-    format(new Date(), "yyyy-MM-dd"),
-  );`;
-const replaceState = `  const [transactionDate, setTransactionDate] = useState(
-    format(new Date(), "yyyy-MM-dd"),
-  );
-  const [transactionReceipt, setTransactionReceipt] = useState<string | null>(null);
-  const [transactionReceiptError, setTransactionReceiptError] = useState<string>("");
-  const [showClosedSeasons, setShowClosedSeasons] = useState(false);
-  const [collapsedCashbookSeasons, setCollapsedCashbookSeasons] = useState<string[]>([]);`;
+const regex = /const \[newSeasonCarryoverSeasonId, setNewSeasonCarryoverSeasonId\] =\s*useState<string>\(""\);\n  const \[newSeasonScoringSystem, setNewSeasonScoringSystem\] = useState<\n    "default" \| "driebanden"\n  >\("default"\);/;
 
-content = content.replace(searchState, replaceState);
+content = content.replace(regex, \`const [newSeasonCarryoverSeasonId, setNewSeasonCarryoverSeasonId] =
+    useState<string>("");
+  const [newSeasonScoringSystem, setNewSeasonScoringSystem] = useState<
+    "default" | "driebanden"
+  >("default");
+  const [showScoringInfoModal, setShowScoringInfoModal] = useState(false);\`);
 
 fs.writeFileSync('src/App.tsx', content);

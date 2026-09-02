@@ -1,21 +1,10 @@
 const fs = require('fs');
-let app = fs.readFileSync('src/App.tsx', 'utf-8');
-const badBlock = `  const liveMatch = useMemo(() => {
-  const isLiveMatchLocked = useMemo(() => {
-    if (!liveMatch || !currentUser) return false;
-    return liveMatch.activeScorerId && liveMatch.activeScorerId !== currentUser.id;
-  }, [liveMatch, currentUser]);
-`;
-const goodBlock = `  const liveMatch = useMemo(() => {\n`;
-app = app.replace(badBlock, goodBlock);
+let content = fs.readFileSync('src/components/ExcelModule.tsx', 'utf8');
 
-const endOfLiveMatch = `    return null;
-  }, [data.matches, data.externalMatches, actualCastMatchId]);`;
-const lockedLogic = `
-  const isLiveMatchLocked = useMemo(() => {
-    if (!liveMatch || !currentUser) return false;
-    return liveMatch.activeScorerId && liveMatch.activeScorerId !== currentUser.id;
-  }, [liveMatch, currentUser]);
-`;
-app = app.replace(endOfLiveMatch, endOfLiveMatch + lockedLogic);
-fs.writeFileSync('src/App.tsx', app);
+// I need to find console.warn(\`Kan speler niet vinden voor wedstrijd: \${p1Name} vs \${p2Name}\`);
+content = content.replace(
+  "console.warn(\\`Kan speler niet vinden voor wedstrijd: \\${p1Name} vs \\${p2Name}\\`);",
+  "console.warn(`Kan speler niet vinden voor wedstrijd: ${p1Name} vs ${p2Name}`);"
+);
+
+fs.writeFileSync('src/components/ExcelModule.tsx', content);

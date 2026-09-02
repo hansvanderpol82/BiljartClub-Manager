@@ -11,18 +11,7 @@ async function run() {
         const snap = await getDoc(docRef);
         const data = JSON.parse(snap.data().data);
         
-        const matchesOnDate = data.matches.filter(m => m.date.startsWith("2026-04-09"));
-        console.log("Matches on 2026-04-09:", matchesOnDate.length);
-        
-        const frank = data.users.find(u => u.name.toLowerCase().includes("frank"));
-        const hansJrId = "9yaorw2vb";
-
-        const badMatches = data.matches.filter(m => 
-          m.date.startsWith("2026-04-09") && 
-          ((m.player1Id === hansJrId && m.player2Id === frank.id) || 
-           (m.player2Id === hansJrId && m.player1Id === frank.id))
-        );
-        console.log("Bad matches count:", badMatches.length);
+        console.log("Users:", data.users.map(u => ({ id: u.id, name: u.name })));
         
         process.exit(0);
     } catch (e) {

@@ -1,48 +1,9 @@
 const fs = require('fs');
 let content = fs.readFileSync('src/App.tsx', 'utf8');
 
-// 1. Add Info to lucide-react imports
-content = content.replace(
-  "  Eye,\n  Gift,",
-  "  Eye,\n  Info,\n  Gift,"
-);
-
-// 2. Add showScoringInfoModal state
-content = content.replace(
-  '  const [newSeasonScoringSystem, setNewSeasonScoringSystem] = useState<\n    "default" | "driebanden"\n  >("default");',
-  '  const [newSeasonScoringSystem, setNewSeasonScoringSystem] = useState<\n    "default" | "driebanden"\n  >("default");\n  const [showScoringInfoModal, setShowScoringInfoModal] = useState(false);'
-);
-
-// 3. Update the Season scoring system UI
-const oldUI = `<label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-2">
-                        Puntentelling Systeem
-                      </label>
-                      <div className="flex gap-4">`;
-
-const newUI = `<div className="flex items-center justify-between mb-2">
-                        <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">
-                          Puntentelling Systeem
-                        </label>
-                        <button type="button" onClick={() => setShowScoringInfoModal(true)} className="text-slate-400 hover:text-emerald-500 flex items-center gap-1 transition-colors">
-                          <Info size={14} /> <span className="text-[10px] uppercase font-bold">Info</span>
-                        </button>
-                      </div>
-                      <div className="flex gap-4">`;
-
-content = content.replace(oldUI, newUI);
-
-// 4. Remove BOG/KOT Reglement from Driebanden
-const oldDriebanden = `<p className="text-[10px] opacity-70">
-                              BOG/KOT Reglement
-                            </p>`;
-const newDriebanden = ``;
-content = content.replace(oldDriebanden, newDriebanden);
-
-// 5. Add the modal
-const animatePresenceStart = `{/* Club Creation Modal */}
-      <AnimatePresence>`;
-
-const scoringModal = `{/* Scoring System Info Modal */}
+const anchor = "{/* Club Creation Modal */}";
+const modalJSX = `
+      {/* Scoring System Info Modal */}
       <AnimatePresence>
         {showScoringInfoModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -104,10 +65,8 @@ const scoringModal = `{/* Scoring System Info Modal */}
         )}
       </AnimatePresence>
 
-      {/* Club Creation Modal */}
-      <AnimatePresence>`;
+      `;
 
-content = content.replace(animatePresenceStart, scoringModal);
-
+content = content.replace(anchor, modalJSX + anchor);
 fs.writeFileSync('src/App.tsx', content);
-console.log("Updated App.tsx successfully");
+console.log("Modal injected!");
