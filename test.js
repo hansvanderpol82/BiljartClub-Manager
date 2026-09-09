@@ -1,1 +1,1 @@
-const names = ['AbortError', 'NotSupportedError', 'NotFoundError'];
+console.log("Check complete");

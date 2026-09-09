@@ -247,7 +247,10 @@ const HomeTab = ({
     if (m.targetClubId && !userClubs.some((c: Club) => c.id === m.targetClubId) && currentUser.role !== "applicatiebeheerder") return false;
     
     // Check role targeting
-    if (m.targetRoles && m.targetRoles.length > 0 && !m.targetRoles.includes(currentUser.role)) return false;
+    if (m.targetRoles && m.targetRoles.length > 0) {
+      const isClubAdminForMsg = m.targetClubId ? isClubAdmin(data.clubs.find((c: Club) => c.id === m.targetClubId), currentUser) : false;
+      if (!m.targetRoles.includes(currentUser.role) && !isClubAdminForMsg) return false;
+    }
 
     return true;
   }).sort((a: BoardMessage, b: BoardMessage) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -1399,7 +1402,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User>(data.users[0]);
 
   useEffect(() => {
-    if (dataLoaded && currentUser && (currentUser.role === "applicatiebeheerder" || currentUser.role === "admin") && data?.matches?.length > 0) {
+    if (dataLoaded && currentUser && (currentUser.role === "applicatiebeheerder" || (currentUser.role === "admin" || currentUser.role === "applicatiebeheerder")) && data?.matches?.length > 0) {
       const hansJrId = "9yaorw2vb";
       const frankId = data.users.find(u => u.name.toLowerCase().includes("frank"))?.id;
       
@@ -1438,7 +1441,7 @@ export default function App() {
       
       // Auto-promote administrators if needed
       const isAdminEmail = authUser.email === "hansvanderpol82@gmail.com" || authUser.email === "biljartclubkot@gmail.com" || authUser.email === "bijartclubkot@gmail.com";
-      const isAppAdminEmail = authUser.email === "info@hans-apps.com";
+      const isAppAdminEmail = authUser.email === "info@hans-apps.com" || authUser.email === "hansvanderpol82@gmail.com";
       
       if (user) {
         if (isAppAdminEmail && user.role !== "applicatiebeheerder") {
@@ -2470,7 +2473,7 @@ export default function App() {
     if (activeTab === "matches" && selectedSeasonId && activeSeason) {
       if (
         isClubAdmin(activeClub, currentUser) ||
-        currentUser.role === "admin" ||
+        (currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") ||
         currentUser.role === "planner"
       ) {
         const now = new Date();
@@ -2768,7 +2771,10 @@ export default function App() {
     return data.boardMessages.filter((m: BoardMessage) => {
       if (m.deletedBy?.includes(currentUser.id) || m.archivedBy?.includes(currentUser.id)) return false;
       if (m.targetClubId && !appUserClubs.some((c: Club) => c.id === m.targetClubId) && currentUser.role !== "applicatiebeheerder") return false;
-      if (m.targetRoles && m.targetRoles.length > 0 && !m.targetRoles.includes(currentUser.role)) return false;
+      if (m.targetRoles && m.targetRoles.length > 0) {
+        const isClubAdminForMsg = m.targetClubId ? isClubAdmin(data.clubs.find((c: Club) => c.id === m.targetClubId), currentUser) : false;
+        if (!m.targetRoles.includes(currentUser.role) && !isClubAdminForMsg) return false;
+      }
       return true;
     }).sort((a: BoardMessage, b: BoardMessage) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [currentUser, data?.boardMessages, appUserClubs]);
@@ -2827,7 +2833,7 @@ export default function App() {
   };
 
   const sendInviteEmail = (club: Club, user: User) => {
-    const defaultTemplate = `Beste {naam},\n\nJe bent uitgenodigd om lid te worden van biljartclub {clubNaam}.\n\nKlik op de onderstaande link om de uitnodiging te accepteren en een account aan te maken:\n{inviteLink}\n\nMet vriendelijke groet,\nDe beheerder`;
+    const defaultTemplate = `Beste {naam},Je bent uitgenodigd om lid te worden van biljartclub {clubNaam}.Klik op de onderstaande link om de uitnodiging te accepteren en een account aan te maken:{inviteLink}Met vriendelijke groet,De beheerder`;
     const template = club.inviteEmailTemplate || defaultTemplate;
     const inviteLink = `${window.location.origin}/?invite=${club.id}`;
     
@@ -3009,7 +3015,7 @@ export default function App() {
               : c,
           ),
         }));
-      },
+      }
     );
   };
 
@@ -3017,7 +3023,8 @@ export default function App() {
     if (!newBoardMessageTitle || !newBoardMessageContent) return;
 
     const userClubs = data.clubs.filter((c: Club) => 
-      (c.memberIds || []).includes(currentUser.id) || 
+      (c.memberIds || []).includes(currentUser.id) ||
+      isClubAdmin(c, currentUser) ||
       (currentUser.role === 'applicatiebeheerder' && c.allowAppAdminAccess)
     );
     const targetClub = selectedClubId || (userClubs.length > 0 ? userClubs[0].id : undefined);
@@ -6337,7 +6344,7 @@ export default function App() {
                   </AnimatePresence>
                 </>
               )}
-              {currentUser.role === "admin" && (
+              {(currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") && (
                 <SidebarItem
                   icon={<Wallet size={20} />}
                   label="Kasboek"
@@ -6519,10 +6526,10 @@ export default function App() {
                     if (targetId)
                       setCastMenuTarget({ type: targetType, id: targetId });
                   }}
-                  className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-bold text-sm shadow-lg active:scale-95"
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-bold text-sm shadow-lg active:scale-95"
                 >
                   <Tv size={18} />
-                  <span className="hidden sm:inline">Cast Menu</span>
+                  <span>Cast Menu</span>
                 </button>
                 <button
                   onClick={() => setLiveMatchId(null)}
@@ -6553,14 +6560,14 @@ export default function App() {
                         });
                       }
                     }}
-                    className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-bold text-sm shadow-lg active:scale-95"
+                    className="hidden sm:flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-bold text-sm shadow-lg active:scale-95"
                   >
                     <Tv size={18} />
-                    <span className="hidden sm:inline">Cast Menu</span>
+                    <span>Cast Menu</span>
                   </button>
                   {selectedSeasonId &&
                     (isClubAdmin(activeClub, currentUser) ||
-                      currentUser.role === "admin" ||
+                      (currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") ||
                       currentUser.role === "planner") && (
                       <button
                         onClick={() =>
@@ -6645,11 +6652,11 @@ export default function App() {
                       });
                     }
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-bold"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-bold"
                   title="Cast Menu"
                 >
                   <Tv size={16} />
-                  <span className="hidden sm:inline">Cast Menu</span>
+                  <span>Cast Menu</span>
                 </button>
                 {isClubAdmin(activeClub, currentUser) && (
                   <button
@@ -6660,10 +6667,10 @@ export default function App() {
                     <span className="hidden lg:inline">Vooruitblikken</span>
                   </button>
                 )}
-                {isClubAdmin(activeClub, currentUser) && (
+                {(isClubAdmin(activeClub, currentUser) || currentUser.role === "applicatiebeheerder") && (
                   <button
                     onClick={() => setIsSeasonModalOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-bold"
+                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-bold"
                   >
                     <Plus size={16} />
                     <span className="hidden lg:inline">Nieuw Seizoen</span>
@@ -6885,7 +6892,7 @@ export default function App() {
             )}
 
             {activeTab === "cashbook" &&
-              currentUser.role === "admin" &&
+              (currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") &&
               activeClub && (
                 <motion.div
                   key="cashbook"
@@ -7361,13 +7368,13 @@ export default function App() {
                         {showInactiveMembers ? "Verbergen" : "Tonen"}
                       </span>
                     </button>
-                    {isClubAdmin(activeClub, currentUser) && (
+                    {(isClubAdmin(activeClub, currentUser) || currentUser.role === "applicatiebeheerder") && (
                       <button
                         onClick={() => setIsMemberModalOpen(true)}
-                        className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                        className="hidden sm:flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
                       >
                         <UserPlus size={20} />
-                        <span>Nieuw Lid Toevoegen</span>
+                        <span className="hidden sm:inline">Nieuw Lid</span>
                       </button>
                     )}
                   </div>
@@ -7435,7 +7442,7 @@ export default function App() {
                               
                               <div className="flex justify-start gap-2 mt-2">
                                 {(isClubAdmin(activeClub, currentUser) ||
-                                  currentUser.role === "admin" ||
+                                  (currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") ||
                                   currentUser.role === "planner") &&
                                   member?.id !== currentUser.id && (
                                     <>
@@ -7539,7 +7546,7 @@ export default function App() {
                             <td className="py-4 pr-6 text-right hidden sm:table-cell">
                               <div className="flex justify-end gap-2">
                                 {(isClubAdmin(activeClub, currentUser) ||
-                                  currentUser.role === "admin" ||
+                                  (currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") ||
                                   currentUser.role === "planner") &&
                                   member?.id !== currentUser.id && (
                                     <>
@@ -7915,9 +7922,7 @@ export default function App() {
                                               id: match.id,
                                             });
                                           }}
-                                          className="px-2 sm:px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"
-                                        >
-                                          Cast Menu
+                                          className="hidden sm:block px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"                                        >                                          Cast Menu
                                         </button>
                                       </div>
                                     )}
@@ -9940,7 +9945,7 @@ export default function App() {
                             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
                               <button
                                 onClick={() => {
-                                  if (currentUser.role === "admin" || currentUser.role === "planner") {
+                                  if ((currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") || currentUser.role === "planner") {
                                     setEditSeasonSpeeldagen(season.speeldagen || []);
                                     setEditSeasonAanvangstijd(season.aanvangstijd || "19:00");
                                     setIsEditSpeeldagenModalOpen(true);
@@ -9948,7 +9953,7 @@ export default function App() {
                                 }}
                                 className={cn(
                                   "col-span-2 md:col-span-1 text-left p-4 rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500",
-                                  (currentUser.role === "admin" || currentUser.role === "planner")
+                                  ((currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") || currentUser.role === "planner")
                                     ? "bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer active:scale-95"
                                     : "bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-800/50 cursor-default"
                                 )}
@@ -10034,7 +10039,7 @@ export default function App() {
                             </div>
 
                             {/* Season Actions */}
-                            {isClubAdmin(activeClub, currentUser) && (
+                            {(isClubAdmin(activeClub, currentUser) || currentUser.role === "applicatiebeheerder") && (
                               <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
                                 <button
                                   onClick={() => toggleBlockSeason(season.id)}
@@ -10281,9 +10286,7 @@ export default function App() {
                                           id: extMatch.id,
                                         });
                                       }}
-                                      className="px-2 sm:px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"
-                                    >
-                                      Cast Menu
+                                      className="hidden sm:block px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors"                                        >                                          Cast Menu
                                     </button>
                                   </div>
                                 )}
@@ -10585,12 +10588,12 @@ export default function App() {
                                             onClick={() => {
                                               if (isFinished || isStarted) {
                                                 setLiveMatchId(match.id);
-                                              } else if (!isFinished && !isStarted && (isClubAdmin(activeClub, currentUser) || currentUser.role === "admin" || currentUser.role === "planner" || currentUser.role === "user")) {
+                                              } else if (!isFinished && !isStarted && (isClubAdmin(activeClub, currentUser) || (currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") || currentUser.role === "planner" || currentUser.role === "user")) {
                                                 setMatchToStartId(match.id);
                                                 setIsStartMatchModalOpen(true);
                                               }
                                             }}
-                                            className={cn("transition-colors border-b border-[#2b6e2b]/30 last:border-0 grid grid-cols-[1fr_72px_72px] sm:table-row", (isFinished || isStarted || (!isFinished && !isStarted && (isClubAdmin(activeClub, currentUser) || currentUser.role === "admin" || currentUser.role === "planner" || currentUser.role === "user"))) ? "cursor-pointer hover:bg-white/10" : "hover:bg-white/5")}
+                                            className={cn("transition-colors border-b border-[#2b6e2b]/30 last:border-0 grid grid-cols-[1fr_72px_72px] sm:table-row", (isFinished || isStarted || (!isFinished && !isStarted && (isClubAdmin(activeClub, currentUser) || (currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") || currentUser.role === "planner" || currentUser.role === "user"))) ? "cursor-pointer hover:bg-white/10" : "hover:bg-white/5")}
                                           >
                                             <td className="col-start-1 row-start-1 sm:col-auto sm:row-auto py-1 sm:py-2 px-2 sm:px-4 border-r border-[#2b6e2b]/30 text-left">
                                               <div className="flex items-center">
@@ -10641,7 +10644,7 @@ export default function App() {
 
                                             <td className="py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
                                               {isClubAdmin(activeClub, currentUser) ||
-                                              currentUser.role === "admin" ||
+                                              (currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") ||
                                               currentUser.role === "planner" ? (
                                                 <button
                                                   onClick={() =>
@@ -10816,7 +10819,7 @@ export default function App() {
 
                                             <td className="py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30 hidden sm:table-cell">
                                               {isClubAdmin(activeClub, currentUser) ||
-                                              currentUser.role === "admin" ||
+                                              (currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") ||
                                               currentUser.role === "planner" ? (
                                                 <button
                                                   onClick={() =>
@@ -11573,7 +11576,7 @@ export default function App() {
 
                                               <td className="hidden sm:table-cell py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30">
                                                 {isClubAdmin(activeClub, currentUser) ||
-                                                currentUser.role === "admin" ||
+                                                (currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") ||
                                                 currentUser.role ===
                                                   "planner" ? (
                                                   <button
@@ -11613,14 +11616,14 @@ export default function App() {
                                                   onClick={(e) => {
                                                     e.stopPropagation();
                                                     if (isFinished) return;
-                                                    if (activeSeason && dateStr && (currentUser.role === "admin" || currentUser.role === "planner" || isClubAdmin(activeClub, currentUser))) {
+                                                    if (activeSeason && dateStr && ((currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") || currentUser.role === "planner" || isClubAdmin(activeClub, currentUser))) {
                                                       toggleAttendance(activeSeason.id, date.toISOString(), match.player1Id);
                                                     }
                                                   }}
                                                   disabled={isFinished}
                                                   className={cn(
                                                     "focus:outline-none transition-transform active:scale-95",
-                                                    (currentUser.role === "admin" || currentUser.role === "planner" || isClubAdmin(activeClub, currentUser)) && !isFinished ? "cursor-pointer hover:opacity-80" : "cursor-default opacity-50"
+                                                    ((currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") || currentUser.role === "planner" || isClubAdmin(activeClub, currentUser)) && !isFinished ? "cursor-pointer hover:opacity-80" : "cursor-default opacity-50"
                                                   )}
                                                   title={p1Absent ? "Afwezig" : "Aanwezig"}
                                                 >
@@ -11761,14 +11764,14 @@ export default function App() {
                                                   onClick={(e) => {
                                                     e.stopPropagation();
                                                     if (isFinished) return;
-                                                    if (activeSeason && dateStr && (currentUser.role === "admin" || currentUser.role === "planner" || isClubAdmin(activeClub, currentUser))) {
+                                                    if (activeSeason && dateStr && ((currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") || currentUser.role === "planner" || isClubAdmin(activeClub, currentUser))) {
                                                       toggleAttendance(activeSeason.id, date.toISOString(), match.player2Id);
                                                     }
                                                   }}
                                                   disabled={isFinished}
                                                   className={cn(
                                                     "focus:outline-none transition-transform active:scale-95",
-                                                    (currentUser.role === "admin" || currentUser.role === "planner" || isClubAdmin(activeClub, currentUser)) && !isFinished ? "cursor-pointer hover:opacity-80" : "cursor-default opacity-50"
+                                                    ((currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") || currentUser.role === "planner" || isClubAdmin(activeClub, currentUser)) && !isFinished ? "cursor-pointer hover:opacity-80" : "cursor-default opacity-50"
                                                   )}
                                                   title={p2Absent ? "Afwezig" : "Aanwezig"}
                                                 >
@@ -11782,7 +11785,7 @@ export default function App() {
 
                                               <td className="hidden sm:table-cell py-1 sm:py-2 px-2 text-center border-r border-[#2b6e2b]/30">
                                                 {isClubAdmin(activeClub, currentUser) ||
-                                                currentUser.role === "admin" ||
+                                                (currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") ||
                                                 currentUser.role ===
                                                   "planner" ? (
                                                   <button
@@ -12946,7 +12949,7 @@ export default function App() {
                   </div>
                   <button
                     onClick={() => setIsBoardMessageModalOpen(true)}
-                    className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm font-bold"
+                    className="hidden sm:flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm font-bold"
                   >
                     <Plus size={20} />
                     <span>Bericht aanmaken</span>
@@ -12978,6 +12981,7 @@ export default function App() {
                   (() => {
                     const absenceHistory = (data.notifications || [])
                       .filter((n: any) => n.type === 'absence_request')
+                      .filter((n: any) => !n.targetClubId || appUserClubs.some((c: Club) => c.id === n.targetClubId) || currentUser.role === 'applicatiebeheerder')
                       .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                       
                     if (absenceHistory.length === 0) {
@@ -13212,7 +13216,7 @@ export default function App() {
                           Sjabloon Uitnodigingsmail
                         </label>
                         <textarea
-                          value={activeClub.inviteEmailTemplate || `Beste {naam},\n\nJe bent uitgenodigd om lid te worden van biljartclub {clubNaam}.\n\nKlik op de onderstaande link om de uitnodiging te accepteren en een account aan te maken:\n{inviteLink}\n\nMet vriendelijke groet,\nDe beheerder`}
+                          value={activeClub.inviteEmailTemplate || `Beste {naam},Je bent uitgenodigd om lid te worden van biljartclub {clubNaam}.Klik op de onderstaande link om de uitnodiging te accepteren en een account aan te maken:{inviteLink}Met vriendelijke groet,De beheerder`}
                           onChange={(e) => {
                             setData((prev: any) => ({
                               ...prev,
@@ -13461,7 +13465,7 @@ export default function App() {
                               </button>
                             </>
                           )}
-                          {currentUser.role === "admin" && (
+                          {(currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") && (
                             <button 
                               className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold pl-8", activeTab === "cashbook" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
                               onClick={() => { setActiveTab("cashbook"); setMobileSubmenu(null); }}
@@ -14859,7 +14863,7 @@ export default function App() {
                     </label>
                   </div>
                 )}
-                {currentUser.role === "admin" && (
+                {(currentUser.role === "admin" || currentUser.role === "applicatiebeheerder") && (
                   <div>
                     <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
                       Rol
