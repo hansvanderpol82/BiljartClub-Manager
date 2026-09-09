@@ -3,6 +3,8 @@ import ExcelModule from "./components/ExcelModule";
 import { PaymentModal } from "./components/PaymentModal";
 import { ImageCropperModal } from "./components/ImageCropperModal";
 import { ManageAccountsTab } from "./components/ManageAccountsTab";
+import { LayoutGrid } from "lucide-react";
+import { SeasonOverview } from "./components/SeasonOverview";
 import {
   Bell,
   BellOff,
@@ -1525,6 +1527,7 @@ export default function App() {
     | "clubs"
     | "seasons"
     | "matches"
+    | "season-overview"
     | "external-matches"
     | "members"
     | "settings"
@@ -6302,6 +6305,14 @@ export default function App() {
                       onClick={() => setActiveTab("matches")}
                       collapsed={isSidebarCollapsed}
                     />
+                    <SidebarItem
+                      icon={<LayoutGrid size={20} />}
+                      label="Overzicht"
+                      isSubItem
+                      active={activeTab === "season-overview"}
+                      onClick={() => setActiveTab("season-overview")}
+                      collapsed={isSidebarCollapsed}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -6489,6 +6500,8 @@ export default function App() {
               {activeTab === "seasons" && (activeClub?.name || "Seizoenen")}
               {activeTab === "matches" &&
                 `Wedstrijden ${activeSeason ? `(${activeSeason.name})` : ""}`}
+              {activeTab === "season-overview" &&
+                `Overzicht ${activeSeason ? `(${activeSeason.name})` : ""}`}
               {activeTab === "external-matches-games" && "Uit & Thuis Wedstrijden"}
               
               
@@ -7386,7 +7399,9 @@ export default function App() {
                       <tr className="bg-slate-50 dark:bg-slate-800/50 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                         <th className="py-2 sm:py-4 pl-6 text-left">Naam</th>
                         <th className="py-2 sm:py-4 text-left">Rol</th>
-                        <th className="py-2 sm:py-4 text-left">Email</th>
+                        {(currentUser.role !== "member" || isClubAdmin(activeClub, currentUser)) && (
+                          <th className="py-2 sm:py-4 text-left">Email</th>
+                        )}
                         <th className="py-2 sm:py-4 pr-6 text-right">Acties</th>
                       </tr>
                     </thead>
@@ -7434,7 +7449,7 @@ export default function App() {
                                 </div>
                               </div>
                               
-                              {member?.email && (
+                              {member?.email && (currentUser.role !== "member" || isClubAdmin(activeClub, currentUser)) && (
                                 <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
                                   {member.email}
                                 </div>
@@ -7540,9 +7555,11 @@ export default function App() {
                                 )}
                               </div>
                             </td>
-                            <td className="py-4 text-slate-500 dark:text-slate-400 hidden sm:table-cell">
-                              {member?.email}
-                            </td>
+                            {(currentUser.role !== "member" || isClubAdmin(activeClub, currentUser)) && (
+                              <td className="py-4 text-slate-500 dark:text-slate-400 hidden sm:table-cell">
+                                {member?.email}
+                              </td>
+                            )}
                             <td className="py-4 pr-6 text-right hidden sm:table-cell">
                               <div className="flex justify-end gap-2">
                                 {(isClubAdmin(activeClub, currentUser) ||
@@ -10079,6 +10096,16 @@ export default function App() {
                     ))}
                 </div>
               </motion.div>
+            )}
+
+            
+            {activeTab === "season-overview" && activeSeason && activeClub && (
+              <SeasonOverview 
+                data={data}
+                activeSeason={activeSeason}
+                activeClub={activeClub}
+                calculatePoints={calculatePoints}
+              />
             )}
 
             {((activeTab === "matches" || activeTab === "external-matches-games") && !liveMatchId) && (
@@ -13446,6 +13473,13 @@ export default function App() {
                           >
                             <History size={20} />
                             Wedstrijden
+                          </button>
+                          <button 
+                            className={cn("flex items-center gap-3 px-2 sm:px-4 py-3 rounded-xl transition-colors font-semibold pl-12", activeTab === "season-overview" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800")}
+                            onClick={() => { setActiveTab("season-overview"); setMobileSubmenu(null); }}
+                          >
+                            <LayoutGrid size={20} />
+                            Overzicht
                           </button>
                           {activeClub?.participatesInExternalMatches && (
                             <>
