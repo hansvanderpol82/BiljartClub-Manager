@@ -232,10 +232,7 @@ const HomeTab = ({
   }, []);
 
 
-  const userClubs = data.clubs.filter((c: Club) => 
-    (c.memberIds || []).includes(currentUser.id) || 
-    (currentUser.role === 'applicatiebeheerder' && c.allowAppAdminAccess)
-  );
+  const userClubs = data.clubs.filter((c: Club) => isUserInClub(c, currentUser));
   const openSeasons = data.seasons.filter(
     (s: Season) => s.status === 'open' && !s.isBlocked && userClubs.some((c: Club) => c.id === s.clubId)
   );
@@ -1177,6 +1174,11 @@ const isClubAdmin = (club: Club | null | undefined, user: User | null | undefine
   if (!club || !user) return false;
   if (user.role === 'applicatiebeheerder' && club.allowAppAdminAccess) return true;
   return club.adminId === user.id || (club.coAdminEmails || []).includes(user.email);
+};
+
+const isUserInClub = (club: Club | null | undefined, user: User | null | undefined) => {
+  if (!club || !user) return false;
+  return (club.memberIds || []).includes(user.id) || isClubAdmin(club, user);
 };
 
 const formatNotificationMessage = (msg: string) => {
@@ -2380,6 +2382,19 @@ export default function App() {
   }, [selectedClubId]);
 
   useEffect(() => {
+    if (dataLoaded && currentUser && data.clubs) {
+      const allowed = data.clubs.filter((c: Club) => isUserInClub(c, currentUser));
+      if (selectedClubId) {
+        if (!allowed.find((c: Club) => c.id === selectedClubId)) {
+           setSelectedClubId(allowed.length > 0 ? allowed[0].id : null);
+        }
+      } else if (allowed.length > 0) {
+        setSelectedClubId(allowed[0].id);
+      }
+    }
+  }, [dataLoaded, currentUser, data.clubs, selectedClubId]);
+
+  useEffect(() => {
     localStorage.setItem("selectedSeasonId", selectedSeasonId || "");
   }, [selectedSeasonId]);
 
@@ -2471,6 +2486,14 @@ export default function App() {
     () => data.seasons.find((s: Season) => s.id === selectedSeasonId),
     [data.seasons, selectedSeasonId],
   );
+
+  useEffect(() => {
+    if (activeSeason && selectedClubId) {
+      if (activeSeason.clubId !== selectedClubId) {
+        setSelectedSeasonId(null);
+      }
+    }
+  }, [activeSeason, selectedClubId]);
 
   useEffect(() => {
     if (activeTab === "matches" && selectedSeasonId && activeSeason) {
@@ -2594,47 +2617,64 @@ export default function App() {
     [data.users, liveMatch],
   );
 
+  const isMatchFinished = liveMatch?.status === 'finished' || liveMatch?.status === 'completed' || liveMatch?.status === 'cancelled';
+
   const p1PreviousTotal = useMemo(() => {
     if (!liveMatch) return 0;
+    if (isMatchFinished) {
+      return (liveMatch.turns || []).reduce((acc: number, t: any) => acc + (t.player1 || 0), 0);
+    }
     return (liveMatch.turns || [])
       .slice(0, activeTurnIndex)
       .reduce((acc: number, t: any) => acc + (t.player1 || 0), 0);
-  }, [liveMatch, activeTurnIndex]);
+  }, [liveMatch, activeTurnIndex, isMatchFinished]);
 
   const p2PreviousTotal = useMemo(() => {
     if (!liveMatch) return 0;
+    if (isMatchFinished) {
+      return (liveMatch.turns || []).reduce((acc: number, t: any) => acc + (t.player2 || 0), 0);
+    }
     return (liveMatch.turns || [])
       .slice(0, activeTurnIndex)
       .reduce((acc: number, t: any) => acc + (t.player2 || 0), 0);
-  }, [liveMatch, activeTurnIndex]);
+  }, [liveMatch, activeTurnIndex, isMatchFinished]);
 
-  const p1Total = p1PreviousTotal + currentTurnP1;
-  const p2Total = p2PreviousTotal + currentTurnP2;
+  const p1Total = isMatchFinished ? p1PreviousTotal : (p1PreviousTotal + currentTurnP1);
+  const p2Total = isMatchFinished ? p2PreviousTotal : (p2PreviousTotal + currentTurnP2);
 
   // Refined confirmed and progress tracking
-  const p1LiveSerie = currentTurnP1;
-  const p2LiveSerie = currentTurnP2;
+  const p1LiveSerie = isMatchFinished ? 0 : currentTurnP1;
+  const p2LiveSerie = isMatchFinished ? 0 : currentTurnP2;
 
   const p1Confirmed = useMemo(() => {
     if (!liveMatch) return 0;
+    if (isMatchFinished) {
+      return (liveMatch.turns || []).reduce((acc: number, t: any) => acc + (t.player1 || 0), 0);
+    }
     const turns =
       activeScoringPlayer === 2 ? activeTurnIndex + 1 : activeTurnIndex;
     return (liveMatch.turns || [])
       .slice(0, turns)
       .reduce((acc: number, t: any) => acc + (t.player1 || 0), 0);
-  }, [liveMatch, activeTurnIndex, activeScoringPlayer]);
+  }, [liveMatch, activeTurnIndex, activeScoringPlayer, isMatchFinished]);
 
   const p2Confirmed = useMemo(() => {
     if (!liveMatch) return 0;
+    if (isMatchFinished) {
+      return (liveMatch.turns || []).reduce((acc: number, t: any) => acc + (t.player2 || 0), 0);
+    }
     const turns = activeTurnIndex;
     return (liveMatch.turns || [])
       .slice(0, turns)
       .reduce((acc: number, t: any) => acc + (t.player2 || 0), 0);
-  }, [liveMatch, activeTurnIndex]);
+  }, [liveMatch, activeTurnIndex, isMatchFinished]);
 
-  const p1CompletedTurns =
-    activeScoringPlayer === 2 ? activeTurnIndex + 1 : activeTurnIndex;
-  const p2CompletedTurns = activeTurnIndex;
+  const p1CompletedTurns = isMatchFinished 
+    ? (liveMatch?.turns?.length || 0)
+    : (activeScoringPlayer === 2 ? activeTurnIndex + 1 : activeTurnIndex);
+  const p2CompletedTurns = isMatchFinished
+    ? (liveMatch?.turns?.length || 0)
+    : activeTurnIndex;
   const p1CompletedTurnsCalc = p1CompletedTurns;
   const p2CompletedTurnsCalc = p2CompletedTurns;
 
@@ -2763,10 +2803,7 @@ export default function App() {
 
   const appUserClubs = useMemo(() => {
     if (!currentUser || !data?.clubs) return [];
-    return data.clubs.filter((c: Club) => 
-      (c.memberIds || []).includes(currentUser.id) || 
-      (currentUser.role === 'applicatiebeheerder' && c.allowAppAdminAccess)
-    );
+    return data.clubs.filter((c: Club) => isUserInClub(c, currentUser));
   }, [currentUser, data?.clubs]);
 
   const accessibleBoardMessages = useMemo(() => {
@@ -3025,11 +3062,7 @@ export default function App() {
   const executeCreateBoardMessage = () => {
     if (!newBoardMessageTitle || !newBoardMessageContent) return;
 
-    const userClubs = data.clubs.filter((c: Club) => 
-      (c.memberIds || []).includes(currentUser.id) ||
-      isClubAdmin(c, currentUser) ||
-      (currentUser.role === 'applicatiebeheerder' && c.allowAppAdminAccess)
-    );
+    const userClubs = data.clubs.filter((c: Club) => isUserInClub(c, currentUser));
     const targetClub = selectedClubId || (userClubs.length > 0 ? userClubs[0].id : undefined);
 
     const newMsg: BoardMessage = {
@@ -4470,6 +4503,11 @@ export default function App() {
               : "fixed inset-0 z-[100] bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] flex overflow-hidden selection:bg-yellow-500/30 font-sans p-8 flex-col overflow-y-auto w-full"
           }
         >
+          {club?.logo && (
+            <div className="absolute top-8 left-8 z-50">
+              <img src={club.logo} alt={club.name} className="h-16 md:h-20 w-auto object-contain drop-shadow-xl" />
+            </div>
+          )}
           <button
             onClick={() => {
               setIsCastMode(false);
@@ -4681,6 +4719,11 @@ export default function App() {
                 : "fixed inset-0 z-[100] bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] flex overflow-hidden selection:bg-yellow-500/30 font-sans p-8 flex-col overflow-y-auto w-full"
             }
           >
+            {club?.logo && (
+              <div className="absolute top-8 left-8 z-50">
+                <img src={club.logo} alt={club.name} className="h-16 md:h-20 w-auto object-contain drop-shadow-xl" />
+              </div>
+            )}
             <button
               onClick={() => {
                 setIsCastMode(false);
@@ -4852,6 +4895,11 @@ export default function App() {
           >
             <X size={24} />
           </button>
+          {activeClub?.logo && (
+            <div className="absolute top-8 left-8 z-50">
+              <img src={activeClub.logo} alt={activeClub.name} className="h-16 md:h-20 w-auto object-contain drop-shadow-xl" />
+            </div>
+          )}
           <div className="w-[95vw] h-[95vh] max-w-[1920px] max-h-[1080px] bg-[#064e3b] bg-linear-to-br from-[#065f46] via-[#064e3b] to-[#042f24] rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden border border-emerald-900/50 flex flex-col relative">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 mix-blend-overlay"></div>
             <div className="relative z-10 flex-1 flex flex-col">
@@ -5801,6 +5849,12 @@ export default function App() {
           >
             <X size={24} />
           </button>
+          
+          {activeClub?.logo && (
+            <div className="absolute top-8 left-8 z-50">
+              <img src={activeClub.logo} alt={activeClub.name} className="h-16 md:h-20 w-auto object-contain drop-shadow-xl" />
+            </div>
+          )}
 
           {/* Header / Game Info - Centered and Slimmer */}
           <div className="w-full max-w-2xl text-center animate-in fade-in slide-in-from-top duration-700 relative mb-2">
@@ -6782,7 +6836,7 @@ export default function App() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {data.clubs.map((club: Club) => (
+                  {appUserClubs.map((club: Club) => (
                     <div
                       key={club.id}
                       className={cn(
@@ -9080,7 +9134,7 @@ export default function App() {
                                     <option value="">Alle Clubs</option>
                                     {Array.from(
                                       new Set(
-                                        data.clubs.map((c: Club) => c.id),
+                                        appUserClubs.map((c: Club) => c.id),
                                       ),
                                     ).map((clubId) => {
                                       const club = data.clubs.find(
@@ -12304,7 +12358,7 @@ export default function App() {
                           <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                             {Array.from({ length: maxTurns }).map((_, idx) => {
                               const turn = match?.turns[idx];
-                              const isCurrent = idx === activeTurnIndex;
+                              const isCurrent = !isMatchFinished && idx === activeTurnIndex;
                               if (!turn && !isCurrent) return null;
                               return (
                                 <tr
@@ -12752,7 +12806,7 @@ export default function App() {
                                   return Array.from({ length: maxTurns }).map(
                                     (_, idx) => {
                                       const turn = match?.turns[idx];
-                                      const isCurrent = idx === activeTurnIndex;
+                                      const isCurrent = !isMatchFinished && idx === activeTurnIndex;
                                       const isPlayed = !!turn || isCurrent;
 
                                       if (!isPlayed) {
@@ -12891,7 +12945,7 @@ export default function App() {
                           <tbody className="divide-y divide-yellow-50 dark:divide-yellow-900/20">
                             {Array.from({ length: maxTurns }).map((_, idx) => {
                               const turn = match?.turns[idx];
-                              const isCurrent = idx === activeTurnIndex;
+                              const isCurrent = !isMatchFinished && idx === activeTurnIndex;
                               if (!turn && !isCurrent) return null;
                               return (
                                 <tr

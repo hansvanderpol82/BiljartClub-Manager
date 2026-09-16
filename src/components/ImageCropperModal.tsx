@@ -115,7 +115,7 @@ async function getCroppedImg(
     throw new Error('No 2d context');
   }
 
-  const MAX_DIMENSION = 400;
+  const MAX_DIMENSION = 250;
   let finalWidth = pixelCrop.width;
   let finalHeight = pixelCrop.height;
 
@@ -140,5 +140,5 @@ async function getCroppedImg(
     finalHeight
   );
 
-  return canvas.toDataURL('image/png');
+  return canvas.toDataURL('image/webp', 0.8);
 }
