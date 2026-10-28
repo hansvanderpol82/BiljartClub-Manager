@@ -2054,6 +2054,8 @@ export default function App() {
   const [selectedTafelNummer, setSelectedTafelNummer] = useState<number>(1);
   const [isFinishMatchModalOpen, setIsFinishMatchModalOpen] = useState(false);
   const [isCancelMatchModalOpen, setIsCancelMatchModalOpen] = useState(false);
+  const [isTransferScorerModalOpen, setIsTransferScorerModalOpen] = useState(false);
+  const [transferTargetUserId, setTransferTargetUserId] = useState<string>("");
   const [p1Paid, setP1Paid] = useState(true);
   const [p2Paid, setP2Paid] = useState(true);
   const [isMatchDetailModalOpen, setIsMatchDetailModalOpen] = useState(false);
@@ -2671,6 +2673,7 @@ export default function App() {
             activeScorerId: game.activeScorerId,
             activeScorerName: game.activeScorerName,
             activeScorerDeviceId: game.activeScorerDeviceId,
+            transferredFromDeviceId: game.transferredFromDeviceId,
             activeTurnIndex: game.activeTurnIndex,
             activeScoringPlayer: game.activeScoringPlayer,
             currentTurnP1: game.currentTurnP1,
@@ -2712,10 +2715,33 @@ export default function App() {
 
   const isMatchFinished = liveMatch?.status === 'finished' || liveMatch?.status === 'completed' || liveMatch?.status === 'cancelled';
 
+  const [visibilityTick, setVisibilityTick] = useState(0);
+  useEffect(() => {
+    const onVisChange = () => setVisibilityTick((v) => v + 1);
+    document.addEventListener("visibilitychange", onVisChange);
+    window.addEventListener("focus", onVisChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisChange);
+      window.removeEventListener("focus", onVisChange);
+    };
+  }, []);
+
   const isActiveScorer = useMemo(() => {
     if (!liveMatch || liveMatch.status !== "started" || isCastMode) return false;
     if (liveMatch.activeScorerDeviceId) {
       return liveMatch.activeScorerDeviceId === deviceId;
+    }
+    if (liveMatch.transferredFromDeviceId) {
+      if (liveMatch.transferredFromDeviceId === deviceId) {
+        return false;
+      }
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden"
+      ) {
+        return false;
+      }
+      return Boolean(currentUser && liveMatch.activeScorerId === currentUser.id);
     }
     if (localStorage.getItem("scorer_match_" + liveMatch.id) === deviceId) {
       return true;
@@ -2748,7 +2774,78 @@ export default function App() {
     activeTurnIndex,
     currentTurnP1,
     currentTurnP2,
+    visibilityTick,
   ]);
+
+  const handleTransferScorer = (matchId: string, targetUserId: string) => {
+    const targetUser =
+      data.users.find((u: User) => u.id === targetUserId) || currentUser;
+    if (!targetUser) return;
+
+    localStorage.removeItem("scorer_match_" + matchId);
+
+    setData((prev: any) => {
+      const patchMatch = (m: any) => {
+        if (m.id !== matchId) return m;
+        const turns = [...(m.turns || [{ player1: 0, player2: 0 }])];
+        while (turns.length <= activeTurnIndex) {
+          turns.push({ player1: 0, player2: 0 });
+        }
+        turns[activeTurnIndex] = {
+          player1: currentTurnP1,
+          player2: currentTurnP2,
+        };
+        return {
+          ...m,
+          turns,
+          activeScorerDeviceId: null,
+          transferredFromDeviceId: deviceId,
+          activeScorerId: targetUser.id,
+          activeScorerName: targetUser.name,
+          writerId: targetUser.id,
+          activeTurnIndex,
+          activeScoringPlayer,
+          currentTurnP1,
+          currentTurnP2,
+          turnNotification,
+        };
+      };
+      return {
+        ...prev,
+        matches: (prev.matches || []).map(patchMatch),
+        externalMatches: (prev.externalMatches || []).map((em: any) => ({
+          ...em,
+          games: (em.games || []).map(patchMatch),
+        })),
+      };
+    });
+
+    setIsTransferScorerModalOpen(false);
+  };
+
+  const handleCancelTransferScorer = (matchId: string) => {
+    localStorage.setItem("scorer_match_" + matchId, deviceId);
+    setData((prev: any) => {
+      const patchMatch = (m: any) => {
+        if (m.id !== matchId) return m;
+        return {
+          ...m,
+          activeScorerDeviceId: deviceId,
+          transferredFromDeviceId: null,
+          activeScorerId: currentUser?.id || m.activeScorerId || null,
+          activeScorerName: currentUser?.name || m.activeScorerName || null,
+        };
+      };
+      return {
+        ...prev,
+        matches: (prev.matches || []).map(patchMatch),
+        externalMatches: (prev.externalMatches || []).map((em: any) => ({
+          ...em,
+          games: (em.games || []).map(patchMatch),
+        })),
+      };
+    });
+  };
 
   const lastSeenAnimationIdRef = useRef<number | null>(null);
 
@@ -2761,19 +2858,53 @@ export default function App() {
         liveMatch.activeScorerDeviceId !== deviceId ||
         liveMatch.activeTurnIndex === undefined
       ) {
+        const syncedTurnIdx =
+          liveMatch.activeScorerDeviceId !== deviceId &&
+          liveMatch.activeTurnIndex !== undefined
+            ? liveMatch.activeTurnIndex
+            : activeTurnIndex;
+        const syncedScoringPlayer: 1 | 2 =
+          liveMatch.activeScorerDeviceId !== deviceId &&
+          liveMatch.activeScoringPlayer !== undefined
+            ? liveMatch.activeScoringPlayer
+            : activeScoringPlayer;
+        const syncedP1 =
+          liveMatch.activeScorerDeviceId !== deviceId &&
+          liveMatch.currentTurnP1 !== undefined
+            ? liveMatch.currentTurnP1
+            : currentTurnP1;
+        const syncedP2 =
+          liveMatch.activeScorerDeviceId !== deviceId &&
+          liveMatch.currentTurnP2 !== undefined
+            ? liveMatch.currentTurnP2
+            : currentTurnP2;
+        const syncedNotif =
+          liveMatch.activeScorerDeviceId !== deviceId &&
+          liveMatch.turnNotification !== undefined
+            ? liveMatch.turnNotification
+            : turnNotification;
+
+        if (activeTurnIndex !== syncedTurnIdx) setActiveTurnIndex(syncedTurnIdx);
+        if (activeScoringPlayer !== syncedScoringPlayer)
+          setActiveScoringPlayer(syncedScoringPlayer);
+        if (currentTurnP1 !== syncedP1) setCurrentTurnP1(syncedP1);
+        if (currentTurnP2 !== syncedP2) setCurrentTurnP2(syncedP2);
+        if (turnNotification !== syncedNotif) setTurnNotification(syncedNotif);
+
         setData((prev: any) => {
           const patchMatch = (m: any) => {
             if (m.id !== liveMatch.id) return m;
             return {
               ...m,
               activeScorerDeviceId: deviceId,
+              transferredFromDeviceId: null,
               activeScorerId: currentUser?.id || m.activeScorerId || null,
               activeScorerName: currentUser?.name || m.activeScorerName || null,
-              activeTurnIndex,
-              activeScoringPlayer,
-              currentTurnP1,
-              currentTurnP2,
-              turnNotification,
+              activeTurnIndex: syncedTurnIdx,
+              activeScoringPlayer: syncedScoringPlayer,
+              currentTurnP1: syncedP1,
+              currentTurnP2: syncedP2,
+              turnNotification: syncedNotif,
             };
           };
           return {
@@ -2787,6 +2918,12 @@ export default function App() {
         });
       }
     } else {
+      if (
+        liveMatch.activeScorerDeviceId &&
+        liveMatch.activeScorerDeviceId !== deviceId
+      ) {
+        localStorage.removeItem("scorer_match_" + liveMatch.id);
+      }
       const remoteTurnIdx =
         liveMatch.activeTurnIndex !== undefined
           ? liveMatch.activeTurnIndex
@@ -2826,6 +2963,7 @@ export default function App() {
     currentTurnP1,
     currentTurnP2,
     turnNotification,
+    visibilityTick,
   ]);
 
   useEffect(() => {
@@ -13460,6 +13598,15 @@ export default function App() {
                           <div className="flex justify-center gap-4 mt-8">
                             <button
                               onClick={() => {
+                                setTransferTargetUserId(currentUser?.id || "");
+                                setIsTransferScorerModalOpen(true);
+                              }}
+                              className="px-2 sm:px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+                            >
+                              Overdragen
+                            </button>
+                            <button
+                              onClick={() => {
                                 setP1Paid(true);
                                 setP2Paid(true);
                                 setIsCancelMatchModalOpen(true);
@@ -13470,6 +13617,22 @@ export default function App() {
                             </button>
                           </div>
                         )}
+                        {match?.status !== "finished" &&
+                          !isActiveScorer &&
+                          liveMatch?.transferredFromDeviceId === deviceId &&
+                          !liveMatch?.activeScorerDeviceId && (
+                            <div className="flex flex-col items-center gap-2 mt-8">
+                              <p className="text-xs text-amber-500 dark:text-amber-400 font-medium">
+                                Wacht tot {liveMatch.activeScorerName || "het andere apparaat"} de live view opent...
+                              </p>
+                              <button
+                                onClick={() => handleCancelTransferScorer(liveMatch.id)}
+                                className="px-2 sm:px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+                              >
+                                Overdracht annuleren
+                              </button>
+                            </div>
+                          )}
                       </div>
 
                       {/* P2 Side Column (Desktop Only) */}
@@ -16831,6 +16994,106 @@ export default function App() {
                         className="flex-1 px-2 sm:px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-lg"
                       >
                         Ja, annuleren
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
+              );
+            })()}
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Transfer Scorer Modal */}
+      <AnimatePresence>
+        {isTransferScorerModalOpen && liveMatch && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            {(() => {
+              const matchClub =
+                data.clubs.find((c: Club) => c.id === liveMatch.clubId) ||
+                activeClub;
+              const clubMembers = (data.users || [])
+                .filter(
+                  (u: User) =>
+                    u.active !== false &&
+                    u.id !== currentUser?.id &&
+                    (matchClub ? isUserInClub(matchClub, u) : true),
+                )
+                .sort((a: User, b: User) =>
+                  (a.shortName || a.name).localeCompare(b.shortName || b.name),
+                );
+
+              return (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsTransferScorerModalOpen(false)}
+                    className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                    className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden transition-colors"
+                  >
+                    <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+                      <h3 className="text-xl font-bold text-slate-800 dark:text-white">
+                        Schrijven Overdragen
+                      </h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        Kies aan wie je het invoervak en de wedstrijdbediening wilt overdragen.
+                      </p>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-2">
+                          Overdragen aan
+                        </label>
+                        <select
+                          value={transferTargetUserId}
+                          onChange={(e) => setTransferTargetUserId(e.target.value)}
+                          className="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white text-sm font-medium focus:ring-2 focus:ring-emerald-500 outline-none"
+                        >
+                          {currentUser && (
+                            <option value={currentUser.id}>
+                              {currentUser.shortName || currentUser.name} (Zelfde gebruiker op andere computer/telefoon)
+                            </option>
+                          )}
+                          {clubMembers.map((member: User) => (
+                            <option key={member.id} value={member.id}>
+                              {member.shortName || member.name}
+                              {member.id === liveMatch.player1Id || member.id === liveMatch.player2Id
+                                ? " (Speler)"
+                                : member.id === liveMatch.arbiterId
+                                  ? " (Scheidsrechter)"
+                                  : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                        Zodra je op <strong>Overdragen</strong> klikt, verdwijnt het invoervak op dit scherm en verschijnt het direct op het scherm van de gekozen gebruiker (of op je andere apparaat).
+                      </p>
+                    </div>
+                    <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
+                      <button
+                        onClick={() => setIsTransferScorerModalOpen(false)}
+                        className="flex-1 px-2 sm:px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        Annuleren
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (liveMatchId && transferTargetUserId) {
+                            handleTransferScorer(liveMatchId, transferTargetUserId);
+                          }
+                        }}
+                        disabled={!transferTargetUserId}
+                        className="flex-1 px-2 sm:px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors shadow-lg disabled:opacity-50"
+                      >
+                        Overdragen
                       </button>
                     </div>
                   </motion.div>

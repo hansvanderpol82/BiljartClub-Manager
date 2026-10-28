@@ -86,6 +86,7 @@ export interface Match {
   activeScorerId?: string | null;
   activeScorerName?: string | null;
   activeScorerDeviceId?: string | null;
+  transferredFromDeviceId?: string | null;
   activeTurnIndex?: number;
   activeScoringPlayer?: 1 | 2;
   currentTurnP1?: number;
