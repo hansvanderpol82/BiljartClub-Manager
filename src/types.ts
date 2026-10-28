@@ -83,8 +83,15 @@ export interface Match {
   turns: { player1: number; player2: number }[];
   player1Paid: boolean;
   player2Paid: boolean;
-  activeScorerId?: string;
-  activeScorerName?: string;
+  activeScorerId?: string | null;
+  activeScorerName?: string | null;
+  activeScorerDeviceId?: string | null;
+  activeTurnIndex?: number;
+  activeScoringPlayer?: 1 | 2;
+  currentTurnP1?: number;
+  currentTurnP2?: number;
+  turnNotification?: string | null;
+  animationEvent?: { type: 'pig' | 'niceBall'; color?: 'white' | 'yellow'; id: number } | null;
 }
 
 export interface MemberStats {
@@ -115,8 +122,15 @@ export interface ExternalMatchGame {
   date?: string;
   homePlayerPaid?: boolean;
   awayPlayerPaid?: boolean;
-  activeScorerId?: string;
-  activeScorerName?: string;
+  activeScorerId?: string | null;
+  activeScorerName?: string | null;
+  activeScorerDeviceId?: string | null;
+  activeTurnIndex?: number;
+  activeScoringPlayer?: 1 | 2;
+  currentTurnP1?: number;
+  currentTurnP2?: number;
+  turnNotification?: string | null;
+  animationEvent?: { type: 'pig' | 'niceBall'; color?: 'white' | 'yellow'; id: number } | null;
 }
 
 export interface ExternalMatch {

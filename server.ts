@@ -58,17 +58,21 @@ async function startServer() {
     }
   });
 
-  // Check Mollie Payment Status
-  app.get("/api/mollie/payment-status/:id", async (req, res) => {
+  // Check Mollie Payment Status (supports both /api/mollie/payment-status?id=... and /api/mollie/payment-status/:id)
+  const handlePaymentStatus = async (req: express.Request, res: express.Response) => {
     try {
-      const { id } = req.params;
+      const id = (req.params as any).id || req.query.id;
       const apiKey = process.env.MOLLIE_API_KEY;
+
+      if (!id) {
+        return res.status(400).json({ error: 'Payment ID is missing' });
+      }
 
       if (!apiKey) {
         throw new Error('MOLLIE_API_KEY environment variable is missing');
       }
 
-      const response = await fetch(`https://api.mollie.com/v2/payments/${id}`, {
+      const response = await fetch(`https://api.mollie.com/v2/payments/${encodeURIComponent(String(id))}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
         },
@@ -85,7 +89,10 @@ async function startServer() {
       console.error("Mollie status error:", error);
       res.status(500).json({ error: error.message });
     }
-  });
+  };
+
+  app.get("/api/mollie/payment-status", handlePaymentStatus);
+  app.get("/api/mollie/payment-status/:id", handlePaymentStatus);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

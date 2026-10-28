@@ -308,14 +308,58 @@ const HomeTab = ({
       relatedEntityId: absenceSeasonId + "_" + absenceDate,
     };
 
+    const dayKey = format(new Date(absenceDate), "yyyy-MM-dd");
+    const normalizedIsoDate = new Date(dayKey).toISOString();
+
     setData((prev: any) => ({
       ...prev,
+      seasons: (prev.seasons || []).map((s: Season) => {
+        if (s.id !== absenceSeasonId) return s;
+        const currentAttendance = { ...(s.attendance || {}) };
+        const allMemberIds = (s.members || []).map((m) => m.userId);
+        const existingList =
+          currentAttendance[normalizedIsoDate] ||
+          currentAttendance[absenceDate] ||
+          allMemberIds;
+        const updatedList = existingList.filter((id: string) => id !== currentUser.id);
+        return {
+          ...s,
+          attendance: {
+            ...currentAttendance,
+            [normalizedIsoDate]: updatedList,
+            [absenceDate]: updatedList,
+          },
+        };
+      }),
       notifications: [...(prev.notifications || []), newNotification]
     }));
     
     setIsAbsenceModalOpen(false);
     setAbsenceDate("");
     setAbsenceSeasonId("");
+  };
+
+  const isPlayerAbsentOnDay = (season: Season, dayKey: string, userId: string) => {
+    const attendanceEntries = Object.entries(season.attendance || {});
+    for (const [k, presentIds] of attendanceEntries) {
+      const d = new Date(k);
+      if (!isNaN(d.getTime()) && format(d, "yyyy-MM-dd") === dayKey) {
+        if (Array.isArray(presentIds) && !presentIds.includes(userId)) {
+          return true;
+        }
+      }
+    }
+
+    const hasAbsenceNotif = (data.notifications || []).some((n: any) => {
+      if (n.type !== "absence_request" || n.forUserId !== userId || !n.relatedEntityId) return false;
+      const prefix = season.id + "_";
+      if (!n.relatedEntityId.startsWith(prefix)) return false;
+      const notifDateStr = n.relatedEntityId.slice(prefix.length);
+      const d = new Date(notifDateStr);
+      return !isNaN(d.getTime()) && format(d, "yyyy-MM-dd") === dayKey;
+    });
+
+    return hasAbsenceNotif;
   };
 
   const handleProcessNotification = () => {
@@ -552,27 +596,46 @@ const HomeTab = ({
                 (m: Match) => m.seasonId === season.id && m.status === 'planned' && m.date
               );
               
-              const upcomingDates = [...new Set(plannedMatches.map((m: Match) => m.date))].sort();
+              const uniqueDayMap = new Map<string, string>();
+              plannedMatches
+                .slice()
+                .sort((a: Match, b: Match) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                .forEach((m: Match) => {
+                  const d = new Date(m.date);
+                  if (!isNaN(d.getTime())) {
+                    const dayKey = format(d, "yyyy-MM-dd");
+                    if (!uniqueDayMap.has(dayKey)) {
+                      uniqueDayMap.set(dayKey, m.date);
+                    }
+                  }
+                });
+
+              const sortedDays = Array.from(uniqueDayMap.entries()).sort((a, b) =>
+                a[0].localeCompare(b[0])
+              );
+
               const now = new Date();
-              const nextDate = upcomingDates.find(d => {
-                 const matchDateStr = d as string;
-                 const aanvangstijd = season.aanvangstijd || "19:00";
-                 const [hours, minutes] = aanvangstijd.split(":");
-                 const matchDeadline = new Date(matchDateStr);
-                 matchDeadline.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                 return matchDeadline > now;
-              }) || upcomingDates[0];
-              
-              const isPastDeadline = nextDate ? (() => {
-                 const matchDateStr = nextDate as string;
-                 const aanvangstijd = season.aanvangstijd || "19:00";
-                 const [hours, minutes] = aanvangstijd.split(":");
-                 const matchDeadline = new Date(matchDateStr);
-                 matchDeadline.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                 return now > matchDeadline;
-              })() : true;
-              
-              const matchesOnNextDate = nextDate ? plannedMatches.filter((m: Match) => m.date === nextDate) : [];
+              const firstUpcomingIdx = sortedDays.findIndex(([, repDate]) => {
+                const aanvangstijd = season.aanvangstijd || "19:00";
+                const [hours, minutes] = aanvangstijd.split(":");
+                const matchDeadline = new Date(repDate);
+                matchDeadline.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                return matchDeadline > now;
+              });
+
+              const nextTwoDays =
+                firstUpcomingIdx !== -1
+                  ? sortedDays.slice(firstUpcomingIdx, firstUpcomingIdx + 2)
+                  : sortedDays.slice(0, 2);
+
+              const primaryNextDate = nextTwoDays[0]?.[1];
+              const hasUpcomingDeadline = nextTwoDays.some(([, repDate]) => {
+                const aanvangstijd = season.aanvangstijd || "19:00";
+                const [hours, minutes] = aanvangstijd.split(":");
+                const matchDeadline = new Date(repDate);
+                matchDeadline.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                return matchDeadline > now;
+              });
               
               return (
                 <div key={`upcoming-${season.id}`} className="bg-white dark:bg-slate-900 sm:rounded-2xl p-4 sm:p-6 border-y sm:border border-slate-200 dark:border-slate-800 shadow-sm -mx-4 sm:mx-0">
@@ -584,42 +647,75 @@ const HomeTab = ({
                     {club?.name} - {season.name}
                   </p>
                   
-                  {matchesOnNextDate.length > 0 ? (
+                  {nextTwoDays.length > 0 ? (
                     <div>
-                      <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg inline-block">
-                        Speeldag: {format(new Date(nextDate as string), "EEEE d MMMM", { locale: nl })}
-                      </p>
-                      <div className="space-y-2">
-                        {matchesOnNextDate.map((match: Match) => {
-                          const p1 = data.users.find((u: User) => u.id === match.player1Id);
-                          const p2 = data.users.find((u: User) => u.id === match.player2Id);
-                          const isUserMatch = match.player1Id === currentUser.id || match.player2Id === currentUser.id;
+                      <div className="space-y-6">
+                        {nextTwoDays.map(([dayKey, repDate]) => {
+                          const matchesOnDate = plannedMatches.filter((m: Match) => {
+                            const d = new Date(m.date);
+                            return !isNaN(d.getTime()) && format(d, "yyyy-MM-dd") === dayKey;
+                          });
+
                           return (
-                            <div key={match.id} className={cn(
-                              "flex justify-between items-center p-3 rounded-xl border text-sm",
-                              isUserMatch 
-                                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800" 
-                                : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700"
-                            )}>
-                              <div className="flex-1 font-medium text-slate-700 dark:text-slate-300">
-                                {p1?.shortName || p1?.name}
-                              </div>
-                              <div className="px-3 text-slate-400 font-bold text-xs bg-white dark:bg-slate-900 py-1 rounded-md border border-slate-200 dark:border-slate-700 shadow-sm mx-2 flex flex-col items-center gap-1">
-                                <span>-</span>
-                              </div>
-                              <div className="flex-1 font-medium text-slate-700 dark:text-slate-300 text-right">
-                                {p2?.shortName || p2?.name}
+                            <div key={dayKey}>
+                              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg inline-block">
+                                Speeldag: {format(new Date(repDate), "EEEE d MMMM", { locale: nl })}
+                              </p>
+                              <div className="space-y-2">
+                                {matchesOnDate.map((match: Match) => {
+                                  const p1 = data.users.find((u: User) => u.id === match.player1Id);
+                                  const p2 = data.users.find((u: User) => u.id === match.player2Id);
+                                  const isUserMatch = match.player1Id === currentUser.id || match.player2Id === currentUser.id;
+                                  const p1Absent = isPlayerAbsentOnDay(season, dayKey, match.player1Id);
+                                  const p2Absent = isPlayerAbsentOnDay(season, dayKey, match.player2Id);
+                                  const anyAbsent = p1Absent || p2Absent;
+
+                                  return (
+                                    <div key={match.id} className={cn(
+                                      "flex justify-between items-center p-3 rounded-xl border text-sm",
+                                      anyAbsent
+                                        ? "bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800/60"
+                                        : isUserMatch 
+                                          ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800" 
+                                          : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700"
+                                    )}>
+                                      <div className="flex-1 flex flex-wrap items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
+                                        <span className={cn(p1Absent && "text-rose-600 dark:text-rose-400 line-through")}>
+                                          {p1?.shortName || p1?.name}
+                                        </span>
+                                        {p1Absent && (
+                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                            Afgemeld
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="px-3 text-slate-400 font-bold text-xs bg-white dark:bg-slate-900 py-1 rounded-md border border-slate-200 dark:border-slate-700 shadow-sm mx-2 flex flex-col items-center gap-1">
+                                        <span>-</span>
+                                      </div>
+                                      <div className="flex-1 flex flex-wrap items-center justify-end gap-1.5 font-medium text-slate-700 dark:text-slate-300 text-right">
+                                        {p2Absent && (
+                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                            Afgemeld
+                                          </span>
+                                        )}
+                                        <span className={cn(p2Absent && "text-rose-600 dark:text-rose-400 line-through")}>
+                                          {p2?.shortName || p2?.name}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           );
                         })}
                       </div>
                       <div className="flex gap-2 mt-4">
-                        {!isPastDeadline && (
+                        {hasUpcomingDeadline && primaryNextDate && (
                           <button
                             onClick={() => {
                               setAbsenceSeasonId(season.id);
-                              setAbsenceDate(nextDate as string);
+                              setAbsenceDate(primaryNextDate);
                               setIsAbsenceModalOpen(true);
                             }}
                             className="flex-1 text-center text-sm font-bold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg py-2 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
@@ -782,11 +878,26 @@ const HomeTab = ({
                       const plannedMatches = data.matches.filter(
                         (m: Match) => m.seasonId === season.id && m.status === 'planned' && m.date
                       );
-                      const upcomingDates = [...new Set(plannedMatches.map((m: Match) => m.date))].sort();
-                      const todayStr = new Date().toISOString().split('T')[0];
-                      return upcomingDates.filter(d => (d as string) >= todayStr).map((d: any) => (
-                        <option key={d} value={d}>{format(new Date(d), "EEEE d MMMM yyyy", { locale: nl })}</option>
-                      ));
+                      const dayMap = new Map<string, string>();
+                      plannedMatches
+                        .slice()
+                        .sort((a: Match, b: Match) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                        .forEach((m: Match) => {
+                          const d = new Date(m.date);
+                          if (!isNaN(d.getTime())) {
+                            const dayKey = format(d, "yyyy-MM-dd");
+                            if (!dayMap.has(dayKey)) {
+                              dayMap.set(dayKey, m.date);
+                            }
+                          }
+                        });
+                      const todayStr = format(new Date(), "yyyy-MM-dd");
+                      return Array.from(dayMap.entries())
+                        .sort((a, b) => a[0].localeCompare(b[0]))
+                        .filter(([dayKey]) => dayKey >= todayStr)
+                        .map(([dayKey, repDate]) => (
+                          <option key={dayKey} value={repDate}>{format(new Date(repDate), "EEEE d MMMM yyyy", { locale: nl })}</option>
+                        ));
                     })()}
                   </select>
                 </div>
@@ -1235,6 +1346,7 @@ export default function App() {
   });
   const [dataLoaded, setDataLoaded] = useState(false);
   const dataRef = useRef(data);
+  const lastFirestoreDataStrRef = useRef<string | null>(null);
   useEffect(() => { dataRef.current = data; }, [data]);
 
 
@@ -1383,18 +1495,26 @@ export default function App() {
           
           if (firestoreClubs.length === 0 && localClubs.length > 0) {
             console.log("Migrating local data to Firestore...");
-            setDoc(doc(db, "appData", "main"), { data: JSON.stringify(dataRef.current) }).catch(console.error);
+            const localStr = JSON.stringify(dataRef.current);
+            lastFirestoreDataStrRef.current = localStr;
+            setDoc(doc(db, "appData", "main"), { data: localStr }).catch(console.error);
           } else if (parsedDataStr !== migratedDataStr) {
             // A migration modified 'parsed'. Force save to Firestore immediately.
             console.log("Applying data migration/deduplication to Firestore...");
+            lastFirestoreDataStrRef.current = migratedDataStr;
             setDoc(doc(db, "appData", "main"), { data: migratedDataStr }).catch(console.error);
             setData(parsed);
           } else if (parsedDataStr !== JSON.stringify(dataRef.current)) {
+            lastFirestoreDataStrRef.current = parsedDataStr;
             setData(parsed);
+          } else {
+            lastFirestoreDataStrRef.current = parsedDataStr;
           }
         } catch(e) {}
       } else {
-        setDoc(doc(db, "appData", "main"), { data: JSON.stringify(dataRef.current) }).catch(console.error);
+        const localStr = JSON.stringify(dataRef.current);
+        lastFirestoreDataStrRef.current = localStr;
+        setDoc(doc(db, "appData", "main"), { data: localStr }).catch(console.error);
       }
       setDataLoaded(true);
     }, (error) => {
@@ -1882,6 +2002,10 @@ export default function App() {
     onSuccess: () => void;
   } | null>(null);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
+  const matchFilterBarRef = useRef<HTMLDivElement>(null);
+  const matchSearchInputRef = useRef<HTMLInputElement>(null);
+  const matchDateSelectRef = useRef<HTMLSelectElement>(null);
+  const [isMatchFilterBarOpen, setIsMatchFilterBarOpen] = useState(false);
   const shareDropdownRef = useRef<HTMLDivElement>(null);
   const hasPromptedRescheduleRef = useRef<Record<string, boolean>>({});
 
@@ -1894,6 +2018,12 @@ export default function App() {
         setIsMatchSearchDropdownOpen(false);
       }
       if (
+        matchFilterBarRef.current &&
+        !matchFilterBarRef.current.contains(event.target as Node)
+      ) {
+        setIsMatchFilterBarOpen(false);
+      }
+      if (
         shareDropdownRef.current &&
         !shareDropdownRef.current.contains(event.target as Node)
       ) {
@@ -1901,13 +2031,13 @@ export default function App() {
       }
     };
 
-    if (isMatchSearchDropdownOpen || activeShareDropdown) {
+    if (isMatchSearchDropdownOpen || activeShareDropdown || isMatchFilterBarOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isMatchSearchDropdownOpen, activeShareDropdown]);
+  }, [isMatchSearchDropdownOpen, activeShareDropdown, isMatchFilterBarOpen]);
   const [matchDateFilter, setMatchDateFilter] = useState("");
   const [isForecastModalOpen, setIsForecastModalOpen] = useState(false);
   const [isCancelDayModalOpen, setIsCancelDayModalOpen] = useState(false);
@@ -1976,6 +2106,15 @@ export default function App() {
       document.documentElement.classList.remove("dark");
     }
   }, [theme]);
+
+  const [deviceId] = useState<string>(() => {
+    let id = localStorage.getItem("biljart_device_id");
+    if (!id) {
+      id = "dev_" + Math.random().toString(36).substring(2, 11) + "_" + Date.now();
+      localStorage.setItem("biljart_device_id", id);
+    }
+    return id;
+  });
 
   const [activeScoringPlayer, setActiveScoringPlayer] = useState<1 | 2>(() => {
     const saved = localStorage.getItem("activeScoringPlayer");
@@ -2313,67 +2452,12 @@ export default function App() {
   }, [liveMatchId]);
 
   useEffect(() => {
-    if (liveMatchId && currentUser && !isCastMode) {
-      // Set lock when opening match
-      setData((prev: any) => {
-        let updated = false;
-        const updateLock = (matches: any[]) => {
-          return matches.map((m: any) => {
-            if (m.id === liveMatchId && m.status === 'started' && (!m.activeScorerId || m.activeScorerId === currentUser.id)) {
-              if (m.activeScorerId !== currentUser.id) updated = true;
-              return { ...m, activeScorerId: currentUser.id, activeScorerName: currentUser.name };
-            }
-            return m;
-          });
-        };
-
-        const newMatches = updateLock(prev.matches || []);
-        let newExternalMatches = prev.externalMatches || [];
-        
-        if (!updated && newExternalMatches.length > 0) {
-          newExternalMatches = newExternalMatches.map((em: any) => ({
-            ...em,
-            games: updateLock(em.games || [])
-          }));
-        }
-        
-        return updated ? { ...prev, matches: newMatches, externalMatches: newExternalMatches } : prev;
-      });
-
-      // Clear lock on cleanup
-      return () => {
-        setData((prev: any) => {
-          let updated = false;
-          const clearLock = (matches: any[]) => {
-            return matches.map((m: any) => {
-              if (m.id === liveMatchId && m.activeScorerId === currentUser.id) {
-                updated = true;
-                return { ...m, activeScorerId: null, activeScorerName: null };
-              }
-              return m;
-            });
-          };
-
-          const newMatches = clearLock(prev.matches || []);
-          let newExternalMatches = prev.externalMatches || [];
-          
-          if (!updated && newExternalMatches.length > 0) {
-            newExternalMatches = newExternalMatches.map((em: any) => ({
-              ...em,
-              games: clearLock(em.games || [])
-            }));
-          }
-          
-          return updated ? { ...prev, matches: newMatches, externalMatches: newExternalMatches } : prev;
-        });
-      };
-    }
-  }, [liveMatchId, currentUser, isCastMode]);
-
-
-  useEffect(() => {
     if (dataLoaded) {
-      setDoc(doc(db, "appData", "main"), { data: JSON.stringify(data) }).catch(console.error);
+      const currentStr = JSON.stringify(data);
+      if (currentStr !== lastFirestoreDataStrRef.current) {
+        lastFirestoreDataStrRef.current = currentStr;
+        setDoc(doc(db, "appData", "main"), { data: currentStr }).catch(console.error);
+      }
     }
   }, [data, dataLoaded]);
 
@@ -2584,6 +2668,15 @@ export default function App() {
             writerId: game.writerId,
             tafelNummer: game.tafelNummer,
             turns: game.turns || [{ player1: 0, player2: 0 }],
+            activeScorerId: game.activeScorerId,
+            activeScorerName: game.activeScorerName,
+            activeScorerDeviceId: game.activeScorerDeviceId,
+            activeTurnIndex: game.activeTurnIndex,
+            activeScoringPlayer: game.activeScoringPlayer,
+            currentTurnP1: game.currentTurnP1,
+            currentTurnP2: game.currentTurnP2,
+            turnNotification: game.turnNotification,
+            animationEvent: game.animationEvent,
             isExternal: true,
             extMatchId: em.id,
             scoringSystem: em.scoringSystem,
@@ -2618,6 +2711,144 @@ export default function App() {
   );
 
   const isMatchFinished = liveMatch?.status === 'finished' || liveMatch?.status === 'completed' || liveMatch?.status === 'cancelled';
+
+  const isActiveScorer = useMemo(() => {
+    if (!liveMatch || liveMatch.status !== "started" || isCastMode) return false;
+    if (liveMatch.activeScorerDeviceId) {
+      return liveMatch.activeScorerDeviceId === deviceId;
+    }
+    if (localStorage.getItem("scorer_match_" + liveMatch.id) === deviceId) {
+      return true;
+    }
+    if (liveMatch.activeScorerId && liveMatch.activeScorerId !== currentUser?.id) {
+      return false;
+    }
+    const hasMatchProgress =
+      (liveMatch.turns?.length || 0) > 1 ||
+      (liveMatch.turns?.[0]?.player1 || 0) > 0 ||
+      (liveMatch.turns?.[0]?.player2 || 0) > 0;
+    if (hasMatchProgress && activeTurnIndex === 0 && currentTurnP1 === 0 && currentTurnP2 === 0) {
+      return false;
+    }
+    if (!currentUser) return false;
+    const isAuthorized =
+      currentUser.id === liveMatch.writerId ||
+      currentUser.id === liveMatch.arbiterId ||
+      currentUser.id === liveMatch.player1Id ||
+      currentUser.id === liveMatch.player2Id ||
+      isClubAdmin(activeClub, currentUser) ||
+      currentUser.role === "admin";
+    return Boolean(isAuthorized);
+  }, [
+    liveMatch,
+    isCastMode,
+    deviceId,
+    currentUser,
+    activeClub,
+    activeTurnIndex,
+    currentTurnP1,
+    currentTurnP2,
+  ]);
+
+  const lastSeenAnimationIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!liveMatch || liveMatch.status !== "started") return;
+
+    if (isActiveScorer) {
+      localStorage.setItem("scorer_match_" + liveMatch.id, deviceId);
+      if (
+        liveMatch.activeScorerDeviceId !== deviceId ||
+        liveMatch.activeTurnIndex === undefined
+      ) {
+        setData((prev: any) => {
+          const patchMatch = (m: any) => {
+            if (m.id !== liveMatch.id) return m;
+            return {
+              ...m,
+              activeScorerDeviceId: deviceId,
+              activeScorerId: currentUser?.id || m.activeScorerId || null,
+              activeScorerName: currentUser?.name || m.activeScorerName || null,
+              activeTurnIndex,
+              activeScoringPlayer,
+              currentTurnP1,
+              currentTurnP2,
+              turnNotification,
+            };
+          };
+          return {
+            ...prev,
+            matches: (prev.matches || []).map(patchMatch),
+            externalMatches: (prev.externalMatches || []).map((em: any) => ({
+              ...em,
+              games: (em.games || []).map(patchMatch),
+            })),
+          };
+        });
+      }
+    } else {
+      const remoteTurnIdx =
+        liveMatch.activeTurnIndex !== undefined
+          ? liveMatch.activeTurnIndex
+          : Math.max(0, (liveMatch.turns?.length || 1) - 1);
+      const remoteScoringPlayer: 1 | 2 =
+        liveMatch.activeScoringPlayer !== undefined
+          ? liveMatch.activeScoringPlayer
+          : 1;
+      const remoteP1 =
+        liveMatch.currentTurnP1 !== undefined
+          ? liveMatch.currentTurnP1
+          : liveMatch.turns?.[remoteTurnIdx]?.player1 || 0;
+      const remoteP2 =
+        liveMatch.currentTurnP2 !== undefined
+          ? liveMatch.currentTurnP2
+          : liveMatch.turns?.[remoteTurnIdx]?.player2 || 0;
+      const remoteNotification =
+        liveMatch.turnNotification !== undefined
+          ? liveMatch.turnNotification
+          : null;
+
+      if (activeTurnIndex !== remoteTurnIdx) setActiveTurnIndex(remoteTurnIdx);
+      if (activeScoringPlayer !== remoteScoringPlayer)
+        setActiveScoringPlayer(remoteScoringPlayer);
+      if (currentTurnP1 !== remoteP1) setCurrentTurnP1(remoteP1);
+      if (currentTurnP2 !== remoteP2) setCurrentTurnP2(remoteP2);
+      if (turnNotification !== remoteNotification)
+        setTurnNotification(remoteNotification);
+    }
+  }, [
+    liveMatch,
+    isActiveScorer,
+    deviceId,
+    currentUser,
+    activeTurnIndex,
+    activeScoringPlayer,
+    currentTurnP1,
+    currentTurnP2,
+    turnNotification,
+  ]);
+
+  useEffect(() => {
+    const anim = liveMatch?.animationEvent;
+    if (!anim || !anim.id) return;
+    if (lastSeenAnimationIdRef.current === null) {
+      lastSeenAnimationIdRef.current = anim.id;
+      return;
+    }
+    if (anim.id !== lastSeenAnimationIdRef.current) {
+      lastSeenAnimationIdRef.current = anim.id;
+      if (!isActiveScorer) {
+        if (anim.type === "pig") {
+          setShowPigAnimation(true);
+          setTimeout(() => setShowPigAnimation(false), 5000);
+        } else if (anim.type === "niceBall") {
+          const color = anim.color || "white";
+          setNiceBallNotification(color);
+          setTimeout(() => setNiceBallNotification(null), 5000);
+        }
+      }
+    }
+  }, [liveMatch?.animationEvent, isActiveScorer]);
 
   const p1PreviousTotal = useMemo(() => {
     if (!liveMatch) return 0;
@@ -2694,16 +2925,30 @@ export default function App() {
       : liveCurrentSeason?.beurtenPerWedstrijd || 30;
 
   const triggerPigAnimation = () => {
-    localStorage.setItem("pigAnimationTrigger", Date.now().toString());
+    const nowId = Date.now();
+    localStorage.setItem("pigAnimationTrigger", nowId.toString());
+    lastSeenAnimationIdRef.current = nowId;
     setShowPigAnimation(true);
     setTimeout(() => setShowPigAnimation(false), 5000);
+    if (liveMatchId && isActiveScorer) {
+      syncLiveMatchState(liveMatchId, {
+        animationEvent: { type: "pig", id: nowId },
+      });
+    }
   };
 
   const triggerNiceBallAnimation = () => {
     const color = activeScoringPlayer === 1 ? "white" : "yellow";
-    localStorage.setItem("niceBallAnimationTrigger", `${color}|${Date.now()}`);
+    const nowId = Date.now();
+    localStorage.setItem("niceBallAnimationTrigger", `${color}|${nowId}`);
+    lastSeenAnimationIdRef.current = nowId;
     setNiceBallNotification(color);
     setTimeout(() => setNiceBallNotification(null), 5000);
+    if (liveMatchId && isActiveScorer) {
+      syncLiveMatchState(liveMatchId, {
+        animationEvent: { type: "niceBall", color, id: nowId },
+      });
+    }
   };
 
   const matchToStart = useMemo(() => {
@@ -4126,6 +4371,87 @@ export default function App() {
     });
   };
 
+  const syncLiveMatchState = (
+    matchId: string,
+    updates: {
+      turnUpdate?: { index: number; p1: number; p2: number };
+      appendEmptyTurn?: boolean;
+      activeTurnIndex?: number;
+      activeScoringPlayer?: 1 | 2;
+      currentTurnP1?: number;
+      currentTurnP2?: number;
+      turnNotification?: string | null;
+      animationEvent?: {
+        type: "pig" | "niceBall";
+        color?: "white" | "yellow";
+        id: number;
+      } | null;
+    },
+  ) => {
+    setData((prev: any) => {
+      const applyUpdates = (m: any) => {
+        if (m.id !== matchId) return m;
+        let newTurns = [...(m.turns || [{ player1: 0, player2: 0 }])];
+        if (updates.turnUpdate) {
+          const { index, p1, p2 } = updates.turnUpdate;
+          while (newTurns.length <= index) {
+            newTurns.push({ player1: 0, player2: 0 });
+          }
+          newTurns[index] = { player1: p1, player2: p2 };
+        }
+        if (updates.appendEmptyTurn) {
+          newTurns.push({ player1: 0, player2: 0 });
+        }
+        return {
+          ...m,
+          turns: newTurns,
+          activeScorerDeviceId: deviceId,
+          activeScorerId: currentUser?.id || m.activeScorerId || null,
+          activeScorerName: currentUser?.name || m.activeScorerName || null,
+          ...(updates.activeTurnIndex !== undefined
+            ? { activeTurnIndex: updates.activeTurnIndex }
+            : {}),
+          ...(updates.activeScoringPlayer !== undefined
+            ? { activeScoringPlayer: updates.activeScoringPlayer }
+            : {}),
+          ...(updates.currentTurnP1 !== undefined
+            ? { currentTurnP1: updates.currentTurnP1 }
+            : {}),
+          ...(updates.currentTurnP2 !== undefined
+            ? { currentTurnP2: updates.currentTurnP2 }
+            : {}),
+          ...(updates.turnNotification !== undefined
+            ? { turnNotification: updates.turnNotification }
+            : {}),
+          ...(updates.animationEvent !== undefined
+            ? { animationEvent: updates.animationEvent }
+            : {}),
+        };
+      };
+
+      let isExternal = false;
+      const nextExt = prev.externalMatches?.map((em: any) => {
+        if (em.games?.some((g: any) => g.id === matchId)) {
+          isExternal = true;
+          return {
+            ...em,
+            games: (em.games || []).map(applyUpdates),
+          };
+        }
+        return em;
+      });
+
+      if (isExternal) {
+        return { ...prev, externalMatches: nextExt };
+      }
+
+      return {
+        ...prev,
+        matches: (prev.matches || []).map(applyUpdates),
+      };
+    });
+  };
+
   const startMatch = (
     matchId: string,
     arbiterId: string,
@@ -4136,6 +4462,7 @@ export default function App() {
     setLastWriterId(writerId);
     localStorage.setItem("lastArbiterId", arbiterId);
     localStorage.setItem("lastWriterId", writerId);
+    localStorage.setItem("scorer_match_" + matchId, deviceId);
     setData((prev: any) => {
       let isExternal = false;
       const nextExt = prev.externalMatches?.map((em: any) => {
@@ -4154,6 +4481,14 @@ export default function App() {
                     tafelNummer,
                     date: new Date().toISOString(),
                     turns: [{ player1: 0, player2: 0 }],
+                    activeScorerId: currentUser?.id || null,
+                    activeScorerName: currentUser?.name || null,
+                    activeScorerDeviceId: deviceId,
+                    activeTurnIndex: 0,
+                    activeScoringPlayer: 1,
+                    currentTurnP1: 0,
+                    currentTurnP2: 0,
+                    turnNotification: null,
                   }
                 : g,
             ),
@@ -4178,6 +4513,14 @@ export default function App() {
                 tafelNummer,
                 date: new Date().toISOString(),
                 turns: [{ player1: 0, player2: 0 }],
+                activeScorerId: currentUser?.id || null,
+                activeScorerName: currentUser?.name || null,
+                activeScorerDeviceId: deviceId,
+                activeTurnIndex: 0,
+                activeScoringPlayer: 1,
+                currentTurnP1: 0,
+                currentTurnP2: 0,
+                turnNotification: null,
               }
             : m,
         ),
@@ -4187,53 +4530,13 @@ export default function App() {
     setActiveScoringPlayer(1);
     setCurrentTurnP1(0);
     setCurrentTurnP2(0);
+    setTurnNotification(null);
     setLiveMatchId(matchId);
   };
 
   const saveTurn = (matchId: string, index: number, p1: number, p2: number) => {
-    setData((prev: any) => {
-      let isExternal = false;
-      const nextExt = prev.externalMatches?.map((em: any) => {
-        if (em.games?.some((g: any) => g.id === matchId)) {
-          isExternal = true;
-          return {
-            ...em,
-            games: (em.games || []).map((g: any) => {
-              if (g.id === matchId) {
-                const newTurns = [...(g.turns || [])];
-                if (index < newTurns.length) {
-                  newTurns[index] = { player1: p1, player2: p2 };
-                } else {
-                  newTurns.push({ player1: p1, player2: p2 });
-                }
-                return { ...g, turns: newTurns };
-              }
-              return g;
-            }),
-          };
-        }
-        return em;
-      });
-
-      if (isExternal) {
-        return { ...prev, externalMatches: nextExt };
-      }
-
-      return {
-        ...prev,
-        matches: prev.matches.map((m: Match) => {
-          if (m.id === matchId) {
-            const newTurns = [...m.turns];
-            if (index < newTurns.length) {
-              newTurns[index] = { player1: p1, player2: p2 };
-            } else {
-              newTurns.push({ player1: p1, player2: p2 });
-            }
-            return { ...m, turns: newTurns };
-          }
-          return m;
-        }),
-      };
+    syncLiveMatchState(matchId, {
+      turnUpdate: { index, p1, p2 },
     });
   };
 
@@ -4244,6 +4547,7 @@ export default function App() {
   };
 
   const finishMatch = (matchId: string, p1Paid: boolean, p2Paid: boolean) => {
+    localStorage.removeItem("scorer_match_" + matchId);
     setData((prev: any) => {
       let isExternal = false;
       const nextExt = prev.externalMatches?.map((em: any) => {
@@ -4271,6 +4575,10 @@ export default function App() {
                   awayScore: myClubIsHome ? p2Total : p1Total,
                   homePlayerPaid: myClubIsHome ? p1Paid : p2Paid,
                   awayPlayerPaid: myClubIsHome ? p2Paid : p1Paid,
+                  activeScorerId: null,
+                  activeScorerName: null,
+                  activeScorerDeviceId: null,
+                  turnNotification: null,
                 };
               }
               return g;
@@ -4293,6 +4601,10 @@ export default function App() {
                 status: "finished",
                 player1Paid: p1Paid,
                 player2Paid: p2Paid,
+                activeScorerId: null,
+                activeScorerName: null,
+                activeScorerDeviceId: null,
+                turnNotification: null,
               }
             : m,
         ),
@@ -4302,6 +4614,7 @@ export default function App() {
   };
 
   const cancelMatch = (matchId: string, p1Paid: boolean, p2Paid: boolean) => {
+    localStorage.removeItem("scorer_match_" + matchId);
     setData((prev: any) => {
       let isExternal = false;
       const nextExt = prev.externalMatches?.map((em: any) => {
@@ -4310,9 +4623,23 @@ export default function App() {
           return {
             ...em,
             games: (em.games || []).map((g: any) =>
-              g.id === matchId ? { ...g, status: "planned", turns: [] } : g,
+              g.id === matchId
+                ? {
+                    ...g,
+                    status: "planned",
+                    turns: [],
+                    activeScorerId: null,
+                    activeScorerName: null,
+                    activeScorerDeviceId: null,
+                    activeTurnIndex: 0,
+                    activeScoringPlayer: 1,
+                    currentTurnP1: 0,
+                    currentTurnP2: 0,
+                    turnNotification: null,
+                  }
+                : g,
             ),
-          }; // for external match, cancelling usually means reverting to planned or similar.
+          };
         }
         return em;
       });
@@ -4328,6 +4655,10 @@ export default function App() {
                 status: "cancelled",
                 player1Paid: p1Paid,
                 player2Paid: p2Paid,
+                activeScorerId: null,
+                activeScorerName: null,
+                activeScorerDeviceId: null,
+                turnNotification: null,
               }
             : m,
         ),
@@ -4337,6 +4668,7 @@ export default function App() {
   };
 
   const restartMatch = (matchId: string) => {
+    localStorage.removeItem("scorer_match_" + matchId);
     setData((prev: any) => {
       let isExternal = false;
       const nextExt = prev.externalMatches?.map((em: any) => {
@@ -4345,7 +4677,21 @@ export default function App() {
           return {
             ...em,
             games: (em.games || []).map((g: any) =>
-              g.id === matchId ? { ...g, status: "planned", turns: [] } : g,
+              g.id === matchId
+                ? {
+                    ...g,
+                    status: "planned",
+                    turns: [],
+                    activeScorerId: null,
+                    activeScorerName: null,
+                    activeScorerDeviceId: null,
+                    activeTurnIndex: 0,
+                    activeScoringPlayer: 1,
+                    currentTurnP1: 0,
+                    currentTurnP2: 0,
+                    turnNotification: null,
+                  }
+                : g,
             ),
           };
         }
@@ -4363,6 +4709,14 @@ export default function App() {
                 status: "planned",
                 player1Paid: false,
                 player2Paid: false,
+                activeScorerId: null,
+                activeScorerName: null,
+                activeScorerDeviceId: null,
+                activeTurnIndex: 0,
+                activeScoringPlayer: 1,
+                currentTurnP1: 0,
+                currentTurnP2: 0,
+                turnNotification: null,
               }
             : m,
         ),
@@ -5849,12 +6203,6 @@ export default function App() {
           >
             <X size={24} />
           </button>
-          
-          {activeClub?.logo && (
-            <div className="absolute top-8 left-8 z-50">
-              <img src={activeClub.logo} alt={activeClub.name} className="h-16 md:h-20 w-auto object-contain drop-shadow-xl" />
-            </div>
-          )}
 
           {/* Header / Game Info - Centered and Slimmer */}
           <div className="w-full max-w-2xl text-center animate-in fade-in slide-in-from-top duration-700 relative mb-2">
@@ -6095,8 +6443,16 @@ export default function App() {
           <div className="w-full max-w-[1400px] flex justify-between items-center bg-black/20 px-6 py-4 rounded-3xl border border-white/10 backdrop-blur-md animate-in fade-in slide-in-from-bottom duration-700 mt-4">
             {/* Club Info */}
             <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
-                <Trophy className="text-emerald-400" size={40} />
+              <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 overflow-hidden">
+                {activeClub?.logo ? (
+                  <img
+                    src={activeClub.logo}
+                    alt={activeClub.name}
+                    className="w-full h-full object-contain p-1"
+                  />
+                ) : (
+                  <Trophy className="text-emerald-400" size={40} />
+                )}
               </div>
               <div className="text-left">
                 <div className="text-white/20 text-sm md:text-base font-black uppercase tracking-widest mb-0.5">
@@ -11005,147 +11361,226 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="space-y-8">
-                    <div className="sticky top-0 z-40 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md py-4 -mx-4 px-2 sm:px-4 border-b border-transparent data-[sticky=true]:border-slate-200 data-[sticky=true]:dark:border-slate-800 transition-colors flex flex-col md:flex-row gap-4">
-                      <div ref={searchDropdownRef} className="relative flex-1">
-                        <Search
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                          size={20}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Zoek op speler..."
-                          value={matchSearchQuery}
-                          onChange={(e) => {
-                            setMatchSearchQuery(e.target.value);
-                            setIsMatchSearchDropdownOpen(true);
-                          }}
-                          onFocus={() => setIsMatchSearchDropdownOpen(true)}
-                          className="w-full pl-12 pr-12 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all shadow-sm"
-                        />
-                        {isMatchSearchDropdownOpen && activeClub && (
-                          <div className="absolute top-full mt-2 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden">
-                            <div className="max-h-64 overflow-y-auto">
-                              {(activeClub.memberIds || [])
-                                .map((id) =>
-                                  data.users.find((u: User) => u.id === id),
-                                )
-                                .filter((u): u is User => !!u)
-                                .filter((u) => {
-                                  if (!matchSearchQuery) return true;
-                                  return (
-                                    u?.name
-                                      ?.toLowerCase()
-                                      .includes(
-                                        matchSearchQuery.toLowerCase(),
-                                      ) ||
-                                    (u?.shortName &&
-                                      u.shortName
-                                        .toLowerCase()
-                                        .includes(
-                                          matchSearchQuery.toLowerCase(),
-                                        ))
-                                  );
-                                })
-                                .map((u) => (
-                                  <button
-                                    key={u.id}
-                                    onClick={() => {
-                                      setMatchSearchQuery(
-                                        u.shortName || u.name,
-                                      );
-                                      setIsMatchSearchDropdownOpen(false);
-                                    }}
-                                    className="w-full text-left px-2 sm:px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-3 border-b border-slate-50 last:border-0 dark:border-slate-800/50"
-                                  >
-                                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400 overflow-hidden shrink-0">
-                                      {u.avatar ? (
-                                        <img
-                                          src={u.avatar}
-                                          className="w-full h-full object-cover"
-                                          referrerPolicy="no-referrer"
-                                        />
-                                      ) : (
-                                        u.name?.[0]
-                                      )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
-                                        {u.shortName || u.name}
-                                      </p>
-                                      {u.shortName &&
-                                        u.shortName !== u.name && (
-                                          <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                                            {u.name}
-                                          </p>
-                                        )}
-                                    </div>
-                                  </button>
-                                ))}
-                              {(activeClub.memberIds || []).length === 0 && (
-                                <div className="p-4 text-center text-sm text-slate-400">
-                                  Geen leden gevonden
-                                </div>
-                              )}
-                            </div>
-                            <div className="p-2 border-t border-slate-50 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                              <button
-                                onClick={() =>
-                                  setIsMatchSearchDropdownOpen(false)
-                                }
-                                className="w-full py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                              >
-                                Sluiten
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        {matchSearchQuery && (
+                    <div
+                      ref={matchFilterBarRef}
+                      className={cn(
+                        "sticky z-40 transition-all",
+                        isMatchFilterBarOpen
+                          ? "top-0 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-md py-4 -mx-4 px-2 sm:px-4 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-3 sm:gap-4 shadow-sm"
+                          : "top-2 flex justify-end py-0 pointer-events-none -mb-6",
+                      )}
+                    >
+                      {!isMatchFilterBarOpen ? (
+                        <div className="pointer-events-auto inline-flex items-center gap-1.5 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
                           <button
-                            onClick={() => setMatchSearchQuery("")}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                            type="button"
+                            onClick={() => {
+                              setIsMatchFilterBarOpen(true);
+                              setTimeout(() => {
+                                matchSearchInputRef.current?.focus();
+                                setIsMatchSearchDropdownOpen(true);
+                              }, 50);
+                            }}
+                            title="Zoek op speler"
+                            className={cn(
+                              "p-2 rounded-lg transition-colors flex items-center gap-1.5",
+                              matchSearchQuery
+                                ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
+                                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800/70",
+                            )}
                           >
-                            <XCircle size={18} />
+                            <Search size={18} />
+                            {matchSearchQuery && (
+                              <span className="text-xs font-bold max-w-[90px] truncate">
+                                {matchSearchQuery}
+                              </span>
+                            )}
                           </button>
-                        )}
-                      </div>
-                      <div className="relative md:w-72">
-                        <Calendar
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                          size={20}
-                        />
-                        <select
-                          value={matchDateFilter}
-                          onChange={(e) => setMatchDateFilter(e.target.value)}
-                          className="w-full pl-12 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all shadow-sm appearance-none font-medium"
-                        >
-                          <option value="">Alle speeldagen</option>
-                          {(() => {
-                            const dates = Array.from(
-                              new Set(
-                                data.matches
-                                  .filter(
-                                    (m: Match) =>
-                                      m.seasonId === selectedSeasonId,
-                                  )
-                                  .map((m: Match) =>
-                                    format(new Date(m.date), "yyyy-MM-dd"),
-                                  ),
-                              ),
-                            ).sort() as string[];
-
-                            return dates.map((dateStr: string) => (
-                              <option key={dateStr} value={dateStr}>
-                                {format(new Date(dateStr), "EEEE d MMMM yyyy", {
-                                  locale: nl,
-                                })}
-                              </option>
-                            ));
-                          })()}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                          <ChevronLeft className="-rotate-90" size={16} />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsMatchFilterBarOpen(true);
+                              setTimeout(() => {
+                                matchDateSelectRef.current?.focus();
+                              }, 50);
+                            }}
+                            title="Filter op speeldag"
+                            className={cn(
+                              "p-2 rounded-lg transition-colors flex items-center gap-1.5",
+                              matchDateFilter
+                                ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
+                                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800/70",
+                            )}
+                          >
+                            <Calendar size={18} />
+                            {matchDateFilter && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            )}
+                          </button>
                         </div>
-                      </div>
+                      ) : (
+                        <>
+                          <div ref={searchDropdownRef} className="relative flex-1">
+                            <Search
+                              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                              size={20}
+                            />
+                            <input
+                              ref={matchSearchInputRef}
+                              type="text"
+                              placeholder="Zoek op speler..."
+                              value={matchSearchQuery}
+                              onChange={(e) => {
+                                setMatchSearchQuery(e.target.value);
+                                setIsMatchSearchDropdownOpen(true);
+                              }}
+                              onFocus={() => setIsMatchSearchDropdownOpen(true)}
+                              className="w-full pl-12 pr-12 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all shadow-sm"
+                            />
+                            {isMatchSearchDropdownOpen && activeClub && (
+                              <div className="absolute top-full mt-2 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden">
+                                <div className="max-h-64 overflow-y-auto">
+                                  {(activeClub.memberIds || [])
+                                    .map((id) =>
+                                      data.users.find((u: User) => u.id === id),
+                                    )
+                                    .filter((u): u is User => !!u)
+                                    .filter((u) => {
+                                      if (!matchSearchQuery) return true;
+                                      return (
+                                        u?.name
+                                          ?.toLowerCase()
+                                          .includes(
+                                            matchSearchQuery.toLowerCase(),
+                                          ) ||
+                                        (u?.shortName &&
+                                          u.shortName
+                                            .toLowerCase()
+                                            .includes(
+                                              matchSearchQuery.toLowerCase(),
+                                            ))
+                                      );
+                                    })
+                                    .map((u) => (
+                                      <button
+                                        key={u.id}
+                                        onClick={() => {
+                                          setMatchSearchQuery(
+                                            u.shortName || u.name,
+                                          );
+                                          setIsMatchSearchDropdownOpen(false);
+                                          setIsMatchFilterBarOpen(false);
+                                        }}
+                                        className="w-full text-left px-2 sm:px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-3 border-b border-slate-50 last:border-0 dark:border-slate-800/50"
+                                      >
+                                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400 overflow-hidden shrink-0">
+                                          {u.avatar ? (
+                                            <img
+                                              src={u.avatar}
+                                              className="w-full h-full object-cover"
+                                              referrerPolicy="no-referrer"
+                                            />
+                                          ) : (
+                                            u.name?.[0]
+                                          )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
+                                            {u.shortName || u.name}
+                                          </p>
+                                          {u.shortName &&
+                                            u.shortName !== u.name && (
+                                              <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                                {u.name}
+                                              </p>
+                                            )}
+                                        </div>
+                                      </button>
+                                    ))}
+                                  {(activeClub.memberIds || []).length === 0 && (
+                                    <div className="p-4 text-center text-sm text-slate-400">
+                                      Geen leden gevonden
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="p-2 border-t border-slate-50 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                                  <button
+                                    onClick={() =>
+                                      setIsMatchSearchDropdownOpen(false)
+                                    }
+                                    className="w-full py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                                  >
+                                    Sluiten
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            {matchSearchQuery && (
+                              <button
+                                onClick={() => setMatchSearchQuery("")}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                              >
+                                <XCircle size={18} />
+                              </button>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="relative flex-1 md:w-72">
+                              <Calendar
+                                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                                size={20}
+                              />
+                              <select
+                                ref={matchDateSelectRef}
+                                value={matchDateFilter}
+                                onChange={(e) => {
+                                  setMatchDateFilter(e.target.value);
+                                  setIsMatchFilterBarOpen(false);
+                                }}
+                                className="w-full pl-12 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all shadow-sm appearance-none font-medium"
+                              >
+                                <option value="">Alle speeldagen</option>
+                                {(() => {
+                                  const dates = Array.from(
+                                    new Set(
+                                      data.matches
+                                        .filter(
+                                          (m: Match) =>
+                                            m.seasonId === selectedSeasonId,
+                                        )
+                                        .map((m: Match) =>
+                                          format(new Date(m.date), "yyyy-MM-dd"),
+                                        ),
+                                    ),
+                                  ).sort() as string[];
+
+                                  return dates.map((dateStr: string) => (
+                                    <option key={dateStr} value={dateStr}>
+                                      {format(new Date(dateStr), "EEEE d MMMM yyyy", {
+                                        locale: nl,
+                                      })}
+                                    </option>
+                                  ));
+                                })()}
+                              </select>
+                              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                <ChevronLeft className="-rotate-90" size={16} />
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsMatchSearchDropdownOpen(false);
+                                setIsMatchFilterBarOpen(false);
+                              }}
+                              title="Sluiten"
+                              className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors shadow-sm shrink-0"
+                            >
+                              <X size={20} />
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     <div className="space-y-12">
@@ -12179,60 +12614,74 @@ export default function App() {
                   const maxTurns = liveMaxTurns;
 
                   const handleNextPlayer = () => {
+                    if (!isActiveScorer) return;
                     if (activeScoringPlayer === 1) {
-                      saveTurn(
-                        liveMatchId!,
-                        activeTurnIndex,
-                        currentTurnP1,
-                        currentTurnP2,
-                      );
+                      const nextP2 =
+                        match && match.turns[activeTurnIndex]
+                          ? match.turns[activeTurnIndex].player2
+                          : 0;
 
                       // Check if P1 reached target in Driebanden
                       if (
                         isDriebanden &&
                         p1Total >= (match?.player1AvgBefore || 0)
                       ) {
-                        setTurnNotification(
-                          "Speler 1 heeft zijn caramboles! Speler 2 krijgt de nastoot.",
-                        );
+                        const notif =
+                          "Speler 1 heeft zijn caramboles! Speler 2 krijgt de nastoot.";
+                        setTurnNotification(notif);
                         setActiveScoringPlayer(2);
-                        if (match && match.turns[activeTurnIndex]) {
-                          setCurrentTurnP2(
-                            match.turns[activeTurnIndex].player2,
-                          );
-                        } else {
-                          setCurrentTurnP2(0);
-                        }
+                        setCurrentTurnP2(nextP2);
+                        syncLiveMatchState(liveMatchId!, {
+                          turnUpdate: {
+                            index: activeTurnIndex,
+                            p1: currentTurnP1,
+                            p2: currentTurnP2,
+                          },
+                          activeScoringPlayer: 2,
+                          currentTurnP1,
+                          currentTurnP2: nextP2,
+                          turnNotification: notif,
+                        });
                         return;
                       }
 
-                      setActiveScoringPlayer(2);
-                      if (match && match.turns[activeTurnIndex]) {
-                        setCurrentTurnP2(match.turns[activeTurnIndex].player2);
-                      } else {
-                        setCurrentTurnP2(0);
-                      }
-
-                      // Keep notification if it's one of the last turns
+                      let notif: string | null = turnNotification;
                       if (activeTurnIndex === maxTurns - 1) {
-                        setTurnNotification("Laatste beurt!");
+                        notif = "Laatste beurt!";
                       } else if (activeTurnIndex === maxTurns - 2) {
-                        setTurnNotification("Voorlaatste beurt!");
+                        notif = "Voorlaatste beurt!";
                       }
-                    } else {
-                      saveTurn(
-                        liveMatchId!,
-                        activeTurnIndex,
+                      setTurnNotification(notif);
+                      setActiveScoringPlayer(2);
+                      setCurrentTurnP2(nextP2);
+                      syncLiveMatchState(liveMatchId!, {
+                        turnUpdate: {
+                          index: activeTurnIndex,
+                          p1: currentTurnP1,
+                          p2: currentTurnP2,
+                        },
+                        activeScoringPlayer: 2,
                         currentTurnP1,
-                        currentTurnP2,
-                      );
-
+                        currentTurnP2: nextP2,
+                        turnNotification: notif,
+                      });
+                    } else {
                       // Check if match should end in Driebanden
                       if (isDriebanden) {
                         if (p2Total >= (match?.player2AvgBefore || 0)) {
-                          setTurnNotification(
-                            "Speler 2 heeft zijn caramboles! Wedstrijd afgelopen.",
-                          );
+                          const notif =
+                            "Speler 2 heeft zijn caramboles! Wedstrijd afgelopen.";
+                          setTurnNotification(notif);
+                          syncLiveMatchState(liveMatchId!, {
+                            turnUpdate: {
+                              index: activeTurnIndex,
+                              p1: currentTurnP1,
+                              p2: currentTurnP2,
+                            },
+                            currentTurnP1,
+                            currentTurnP2,
+                            turnNotification: notif,
+                          });
                           setTimeout(() => {
                             openFinishMatchModal();
                             setTurnNotification(null);
@@ -12240,9 +12689,19 @@ export default function App() {
                           return;
                         }
                         if (p1Total >= (match?.player1AvgBefore || 0)) {
-                          setTurnNotification(
-                            "Nastoot voltooid! Wedstrijd afgelopen.",
-                          );
+                          const notif =
+                            "Nastoot voltooid! Wedstrijd afgelopen.";
+                          setTurnNotification(notif);
+                          syncLiveMatchState(liveMatchId!, {
+                            turnUpdate: {
+                              index: activeTurnIndex,
+                              p1: currentTurnP1,
+                              p2: currentTurnP2,
+                            },
+                            currentTurnP1,
+                            currentTurnP2,
+                            turnNotification: notif,
+                          });
                           setTimeout(() => {
                             openFinishMatchModal();
                             setTurnNotification(null);
@@ -12254,7 +12713,18 @@ export default function App() {
                       const nextIndex = activeTurnIndex + 1;
 
                       if (nextIndex >= maxTurns) {
-                        setTurnNotification("Wedstrijd voltooid!");
+                        const notif = "Wedstrijd voltooid!";
+                        setTurnNotification(notif);
+                        syncLiveMatchState(liveMatchId!, {
+                          turnUpdate: {
+                            index: activeTurnIndex,
+                            p1: currentTurnP1,
+                            p2: currentTurnP2,
+                          },
+                          currentTurnP1,
+                          currentTurnP2,
+                          turnNotification: notif,
+                        });
                         setTimeout(() => {
                           openFinishMatchModal();
                           setTurnNotification(null);
@@ -12262,85 +12732,98 @@ export default function App() {
                         return;
                       }
 
+                      let notif: string | null = null;
                       if (nextIndex === maxTurns - 1) {
-                        setTurnNotification("Laatste beurt!");
+                        notif = "Laatste beurt!";
                       } else if (nextIndex === maxTurns - 2) {
-                        setTurnNotification("Voorlaatste beurt!");
-                      } else {
-                        setTurnNotification(null);
+                        notif = "Voorlaatste beurt!";
                       }
+                      setTurnNotification(notif);
 
-                      if (match && nextIndex >= (match.turns || []).length) {
-                        setData((prev: any) => ({
-                          ...prev,
-                          matches: prev.matches.map((m: Match) =>
-                            m.id === liveMatchId
-                              ? {
-                                  ...m,
-                                  turns: [
-                                    ...m.turns,
-                                    { player1: 0, player2: 0 },
-                                  ],
-                                }
-                              : m,
-                          ),
-                        }));
-                        setCurrentTurnP1(0);
-                        setCurrentTurnP2(0);
-                      } else if (match) {
-                        setCurrentTurnP1(match.turns[nextIndex].player1);
-                        setCurrentTurnP2(match.turns[nextIndex].player2);
-                      }
+                      const shouldAppend =
+                        match && nextIndex >= (match.turns || []).length;
+                      const nextP1 = shouldAppend
+                        ? 0
+                        : match?.turns[nextIndex]?.player1 || 0;
+                      const nextP2 = shouldAppend
+                        ? 0
+                        : match?.turns[nextIndex]?.player2 || 0;
 
+                      setCurrentTurnP1(nextP1);
+                      setCurrentTurnP2(nextP2);
                       setActiveTurnIndex(nextIndex);
                       setActiveScoringPlayer(1);
+
+                      syncLiveMatchState(liveMatchId!, {
+                        turnUpdate: {
+                          index: activeTurnIndex,
+                          p1: currentTurnP1,
+                          p2: currentTurnP2,
+                        },
+                        appendEmptyTurn: Boolean(shouldAppend),
+                        activeTurnIndex: nextIndex,
+                        activeScoringPlayer: 1,
+                        currentTurnP1: nextP1,
+                        currentTurnP2: nextP2,
+                        turnNotification: notif,
+                      });
                     }
                   };
 
                   const handlePrevPlayer = () => {
+                    if (!isActiveScorer) return;
                     if (activeScoringPlayer === 2) {
-                      saveTurn(
-                        liveMatchId!,
-                        activeTurnIndex,
-                        currentTurnP1,
-                        currentTurnP2,
-                      );
-                      setActiveScoringPlayer(1);
-                      if (match && match.turns[activeTurnIndex]) {
-                        setCurrentTurnP1(match.turns[activeTurnIndex].player1);
-                      }
-
-                      // Update notification
+                      const prevP1 =
+                        match && match.turns[activeTurnIndex]
+                          ? match.turns[activeTurnIndex].player1
+                          : currentTurnP1;
+                      let notif: string | null = null;
                       if (activeTurnIndex === maxTurns - 1) {
-                        setTurnNotification("Laatste beurt!");
+                        notif = "Laatste beurt!";
                       } else if (activeTurnIndex === maxTurns - 2) {
-                        setTurnNotification("Voorlaatste beurt!");
-                      } else {
-                        setTurnNotification(null);
+                        notif = "Voorlaatste beurt!";
                       }
-                    } else if (activeTurnIndex > 0) {
-                      saveTurn(
-                        liveMatchId!,
-                        activeTurnIndex,
-                        currentTurnP1,
+                      setActiveScoringPlayer(1);
+                      setCurrentTurnP1(prevP1);
+                      setTurnNotification(notif);
+                      syncLiveMatchState(liveMatchId!, {
+                        turnUpdate: {
+                          index: activeTurnIndex,
+                          p1: currentTurnP1,
+                          p2: currentTurnP2,
+                        },
+                        activeScoringPlayer: 1,
+                        currentTurnP1: prevP1,
                         currentTurnP2,
-                      );
+                        turnNotification: notif,
+                      });
+                    } else if (activeTurnIndex > 0) {
                       const prevIndex = activeTurnIndex - 1;
+                      const prevP1 = match?.turns[prevIndex]?.player1 || 0;
+                      const prevP2 = match?.turns[prevIndex]?.player2 || 0;
+                      let notif: string | null = null;
+                      if (prevIndex === maxTurns - 1) {
+                        notif = "Laatste beurt!";
+                      } else if (prevIndex === maxTurns - 2) {
+                        notif = "Voorlaatste beurt!";
+                      }
                       setActiveTurnIndex(prevIndex);
                       setActiveScoringPlayer(2);
-                      if (match && match.turns[prevIndex]) {
-                        setCurrentTurnP1(match.turns[prevIndex].player1);
-                        setCurrentTurnP2(match.turns[prevIndex].player2);
-                      }
-
-                      // Update notification
-                      if (prevIndex === maxTurns - 1) {
-                        setTurnNotification("Laatste beurt!");
-                      } else if (prevIndex === maxTurns - 2) {
-                        setTurnNotification("Voorlaatste beurt!");
-                      } else {
-                        setTurnNotification(null);
-                      }
+                      setCurrentTurnP1(prevP1);
+                      setCurrentTurnP2(prevP2);
+                      setTurnNotification(notif);
+                      syncLiveMatchState(liveMatchId!, {
+                        turnUpdate: {
+                          index: activeTurnIndex,
+                          p1: currentTurnP1,
+                          p2: currentTurnP2,
+                        },
+                        activeTurnIndex: prevIndex,
+                        activeScoringPlayer: 2,
+                        currentTurnP1: prevP1,
+                        currentTurnP2: prevP2,
+                        turnNotification: notif,
+                      });
                     }
                   };
 
@@ -12352,7 +12835,7 @@ export default function App() {
                           <thead>
                             <tr className="bg-slate-50/50 dark:bg-slate-800/30 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase border-b border-slate-100 dark:border-slate-800">
                               <th className="py-2">Bt</th>
-                              <th className="py-2">Pnt</th>
+                              <th className="py-2">Car</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
@@ -12475,7 +12958,7 @@ export default function App() {
                                 {p1?.shortName || p1?.name}
                               </h3>
                               <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full text-xs font-bold">
-                                Gemiddelde:{" "}
+                                Te maken:{" "}
                                 {formatNumber(match?.player1AvgBefore || 0)}
                               </div>
                             </div>
@@ -12488,7 +12971,7 @@ export default function App() {
                                 {p2?.shortName || p2?.name}
                               </h3>
                               <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-full text-xs font-bold">
-                                Gemiddelde:{" "}
+                                Te maken:{" "}
                                 {formatNumber(match?.player2AvgBefore || 0)}
                               </div>
                             </div>
@@ -12601,7 +13084,7 @@ export default function App() {
                               </div>
                               <div className="min-h-[1.5rem] flex items-center justify-center mb-4">
                                 {activeScoringPlayer === 2 && (
-                                  <div className="text-base sm:text-lg font-black text-yellow-600 dark:text-yellow-400">
+                                  <div className="text-base sm:text-lg font-black text-[#00d492]">
                                     ({formatNumber(currentTurnP2)})
                                   </div>
                                 )}
@@ -12656,7 +13139,7 @@ export default function App() {
                                 </p>
                               </div>
                             </div>
-                          ) : (
+                          ) : isActiveScorer ? (
                             <div className="bg-slate-50 dark:bg-slate-800/50 p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 relative">
                               <div className="flex flex-col items-center space-y-4">
                                 <div className="flex items-center gap-4 text-slate-400 dark:text-slate-500 uppercase font-black text-xs tracking-widest">
@@ -12707,11 +13190,31 @@ export default function App() {
                                       }
                                       onFocus={(e) => e.target.select()}
                                       onChange={(e) => {
-                                        const val =
-                                          parseInt(e.target.value) || 0;
-                                        if (activeScoringPlayer === 1)
+                                        const val = Math.max(
+                                          0,
+                                          parseInt(e.target.value) || 0,
+                                        );
+                                        if (activeScoringPlayer === 1) {
                                           setCurrentTurnP1(val);
-                                        else setCurrentTurnP2(val);
+                                          syncLiveMatchState(liveMatchId!, {
+                                            turnUpdate: {
+                                              index: activeTurnIndex,
+                                              p1: val,
+                                              p2: currentTurnP2,
+                                            },
+                                            currentTurnP1: val,
+                                          });
+                                        } else {
+                                          setCurrentTurnP2(val);
+                                          syncLiveMatchState(liveMatchId!, {
+                                            turnUpdate: {
+                                              index: activeTurnIndex,
+                                              p1: currentTurnP1,
+                                              p2: val,
+                                            },
+                                            currentTurnP2: val,
+                                          });
+                                        }
                                       }}
                                       onKeyDown={(e) => {
                                         if (e.key === "Enter") {
@@ -12729,14 +13232,29 @@ export default function App() {
                                     <div className="flex flex-col gap-3 md:absolute md:-right-14 md:top-1/2 md:-translate-y-1/2 justify-center">
                                       <button
                                         onClick={() => {
-                                          if (activeScoringPlayer === 1)
-                                            setCurrentTurnP1(
-                                              (prev) => prev + 1,
-                                            );
-                                          else
-                                            setCurrentTurnP2(
-                                              (prev) => prev + 1,
-                                            );
+                                          if (activeScoringPlayer === 1) {
+                                            const nextVal = currentTurnP1 + 1;
+                                            setCurrentTurnP1(nextVal);
+                                            syncLiveMatchState(liveMatchId!, {
+                                              turnUpdate: {
+                                                index: activeTurnIndex,
+                                                p1: nextVal,
+                                                p2: currentTurnP2,
+                                              },
+                                              currentTurnP1: nextVal,
+                                            });
+                                          } else {
+                                            const nextVal = currentTurnP2 + 1;
+                                            setCurrentTurnP2(nextVal);
+                                            syncLiveMatchState(liveMatchId!, {
+                                              turnUpdate: {
+                                                index: activeTurnIndex,
+                                                p1: currentTurnP1,
+                                                p2: nextVal,
+                                              },
+                                              currentTurnP2: nextVal,
+                                            });
+                                          }
                                         }}
                                         className="w-12 h-12 md:w-10 md:h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
                                       >
@@ -12744,14 +13262,35 @@ export default function App() {
                                       </button>
                                       <button
                                         onClick={() => {
-                                          if (activeScoringPlayer === 1)
-                                            setCurrentTurnP1((prev) =>
-                                              Math.max(0, prev - 1),
+                                          if (activeScoringPlayer === 1) {
+                                            const nextVal = Math.max(
+                                              0,
+                                              currentTurnP1 - 1,
                                             );
-                                          else
-                                            setCurrentTurnP2((prev) =>
-                                              Math.max(0, prev - 1),
+                                            setCurrentTurnP1(nextVal);
+                                            syncLiveMatchState(liveMatchId!, {
+                                              turnUpdate: {
+                                                index: activeTurnIndex,
+                                                p1: nextVal,
+                                                p2: currentTurnP2,
+                                              },
+                                              currentTurnP1: nextVal,
+                                            });
+                                          } else {
+                                            const nextVal = Math.max(
+                                              0,
+                                              currentTurnP2 - 1,
                                             );
+                                            setCurrentTurnP2(nextVal);
+                                            syncLiveMatchState(liveMatchId!, {
+                                              turnUpdate: {
+                                                index: activeTurnIndex,
+                                                p1: currentTurnP1,
+                                                p2: nextVal,
+                                              },
+                                              currentTurnP2: nextVal,
+                                            });
+                                          }
                                         }}
                                         className="w-12 h-12 md:w-10 md:h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
                                       >
@@ -12779,7 +13318,7 @@ export default function App() {
                                 </div>
                               </div>
                             </div>
-                          )}
+                          ) : null}
                         </div>
 
                         {/* Detailed Table (Mobile only) */}
@@ -12917,7 +13456,7 @@ export default function App() {
                           </div>
                         </div>
 
-                        {match?.status !== "finished" && (
+                        {match?.status !== "finished" && isActiveScorer && (
                           <div className="flex justify-center gap-4 mt-8">
                             <button
                               onClick={() => {
@@ -12939,7 +13478,7 @@ export default function App() {
                           <thead>
                             <tr className="bg-yellow-50/50 dark:bg-yellow-900/10 text-[10px] font-bold text-yellow-600 dark:text-yellow-400 uppercase border-b border-yellow-100 dark:border-yellow-900/20">
                               <th className="py-2">Bt</th>
-                              <th className="py-2">Pnt</th>
+                              <th className="py-2">Car</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-yellow-50 dark:divide-yellow-900/20">

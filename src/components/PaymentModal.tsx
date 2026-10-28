@@ -30,6 +30,20 @@ export function PaymentModal({ isOpen, onClose, onSuccess, amount, description }
     }
   }, [isOpen]);
 
+  const parseApiResponse = async (response: Response) => {
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      if (response.status === 404 || text.includes('The page could not be found')) {
+        throw new Error(
+          'De Mollie API-route (/api/mollie) is nog niet gepubliceerd op deze omgeving. Publiceer/deploy de nieuwste versie van de app.'
+        );
+      }
+      throw new Error(`Onverwacht antwoord van de server (${response.status}).`);
+    }
+  };
+
   const handleCreatePayment = async () => {
     // Open een leeg tabblad direct bij de klik om popup-blockers te vermijden
     // Let op: we gebruiken hier express GEEN noopener/noreferrer, anders kunnen we het document niet aanpassen.
@@ -46,8 +60,10 @@ export function PaymentModal({ isOpen, onClose, onSuccess, amount, description }
           description
         }),
       });
-      const data = await response.json();
-      if (data.error) throw new Error(data.error);
+      const data = await parseApiResponse(response);
+      if (!response.ok || data.error) {
+        throw new Error(data.error || 'Kan geen verbinding maken met Mollie.');
+      }
       
       setPaymentId(data.paymentId);
       setCheckoutUrl(data.checkoutUrl);
@@ -82,9 +98,11 @@ export function PaymentModal({ isOpen, onClose, onSuccess, amount, description }
     setIsChecking(true);
     setError(null);
     try {
-      const response = await fetch(`/api/mollie/payment-status/${paymentId}`);
-      const data = await response.json();
-      if (data.error) throw new Error(data.error);
+      const response = await fetch(`/api/mollie/payment-status?id=${encodeURIComponent(paymentId)}`);
+      const data = await parseApiResponse(response);
+      if (!response.ok || data.error) {
+        throw new Error(data.error || 'Kan betalingsstatus niet ophalen.');
+      }
       
       if (data.status === 'paid') {
         setIsSuccess(true);
